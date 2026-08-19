@@ -1,0 +1,4 @@
+[
+  { "id": 421, "name": "Bata Classic Tee", "price": 220, "stock": 11, "category": "clothes", "image_url": "/images/products/bata-tshirt.jpg", "store_name": "Bata" },
+  { "id": 422, "name": "Bata Easy Pants", "price": 350, "stock": 5, "category": "clothes", "image_url": "/images/products/bata-pants.jpg", "store_name": "Bata" }
+]

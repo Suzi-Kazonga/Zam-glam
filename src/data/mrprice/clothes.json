@@ -1,0 +1,4 @@
+[
+  { "id": 441, "name": "Mr Price Casual Shirt", "price": 260, "stock": 10, "category": "clothes", "image_url": "/images/products/mrprice-shirt.jpg", "store_name": "Mr Price Zambia" },
+  { "id": 442, "name": "Mr Price Everyday Joggers", "price": 340, "stock": 7, "category": "clothes", "image_url": "/images/products/mrprice-joggers.jpg", "store_name": "Mr Price Zambia" }
+]
