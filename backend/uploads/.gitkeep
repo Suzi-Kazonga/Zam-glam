@@ -1,0 +1,8 @@
+# Uploads directory for user-generated files
+# This directory stores:
+# - Product images
+# - KYC documents (PACRA, NRC)
+# - Store logos
+# - User files
+
+# Keep this directory in version control but ignore files

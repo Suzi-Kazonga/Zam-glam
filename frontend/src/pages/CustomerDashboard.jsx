@@ -1,0 +1,43 @@
+import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
+import apiClient from '../api/axios';
+import DashboardCard from '../components/DashboardCard';
+import Sidebar from '../components/Sidebar';
+import Topbar from '../components/Topbar';
+import { useAuth } from '../context/AuthContext';
+import { useCart } from '../context/CartContext';
+
+const sections = ['Overview', 'Orders', 'Cart', 'Profile', 'Wishlist'];
+
+export default function CustomerDashboard() {
+  const { user } = useAuth();
+  const { cart, getTotalItems, getTotalPrice } = useCart();
+  const [active, setActive] = useState('Overview');
+  const [query, setQuery] = useState('');
+  const [orders, setOrders] = useState([]);
+  const [profile, setProfile] = useState({ name: user?.name || '', email: user?.email || '', address: '', phone: user?.phone || '' });
+  const [wishlist] = useState(() => {
+    try {
+      const storedWishlist = JSON.parse(localStorage.getItem('zamglam_wishlist') || '[]');
+      return Array.isArray(storedWishlist) ? storedWishlist : [];
+    } catch {
+      localStorage.removeItem('zamglam_wishlist');
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    apiClient.get('/orders').then(({ data }) => setOrders(Array.isArray(data) ? data : [])).catch(() => setOrders([]));
+  }, []);
+
+  const filteredOrders = useMemo(() => orders.filter((order) => `${order.id} ${order.name || order.item} ${order.status}`.toLowerCase().includes(query.toLowerCase())), [orders, query]);
+  const orderRows = filteredOrders.length ? filteredOrders : [{ id: '—', name: 'No orders found yet', status: '—', quantity: 0 }];
+
+  return <div className="flex min-h-screen bg-gray-50"><Sidebar items={sections} active={active} onSelect={setActive} role="customer" /><div className="min-w-0 flex-1"><Topbar onSearch={setQuery} /><main className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6 lg:p-8">
+    <div><p className="text-sm font-semibold uppercase tracking-widest text-indigo-600">Customer space</p><h1 className="mt-2 text-3xl font-bold text-slate-900">Good to see you, {user?.name?.split(' ')[0] || 'there'}</h1><p className="mt-1 text-slate-500">Keep an eye on your orders and your next favorite find.</p></div>
+    {(active === 'Overview' || active === 'Orders') && <section className="space-y-4"><div className="grid gap-4 sm:grid-cols-3"><DashboardCard title="Orders" value={orders.length || '0'} detail="All-time orders" /><DashboardCard title="Cart" value={`${getTotalItems()} items`} detail={`K${getTotalPrice().toFixed(2)} selected`} /><DashboardCard title="Wishlist" value={wishlist.length} detail="Saved for later" /></div><DashboardCard title="Order history" className="overflow-hidden"><div className="mt-4 overflow-x-auto"><table className="w-full min-w-[620px] text-left text-sm"><thead className="border-b border-slate-100 text-slate-400"><tr><th className="py-3">Order ID</th><th>Product</th><th>Status</th><th>Delivery</th></tr></thead><tbody>{orderRows.map((order) => <tr key={order.id} className="border-b border-slate-50 last:border-0"><td className="py-4 font-semibold">#{order.id}</td><td>{order.name || order.item}<span className="block text-xs text-slate-400">Qty: {order.quantity || 1}</span></td><td><span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold capitalize text-indigo-700">{order.status}</span></td><td className="text-slate-500">{order.status === 'delivered' ? 'Delivered' : 'Tracking available after dispatch'}</td></tr>)}</tbody></table></div></DashboardCard></section>}
+    {active === 'Cart' && <DashboardCard title="Cart summary"><div className="mt-4 space-y-3">{cart.length ? cart.map((item) => <div key={item.id} className="flex justify-between border-b border-slate-100 py-3"><span>{item.name || item.title} × {item.quantity}</span><strong>K{(item.price * item.quantity).toFixed(2)}</strong></div>) : <p className="text-slate-500">Your cart is empty.</p>}<div className="flex justify-between pt-3 text-lg font-bold"><span>Total</span><span>K{getTotalPrice().toFixed(2)}</span></div><Link to="/cart" className="mt-4 inline-block rounded-lg bg-indigo-600 px-5 py-3 font-semibold text-white hover:bg-indigo-700">Checkout</Link></div></DashboardCard>}
+    {active === 'Profile' && <DashboardCard title="Profile"><form className="mt-4 grid gap-4 sm:grid-cols-2" onSubmit={(event) => event.preventDefault()}>{[['name', 'Full name'], ['email', 'Email'], ['address', 'Address'], ['phone', 'Phone']].map(([key, label]) => <label key={key} className="text-sm font-medium text-slate-600">{label}<input value={profile[key]} onChange={(event) => setProfile({ ...profile, [key]: event.target.value })} className="mt-1 w-full rounded-lg border border-slate-200 px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-300" /></label>)}<button className="rounded-lg bg-indigo-600 px-5 py-2 font-semibold text-white hover:bg-indigo-700 sm:col-span-2">Save profile</button></form></DashboardCard>}
+    {active === 'Wishlist' && <DashboardCard title="Wishlist"><div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{wishlist.length ? wishlist.map((item) => <div key={item.id} className="border-b border-slate-100 pb-3"><p className="font-semibold">{item.name || item.title}</p><p className="text-sm text-indigo-700">K{Number(item.price).toFixed(2)}</p></div>) : <p className="text-slate-500">Your saved products will appear here.</p>}</div></DashboardCard>}
+  </main></div></div>;
+}
