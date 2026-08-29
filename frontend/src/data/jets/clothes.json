@@ -1,0 +1,4 @@
+[
+  { "id": 411, "name": "Jets Everyday Shirt", "price": 280, "stock": 9, "category": "clothes", "image_url": "/images/products/jets-shirt.jpg", "store_name": "Jets" },
+  { "id": 412, "name": "Jets Relaxed Pants", "price": 420, "stock": 6, "category": "clothes", "image_url": "/images/products/jets-pants.jpg", "store_name": "Jets" }
+]

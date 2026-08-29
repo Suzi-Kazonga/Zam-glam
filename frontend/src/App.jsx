@@ -10,15 +10,17 @@ import SignupSeller from './pages/SignupSeller';
 import CustomerDashboard from './pages/CustomerDashboard';
 import SellerDashboard from './pages/SellerDashboard';
 import ProtectedRoute from './components/ProtectedRoute';
+import AdminRoute from './components/AdminRoute';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import CartPage from './pages/CartPage';
 import AdminDashboard from './pages/AdminDashboard';
 import Products from './pages/Products';
-import StoreProducts from './pages/StoreProducts';
+import StoreCatalog from './pages/StoreCatalog';
 import About from './pages/About';
 import Contact from './pages/Contact';
 import Policies from './pages/Policies';
+import OrderTrack from './pages/OrderTrack';
 
 function MainLayout() {
   return <div className="min-h-screen flex flex-col bg-slate-50"><Header /><main className="flex-1"><Outlet /></main><Footer /></div>;
@@ -68,8 +70,9 @@ function App() {
             <Route element={<MainLayout />}>
               <Route path="/" element={<Home />} />
               <Route path="/products" element={<Products />} />
-              <Route path="/stores/:id" element={<StoreProducts />} />
+              <Route path="/stores/:id" element={<StoreCatalog />} />
               <Route path="/cart" element={<CartPage />} />
+              <Route path="/orders/:id" element={<OrderTrack />} />
               <Route path="/product/:id" element={<ProductDetail />} />
               <Route path="/about" element={<About />} />
               <Route path="/contact" element={<Contact />} />
@@ -82,6 +85,9 @@ function App() {
             <Route element={<ProtectedRoute />}>
               <Route path="/customer/dashboard" element={<CustomerDashboard />} />
               <Route path="/seller/dashboard" element={<SellerDashboard />} />
+            </Route>
+            <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
+            <Route element={<AdminRoute />}>
               <Route path="/admin/dashboard" element={<AdminDashboard />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />

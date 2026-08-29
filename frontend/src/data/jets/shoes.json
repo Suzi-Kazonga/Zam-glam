@@ -1,0 +1,4 @@
+[
+  { "id": 413, "name": "Jets Lifestyle Sneakers", "price": 500, "stock": 7, "category": "shoes", "image_url": "/images/products/jets-sneakers.jpg", "store_name": "Jets" },
+  { "id": 414, "name": "Jets Daily Trainers", "price": 460, "stock": 3, "category": "shoes", "image_url": "/images/products/jets-sneakers.jpg", "store_name": "Jets" }
+]
