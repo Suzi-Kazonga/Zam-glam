@@ -4,7 +4,7 @@ import User from '../models/User.js';
 // Register a new user
 export const register = async (req, res) => {
   try {
-    const { name, email, password, phone, role, address, shop_name } = req.body;
+    const { name, email, password, phone, role, address, shop_name, location, city } = req.body;
 
     // Validate input
     if (!name || !email || !password) {
@@ -26,6 +26,7 @@ export const register = async (req, res) => {
       role: role || 'customer',
       address,
       shop_name,
+      location: location || city,
     });
 
     // Generate JWT
@@ -38,7 +39,15 @@ export const register = async (req, res) => {
     res.status(201).json({
       message: 'User registered successfully',
       token,
-      user: { id: userId, name, email, role: role || 'customer' },
+      user: { 
+        id: userId, 
+        name, 
+        email, 
+        role: role || 'customer',
+        phone,
+        address,
+        location: location || city,
+      },
     });
   } catch (error) {
     res.status(500).json({ error: error.message });

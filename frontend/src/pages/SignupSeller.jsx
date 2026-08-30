@@ -15,7 +15,10 @@ export default function SignupSeller() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await authApi.register(form.name, form.email, form.password, 'seller');
+      await authApi.register(form.name, form.email, form.password, 'seller', {
+        shop_name: form.shop_name,
+        phone: form.phone,
+      });
       navigate('/login');
     } catch (error) {
       const message = error?.error || error?.message || 'Seller registration failed';

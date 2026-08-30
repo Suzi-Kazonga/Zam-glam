@@ -10,12 +10,17 @@ export default function SignupCustomer() {
     password: '',
     address: '',
     phone: '',
+    location: '',
   });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await authApi.register(form.name, form.email, form.password, 'customer');
+      await authApi.register(form.name, form.email, form.password, 'customer', {
+        address: form.address,
+        phone: form.phone,
+        location: form.location,
+      });
       navigate('/login');
     } catch (error) {
       const message = error?.error || error?.message || 'Sign up failed';
@@ -43,6 +48,7 @@ export default function SignupCustomer() {
         <input className="w-full border p-2 mb-3 rounded focus:outline-none focus:ring-2 focus:ring-black" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="Email" type="email" />
         <input className="w-full border p-2 mb-3 rounded focus:outline-none focus:ring-2 focus:ring-black" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="Password" type="password" />
         <input className="w-full border p-2 mb-3 rounded focus:outline-none focus:ring-2 focus:ring-black" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} placeholder="Address" />
+        <input className="w-full border p-2 mb-3 rounded focus:outline-none focus:ring-2 focus:ring-black" value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} placeholder="City/Location (e.g., Lusaka)" />
         <input className="w-full border p-2 mb-3 rounded focus:outline-none focus:ring-2 focus:ring-black" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="Phone" />
         <button className="w-full bg-black text-white p-2 rounded">Sign Up</button>
       </form>

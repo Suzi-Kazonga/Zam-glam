@@ -1,13 +1,17 @@
 import apiClient from './axios';
 
 // Register user
-export const register = async (name, email, password, role = 'customer') => {
+export const register = async (name, email, password, role = 'customer', profileData = {}) => {
   try {
     const response = await apiClient.post('/auth/signup', {
       name,
       email,
       password,
       role,
+      address: profileData.address || '',
+      phone: profileData.phone || '',
+      location: profileData.location || '',
+      city: profileData.location || '',
     });
     return response.data;
   } catch (error) {

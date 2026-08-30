@@ -19,6 +19,7 @@ export default function CartPage() {
   const [checkout, setCheckout] = useState({
     address: user?.address || '',
     phone: user?.phone || '',
+    location: user?.location || user?.city || '',
     paymentMethod: 'Airtel Money',
   });
 
@@ -30,6 +31,7 @@ export default function CartPage() {
       customerName: user?.name || 'Guest shopper',
       total: getTotalPrice(),
       address: checkout.address,
+      location: checkout.location,
       phone: checkout.phone,
       paymentMethod: checkout.paymentMethod,
     });
@@ -46,6 +48,8 @@ export default function CartPage() {
         <p className="mt-3 text-slate-500">Order #{placedOrder.id} is confirmed. Tracking starts as soon as the shop begins packing.</p>
         <div className="mt-8 space-y-3 rounded-lg border border-slate-200 bg-white p-6">
           <p><span className="text-slate-500">Deliver to</span> · {placedOrder.address}</p>
+          <p><span className="text-slate-500">Location</span> · {placedOrder.location}</p>
+          <p><span className="text-slate-500">Phone</span> · {placedOrder.phone}</p>
           <p><span className="text-slate-500">Payment</span> · {placedOrder.paymentMethod}</p>
           <p><span className="text-slate-500">Total</span> · K{Number(placedOrder.total).toFixed(2)}</p>
           <p className="capitalize"><span className="text-slate-500">Status</span> · {placedOrder.status}</p>
@@ -116,6 +120,9 @@ export default function CartPage() {
             )}
             <label className="block text-sm font-medium text-slate-700">Delivery address
               <input required value={checkout.address} onChange={(event) => setCheckout({ ...checkout, address: event.target.value })} placeholder="House number, street, city" className="mt-2 w-full rounded-lg border border-slate-200 px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-300" />
+            </label>
+            <label className="block text-sm font-medium text-slate-700">Location/City
+              <input required value={checkout.location} onChange={(event) => setCheckout({ ...checkout, location: event.target.value })} placeholder="e.g., Lusaka, Kitwe, Ndola" className="mt-2 w-full rounded-lg border border-slate-200 px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-300" />
             </label>
             <label className="block text-sm font-medium text-slate-700">Phone
               <input required value={checkout.phone} onChange={(event) => setCheckout({ ...checkout, phone: event.target.value })} placeholder="+260 ..." className="mt-2 w-full rounded-lg border border-slate-200 px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-300" />

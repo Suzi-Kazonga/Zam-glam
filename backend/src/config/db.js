@@ -55,6 +55,8 @@ export async function initializeDatabase() {
       name VARCHAR(255) NOT NULL,
       address VARCHAR(255),
       phone VARCHAR(50),
+      city VARCHAR(100),
+      location VARCHAR(100),
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     );

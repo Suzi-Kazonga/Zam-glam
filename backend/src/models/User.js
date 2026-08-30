@@ -15,7 +15,7 @@ class User {
     return Number(rows[0]?.count || 0) > 0;
   }
 
-  static async create({ name, email, password, phone, role, address, shop_name }) {
+  static async create({ name, email, password, phone, role, address, shop_name, location }) {
     const hashedPassword = await bcrypt.hash(password, 10);
     const connection = await pool.getConnection();
     const accountRole = String(role || 'customer').toLowerCase();
@@ -37,8 +37,8 @@ class User {
           );
         } else {
           await connection.query(
-            'INSERT INTO customers (user_id, name, address, phone) VALUES (?, ?, ?, ?)',
-            [result.insertId, name, address || '', phone || ''],
+            'INSERT INTO customers (user_id, name, address, phone, location) VALUES (?, ?, ?, ?, ?)',
+            [result.insertId, name, address || '', phone || '', location || ''],
           );
         }
 
@@ -56,8 +56,8 @@ class User {
       }
 
       const [result] = await connection.query(
-        'INSERT INTO customers (name, email, password, address, phone) VALUES (?, ?, ?, ?, ?)',
-        [name, email, hashedPassword, address || '', phone || ''],
+        'INSERT INTO customers (name, email, password, address, phone, location) VALUES (?, ?, ?, ?, ?, ?)',
+        [name, email, hashedPassword, address || '', phone || '', location || ''],
       );
 
       await connection.commit();
