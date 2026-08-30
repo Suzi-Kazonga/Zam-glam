@@ -81,7 +81,7 @@ export default function Home() {
             to="/products"
             className="inline-block rounded-lg bg-indigo-600 px-8 py-3 font-semibold hover:bg-indigo-700 transition"
           >
-            Explore Products →
+            Shop Now →
           </Link>
         </section>
       </main>
