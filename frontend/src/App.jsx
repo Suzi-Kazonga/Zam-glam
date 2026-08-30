@@ -19,6 +19,7 @@ import StoreProducts from './pages/StoreProducts';
 import About from './pages/About';
 import Contact from './pages/Contact';
 import Policies from './pages/Policies';
+import AccountProfile from './pages/AccountProfile';
 
 function MainLayout() {
   return <div className="min-h-screen flex flex-col bg-slate-50"><Header /><main className="flex-1"><Outlet /></main><Footer /></div>;
@@ -75,6 +76,7 @@ function App() {
               <Route path="/contact" element={<Contact />} />
               <Route path="/policies" element={<Policies />} />
             </Route>
+            <Route path="/account" element={<AccountProfile />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<SignupChoice />} />
             <Route path="/signup/customer" element={<SignupCustomer />} />

@@ -18,7 +18,20 @@ export default function SignupCustomer() {
       await authApi.register(form.name, form.email, form.password, 'customer');
       navigate('/login');
     } catch (error) {
-      alert(error?.error || error?.message || 'Sign up failed');
+      const message = error?.error || error?.message || 'Sign up failed';
+      const isDuplicate = /already exists|duplicate/i.test(message);
+
+      if (isDuplicate) {
+        navigate('/login', {
+          state: {
+            signupError: 'Account already exists. Please log in instead.',
+            signupEmail: form.email,
+          },
+        });
+        return;
+      }
+
+      alert(message);
     }
   };
 

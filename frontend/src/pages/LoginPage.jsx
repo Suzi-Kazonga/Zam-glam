@@ -1,15 +1,25 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 function LoginPage() {
-  const [email, setEmail] = useState('');
+  const location = useLocation();
+  const [email, setEmail] = useState(location.state?.signupEmail || '');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState('customer');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(location.state?.signupError || '');
   const { login, user } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (location.state?.signupEmail) {
+      setEmail(location.state.signupEmail);
+    }
+    if (location.state?.signupError) {
+      setError(location.state.signupError);
+    }
+  }, [location.state]);
 
   if (user) {
     navigate(user.role === 'seller' ? '/seller/dashboard' : '/customer/dashboard');
@@ -68,8 +78,9 @@ function LoginPage() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
-              <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-600">
-                {error}
+              <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-3 text-sm text-red-600">
+                <p className="font-semibold">{error}</p>
+                <p className="mt-1 text-red-500">Please log in with your existing account, or create a different one.</p>
               </div>
             )}
 
@@ -108,11 +119,26 @@ function LoginPage() {
             </button>
           </form>
 
-          <div className="mt-6 text-center text-sm text-gray-600">
-            Don’t have an account?{' '}
-            <Link to="/signup" className="font-semibold text-indigo-600 hover:text-indigo-800">
-              Create one here
-            </Link>
+          <div className="mt-6 space-y-2 text-center text-sm text-gray-600">
+            {error ? (
+              <div>
+                Already have an account?{' '}
+                <button
+                  type="button"
+                  onClick={() => setError('')}
+                  className="font-semibold text-indigo-600 hover:text-indigo-800"
+                >
+                  Try again
+                </button>
+              </div>
+            ) : (
+              <div>
+                Don’t have an account?{' '}
+                <Link to="/signup" className="font-semibold text-indigo-600 hover:text-indigo-800">
+                  Create one here
+                </Link>
+              </div>
+            )}
           </div>
         </div>
       </div>

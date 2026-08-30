@@ -19,7 +19,7 @@ const Header = () => {
   return (
     <header className="border-b border-slate-200 bg-white">
       <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-4 px-4 py-4">
-      <Link to="/" className="text-2xl font-bold tracking-tight text-slate-900">Zamglam</Link>
+      <Link to="/" className="text-2xl font-bold tracking-tight text-slate-900 transition hover:text-indigo-600">Zamglam</Link>
       <nav className="hidden gap-5 text-sm font-semibold text-slate-600 lg:flex"><Link to="/">Home</Link><Link to="/products">Shop</Link>
         {user?.role === 'seller' && <Link to="/seller/dashboard">Seller Dashboard</Link>}
         {user?.role === 'admin' && <Link to="/admin/dashboard">Admin</Link>}
@@ -29,8 +29,11 @@ const Header = () => {
         <CartIcon />
 
         {user ? (
-          <div className="flex gap-2 items-center">
-              <span className="hidden text-sm font-semibold sm:inline">{user.name}</span>
+          <div className="flex items-center gap-3">
+            <Link to="/account" className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-indigo-100 text-sm font-bold text-indigo-700 transition hover:bg-indigo-200" title="View profile">
+              {user.name?.charAt(0)?.toUpperCase() || 'U'}
+            </Link>
+            <span className="hidden text-sm font-semibold sm:inline">{user.name}</span>
             <Button variant="danger" size="sm" onClick={handleLogout}>
               Logout
             </Button>
