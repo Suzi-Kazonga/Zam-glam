@@ -27,24 +27,44 @@ export async function initializeDatabase() {
   await adminConnection.end();
 
   await pool.query(`
-    CREATE TABLE IF NOT EXISTS customers (
+    CREATE TABLE IF NOT EXISTS users (
       id INT AUTO_INCREMENT PRIMARY KEY,
-      name VARCHAR(255) NOT NULL,
       email VARCHAR(255) NOT NULL UNIQUE,
       password VARCHAR(255) NOT NULL,
+      role ENUM('admin','customer','seller') NOT NULL DEFAULT 'customer',
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS customers (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      user_id INT NOT NULL UNIQUE,
+      name VARCHAR(255) NOT NULL,
       address VARCHAR(255),
-      phone VARCHAR(50)
+      phone VARCHAR(50),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     );
   `);
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS sellers (
       id INT AUTO_INCREMENT PRIMARY KEY,
-      name VARCHAR(255) NOT NULL,
-      email VARCHAR(255) NOT NULL UNIQUE,
-      password VARCHAR(255) NOT NULL,
+      user_id INT NOT NULL UNIQUE,
       shop_name VARCHAR(255) NOT NULL,
-      phone VARCHAR(50)
+      phone VARCHAR(50),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS categories (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      name VARCHAR(100) NOT NULL UNIQUE,
+      description TEXT,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
   `);
 
@@ -59,7 +79,8 @@ export async function initializeDatabase() {
       open_hours JSON,
       status VARCHAR(20) DEFAULT 'open',
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      UNIQUE KEY uk_stores_seller (seller_id)
+      UNIQUE KEY uk_stores_seller (seller_id),
+      FOREIGN KEY (seller_id) REFERENCES sellers(id) ON DELETE CASCADE
     );
   `);
 
@@ -74,24 +95,45 @@ export async function initializeDatabase() {
       price DECIMAL(10,2) NOT NULL,
       stock INT DEFAULT 0,
       image_url VARCHAR(500),
+      audience VARCHAR(50) DEFAULT 'unisex',
+      sizes JSON,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (seller_id) REFERENCES sellers(id) ON DELETE CASCADE
     );
   `);
 
-  await pool.query('ALTER TABLE products ADD COLUMN store_id INT NULL').catch(() => {});
-  await pool.query('ALTER TABLE products ADD COLUMN category_id INT NULL').catch(() => {});
-  await pool.query("ALTER TABLE products ADD COLUMN audience VARCHAR(50) DEFAULT 'unisex'").catch(() => {});
-  await pool.query('ALTER TABLE products ADD COLUMN sizes JSON').catch(() => {});
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS cart (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      customer_id INT NOT NULL,
+      product_id INT NOT NULL,
+      quantity INT NOT NULL DEFAULT 1,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE KEY uk_cart_customer_product (customer_id, product_id),
+      FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE,
+      FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+    );
+  `);
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS orders (
       id INT AUTO_INCREMENT PRIMARY KEY,
       customer_id INT NOT NULL,
-      product_id INT NOT NULL,
-      quantity INT NOT NULL DEFAULT 1,
+      total_price DECIMAL(12,2) NOT NULL DEFAULT 0,
       status VARCHAR(50) DEFAULT 'pending',
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE,
+      FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE
+    );
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS order_items (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      order_id INT NOT NULL,
+      product_id INT NOT NULL,
+      quantity INT NOT NULL DEFAULT 1,
+      price DECIMAL(10,2) NOT NULL,
+      FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
       FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
     );
   `);
@@ -104,14 +146,27 @@ export async function initializeDatabase() {
       price DECIMAL(10,2) NOT NULL,
       distance VARCHAR(100),
       direction VARCHAR(255),
+      status VARCHAR(30) DEFAULT 'assigned',
       FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
+    );
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS documents (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      user_id INT NOT NULL,
+      type VARCHAR(50) NOT NULL,
+      url VARCHAR(500) NOT NULL,
+      status VARCHAR(20) DEFAULT 'pending',
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     );
   `);
 
   await pool.query(`
     INSERT INTO categories (name, description)
     SELECT 'General', 'Zamglam products'
-    WHERE NOT EXISTS (SELECT 1 FROM categories)
+    WHERE NOT EXISTS (SELECT 1 FROM categories WHERE name = 'General')
   `);
 
   return pool;
