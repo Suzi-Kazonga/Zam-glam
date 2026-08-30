@@ -20,10 +20,13 @@ const Header = () => {
     <header className="border-b border-slate-200 bg-white">
       <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-4 px-4 py-4">
       <Link to="/" className="text-2xl font-bold tracking-tight text-slate-900 transition hover:text-indigo-600">Zamglam</Link>
-      <nav className="hidden gap-5 text-sm font-semibold text-slate-600 lg:flex"><Link to="/">Home</Link><Link to="/products">Shop</Link>
-        {user?.role === 'customer' && <Link to="/customer/dashboard">Dashboard</Link>}
-        {user?.role === 'seller' && <><Link to="/seller/dashboard">Seller Dashboard</Link><Link to={getStorefrontPath(user.shop_name || user.name)}>View store</Link></>}
-        {user?.role === 'admin' && <Link to="/admin/dashboard">Admin</Link>}
+      <nav className="hidden gap-8 text-sm font-semibold text-slate-600 lg:flex">
+        <Link to="/" className="hover:text-indigo-600 transition">Home</Link>
+        <Link to="/collections" className="hover:text-indigo-600 transition">Collections</Link>
+        <Link to="/products" className="hover:text-indigo-600 transition">All Products</Link>
+        {user?.role === 'customer' && <Link to="/customer/dashboard" className="hover:text-indigo-600 transition">Dashboard</Link>}
+        {user?.role === 'seller' && <><Link to="/seller/dashboard" className="hover:text-indigo-600 transition">Seller Dashboard</Link><Link to={getStorefrontPath(user.shop_name || user.name)} className="hover:text-indigo-600 transition">View store</Link></>}
+        {user?.role === 'admin' && <Link to="/admin/dashboard" className="hover:text-indigo-600 transition">Admin</Link>}
       </nav>
       <div className="order-3 w-full flex-1 md:order-2 md:w-auto"><SearchBar placeholder="Search all styles" onSearch={(value) => { if (value) navigate(`/products?search=${encodeURIComponent(value)}`); }} /></div>
       <div className="ml-auto flex items-center gap-3">

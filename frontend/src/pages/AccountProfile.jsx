@@ -1,8 +1,20 @@
+import { useState, useEffect } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { getCustomerOrders } from '../utils/orderStore';
 
 export default function AccountProfile() {
   const { user } = useAuth();
+  const [orders, setOrders] = useState([]);
+
+  useEffect(() => {
+    if (user?.email) {
+      const customerOrders = getCustomerOrders(user.email);
+      // Sort orders by most recent first
+      const sorted = customerOrders.sort((a, b) => new Date(b.createdAt || b.placed_at) - new Date(a.createdAt || a.placed_at));
+      setOrders(sorted);
+    }
+  }, [user]);
 
   if (!user) {
     return <Navigate to="/login" replace />;
@@ -63,6 +75,68 @@ export default function AccountProfile() {
           </Link>
         </div>
       </div>
+
+      {orders.length > 0 && (
+        <div className="mt-12">
+          <h2 className="text-2xl font-bold text-slate-900 mb-6">Your Orders</h2>
+          <div className="space-y-4">
+            {orders.map((order) => (
+              <div key={order.id} className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm hover:shadow-md transition">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      <h3 className="font-semibold text-slate-900">Order #{order.id}</h3>
+                      <span className={`px-3 py-1 text-xs font-semibold rounded-full ${
+                        order.status === 'delivered' ? 'bg-emerald-100 text-emerald-700' :
+                        order.status === 'shipped' ? 'bg-blue-100 text-blue-700' :
+                        order.status === 'processing' ? 'bg-yellow-100 text-yellow-700' :
+                        'bg-slate-100 text-slate-700'
+                      }`}>
+                        {order.status || 'pending'}
+                      </span>
+                    </div>
+                    <p className="text-sm text-slate-500">
+                      {new Date(order.createdAt || order.placed_at).toLocaleDateString('en-US', { 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </p>
+                    <p className="mt-2 text-slate-600">
+                      Deliver to: <span className="font-semibold">{order.address}</span>
+                    </p>
+                    {order.location && (
+                      <p className="text-slate-600">
+                        Location: <span className="font-semibold">{order.location}</span>
+                      </p>
+                    )}
+                  </div>
+                  <div className="text-right">
+                    <p className="text-lg font-bold text-indigo-600">K{Number(order.total).toFixed(2)}</p>
+                    <Link 
+                      to={`/orders/${order.id}`} 
+                      className="mt-3 inline-block text-sm font-semibold text-indigo-600 hover:text-indigo-700"
+                    >
+                      View details →
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {orders.length === 0 && (
+        <div className="mt-12 text-center">
+          <p className="text-slate-500 mb-4">No orders yet</p>
+          <Link to="/products" className="inline-block rounded-lg bg-indigo-600 px-6 py-3 font-semibold text-white hover:bg-indigo-700">
+            Start shopping
+          </Link>
+        </div>
+      )}
     </main>
   );
 }

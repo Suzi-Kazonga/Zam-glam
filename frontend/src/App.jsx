@@ -17,6 +17,7 @@ import CartPage from './pages/CartPage';
 import AdminDashboard from './pages/AdminDashboard';
 import Products from './pages/Products';
 import StoreCatalog from './pages/StoreCatalog';
+import Collections from './pages/Collections';
 import About from './pages/About';
 import Contact from './pages/Contact';
 import Policies from './pages/Policies';
@@ -70,6 +71,7 @@ function App() {
           <Routes>
             <Route element={<MainLayout />}>
               <Route path="/" element={<Home />} />
+              <Route path="/collections" element={<Collections />} />
               <Route path="/products" element={<Products />} />
               <Route path="/stores/:id" element={<StoreCatalog />} />
               <Route path="/cart" element={<CartPage />} />

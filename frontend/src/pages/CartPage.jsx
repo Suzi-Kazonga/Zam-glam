@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
@@ -10,6 +10,20 @@ const payments = [
   { id: 'Card', detail: 'Visa or Mastercard' },
 ];
 
+const detectPaymentMethod = (phone) => {
+  // Detect payment based on phone number (third digit after first 0)
+  // 0976... or 097... → Airtel (digit at index 3 is 7)
+  // 0966... or 096... → MTN (digit at index 3 is 6)
+  if (!phone) return 'Airtel Money';
+  const cleanPhone = String(phone).replace(/\D/g, '');
+  if (cleanPhone.length >= 4) {
+    const thirdDigitAfterZero = cleanPhone[3];
+    if (thirdDigitAfterZero === '7') return 'Airtel Money';
+    if (thirdDigitAfterZero === '6') return 'MTN MoMo';
+  }
+  return 'Airtel Money';
+};
+
 export default function CartPage() {
   const { user } = useAuth();
   const location = useLocation();
@@ -20,8 +34,16 @@ export default function CartPage() {
     address: user?.address || '',
     phone: user?.phone || '',
     location: user?.location || user?.city || '',
-    paymentMethod: 'Airtel Money',
+    paymentMethod: detectPaymentMethod(user?.phone),
   });
+
+  useEffect(() => {
+    // Update payment method if phone changes
+    setCheckout((prev) => ({
+      ...prev,
+      paymentMethod: detectPaymentMethod(prev.phone),
+    }));
+  }, [checkout.phone]);
 
   const placeOrder = (event) => {
     event.preventDefault();
