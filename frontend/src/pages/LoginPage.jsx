@@ -23,7 +23,6 @@ function LoginPage() {
   const { login, user } = useAuth();
   const { getTotalItems } = useCart();
   const navigate = useNavigate();
-  const location = useLocation();
   const from = location.state?.from;
 
   useEffect(() => {

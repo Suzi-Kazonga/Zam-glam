@@ -9,7 +9,6 @@ import Sidebar from '../components/Sidebar';
 import Topbar from '../components/Topbar';
 import HeroBanner from '../components/HeroBanner';
 import CategoryNav from '../components/CategoryNav';
-import ProductCard from '../components/ProductCard';
 import StoreCard from '../components/StoreCard';
 import FeaturedDeals from '../components/FeaturedDeals';
 import { getAllStores } from '../api/storeApi';

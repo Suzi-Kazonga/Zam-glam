@@ -21,6 +21,7 @@ import About from './pages/About';
 import Contact from './pages/Contact';
 import Policies from './pages/Policies';
 import AccountProfile from './pages/AccountProfile';
+import OrderTrack from './pages/OrderTrack';
 
 function MainLayout() {
   return <div className="min-h-screen flex flex-col bg-slate-50"><Header /><main className="flex-1"><Outlet /></main><Footer /></div>;
