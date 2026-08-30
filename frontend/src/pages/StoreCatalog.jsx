@@ -1,0 +1,89 @@
+import { useEffect, useMemo, useState } from 'react';
+import { Link, useParams } from 'react-router-dom';
+import ProductCard from '../components/ProductCard';
+import apiClient from '../api/axios';
+import { getStore, getStoreProducts } from '../api/storeApi';
+import { getStoreLocalProducts } from '../utils/shopCatalog';
+import { getSellerScore } from '../utils/ratingStore';
+import pepClothes from '../data/pep/clothes.json';
+import pepShoes from '../data/pep/shoes.json';
+import jetsClothes from '../data/jets/clothes.json';
+import jetsShoes from '../data/jets/shoes.json';
+import bataClothes from '../data/bata/clothes.json';
+import bataShoes from '../data/bata/shoes.json';
+import mudClothes from '../data/mud/clothes.json';
+import mudShoes from '../data/mud/shoes.json';
+import mrpriceClothes from '../data/mrprice/clothes.json';
+import mrpriceShoes from '../data/mrprice/shoes.json';
+import fashionsClothes from '../data/fashionsgalore/clothes.json';
+import fashionsShoes from '../data/fashionsgalore/shoes.json';
+
+const storeCatalogs = {
+  1: { name: 'Mud', clothes: mudClothes, shoes: mudShoes },
+  2: { name: 'Jets', clothes: jetsClothes, shoes: jetsShoes },
+  3: { name: 'Bata', clothes: bataClothes, shoes: bataShoes },
+  4: { name: 'Pep', clothes: pepClothes, shoes: pepShoes },
+  5: { name: 'Mr Price Zambia', clothes: mrpriceClothes, shoes: mrpriceShoes },
+  6: { name: 'Fashions Galore', clothes: fashionsClothes, shoes: fashionsShoes },
+};
+
+export default function StoreCatalog() {
+  const { id } = useParams();
+  const fallbackCatalog = storeCatalogs[id] || storeCatalogs[1];
+  const [activeStore, setActiveStore] = useState(id);
+  const [store, setStore] = useState({ name: fallbackCatalog.name });
+  const [products, setProducts] = useState([...fallbackCatalog.clothes, ...fallbackCatalog.shoes]);
+  const [selectedCategory, setSelectedCategory] = useState('All');
+
+  useEffect(() => {
+    setActiveStore(id);
+    const catalog = storeCatalogs[id] || storeCatalogs[1];
+    const localProducts = getStoreLocalProducts(catalog.name);
+    setProducts([...localProducts, ...catalog.clothes, ...catalog.shoes]);
+    setStore({ name: catalog.name });
+
+    Promise.allSettled([getStore(id), getStoreProducts(id)]).then(([storeResult, productsResult]) => {
+      if (storeResult.status === 'fulfilled' && storeResult.value) setStore(storeResult.value);
+      const extraLocal = getStoreLocalProducts(storeResult.value?.name || catalog.name);
+      if (productsResult.status === 'fulfilled' && Array.isArray(productsResult.value) && productsResult.value.length) {
+        setProducts([...extraLocal, ...productsResult.value]);
+        return;
+      }
+      apiClient.get('/products', { params: { store_id: id } }).then(({ data }) => {
+        if (Array.isArray(data) && data.length) setProducts([...extraLocal, ...data]);
+      }).catch(() => {});
+    });
+  }, [id]);
+
+  const filteredProducts = useMemo(() => products.filter((product) => {
+    if (selectedCategory === 'All') return true;
+    return String(product.category_name || product.category || '').toLowerCase().includes(selectedCategory.toLowerCase().slice(0, -1));
+  }), [products, selectedCategory]);
+
+  return (
+    <main data-active-store={activeStore} className="mx-auto max-w-7xl px-4 py-12">
+      <Link to="/" className="mb-6 inline-block text-sm font-semibold text-indigo-600 transition hover:text-indigo-800">← Back to Stores</Link>
+      <div className="flex flex-wrap items-end justify-between gap-5">
+        <div>
+          <p className="text-sm font-semibold uppercase tracking-widest text-indigo-600">Store catalog</p>
+          <h1 className="mt-2 text-4xl font-bold text-slate-900">{store.name} Store</h1>
+          <p className="mt-2 text-slate-500">Clothes and shoes selected from {store.name}.</p>
+          {getSellerScore(store.name).count > 0 && (
+            <p className="mt-2 text-sm text-amber-600">★ {getSellerScore(store.name).average} average from {getSellerScore(store.name).count} customer rating{getSellerScore(store.name).count === 1 ? '' : 's'}</p>
+          )}
+        </div>
+        <div className="flex rounded-lg bg-slate-100 p-1" aria-label="Product category">
+          {['All', 'Clothes', 'Shoes'].map((category) => (
+            <button key={category} type="button" onClick={() => setSelectedCategory(category)} className={`rounded-md px-4 py-2 text-sm font-semibold transition ${selectedCategory === category ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}>
+              {category}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="mt-10 grid gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+        {filteredProducts.map((product) => <ProductCard key={product.id} product={product} />)}
+        {!filteredProducts.length && <p className="col-span-full py-16 text-center text-slate-500">No products match this category.</p>}
+      </div>
+    </main>
+  );
+}

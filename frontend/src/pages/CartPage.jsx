@@ -1,32 +1,165 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import apiClient from '../api/axios';
+import { Link, useLocation } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
+import { createOrder } from '../utils/orderStore';
+
+const payments = [
+  { id: 'Airtel Money', detail: 'Pay with your Airtel number' },
+  { id: 'MTN MoMo', detail: 'Pay with MTN Mobile Money' },
+  { id: 'Card', detail: 'Visa or Mastercard' },
+];
 
 export default function CartPage() {
-  const { cart, updateQuantity, removeFromCart, getTotalPrice } = useCart();
-  const [delivery, setDelivery] = useState(null);
-  const [quoteError, setQuoteError] = useState('');
+  const { user } = useAuth();
+  const location = useLocation();
+  const { cart, updateQuantity, removeFromCart, getTotalPrice, clearCart } = useCart();
+  const [step, setStep] = useState('bag');
+  const [placedOrder, setPlacedOrder] = useState(null);
+  const [checkout, setCheckout] = useState({
+    address: user?.address || '',
+    phone: user?.phone || '',
+    paymentMethod: 'Airtel Money',
+  });
 
-  const requestQuote = async () => {
-    setQuoteError('');
-    try {
-      const { data } = await apiClient.post('/delivery/quote', {
-        pickup: { lat: -15.4167, lng: 28.2833 },
-        dropoff: { lat: -15.39, lng: 28.32 },
-      });
-      setDelivery(data);
-    } catch (error) {
-      setQuoteError(error.response?.data?.error || 'Delivery quote unavailable');
-    }
+  const placeOrder = (event) => {
+    event.preventDefault();
+    const { order } = createOrder({
+      items: cart,
+      customerEmail: user?.email || 'guest',
+      customerName: user?.name || 'Guest shopper',
+      total: getTotalPrice(),
+      address: checkout.address,
+      phone: checkout.phone,
+      paymentMethod: checkout.paymentMethod,
+    });
+    clearCart();
+    setPlacedOrder(order);
+    setStep('placed');
   };
 
-  if (!cart.length) return <section className="mx-auto max-w-3xl px-6 py-20 text-center"><h1 className="text-3xl font-bold text-slate-900">Your bag is empty</h1><p className="mt-3 text-slate-500">Find something that feels like you.</p><Link to="/" className="mt-6 inline-block rounded-lg bg-indigo-600 px-6 py-3 font-semibold text-white">Start shopping</Link></section>;
+  if (step === 'placed' && placedOrder) {
+    return (
+      <section className="mx-auto max-w-3xl px-6 py-16">
+        <p className="text-sm font-semibold uppercase tracking-widest text-emerald-600">Order placed</p>
+        <h1 className="mt-2 text-3xl font-bold text-slate-900">Your order is on its way</h1>
+        <p className="mt-3 text-slate-500">Order #{placedOrder.id} is confirmed. Tracking starts as soon as the shop begins packing.</p>
+        <div className="mt-8 space-y-3 rounded-lg border border-slate-200 bg-white p-6">
+          <p><span className="text-slate-500">Deliver to</span> · {placedOrder.address}</p>
+          <p><span className="text-slate-500">Payment</span> · {placedOrder.paymentMethod}</p>
+          <p><span className="text-slate-500">Total</span> · K{Number(placedOrder.total).toFixed(2)}</p>
+          <p className="capitalize"><span className="text-slate-500">Status</span> · {placedOrder.status}</p>
+        </div>
+        <div className="mt-8 flex flex-wrap gap-3">
+          <Link to={`/orders/${placedOrder.id}`} className="rounded-lg bg-indigo-600 px-5 py-3 font-semibold text-white hover:bg-indigo-700">Track order</Link>
+          <Link to="/products" className="rounded-lg border border-slate-300 px-5 py-3 font-semibold text-slate-700">Keep shopping</Link>
+        </div>
+      </section>
+    );
+  }
 
-  return <section className="mx-auto grid max-w-6xl gap-8 px-6 py-12 lg:grid-cols-[1fr_360px]">
-    <div><div className="mb-6"><p className="text-sm font-semibold uppercase tracking-widest text-indigo-600">Your selection</p><h1 className="mt-2 text-3xl font-bold text-slate-900">Shopping bag</h1></div>
-      <div className="space-y-4">{cart.map((item) => <article key={item.id} className="flex gap-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm"><img src={item.image_url || item.image || 'https://images.unsplash.com/photo-1529139574466-a303027c1d8b?auto=format&fit=crop&w=240&q=80'} alt="" className="h-28 w-24 rounded object-cover" /><div className="flex flex-1 justify-between"><div><h2 className="font-semibold text-slate-900">{item.name || item.title}</h2><p className="mt-2 text-indigo-700">K{Number(item.price).toFixed(2)}</p></div><div className="flex items-start gap-3"><input aria-label="Quantity" type="number" min="1" value={item.quantity} onChange={(e) => updateQuantity(item.id, Number(e.target.value))} className="w-16 rounded border px-2 py-1" /><button onClick={() => removeFromCart(item.id)} className="text-sm text-rose-600">Remove</button></div></div></article>)}</div>
-    </div>
-    <aside className="h-fit rounded-lg bg-slate-900 p-6 text-white"><h2 className="text-xl font-bold">Checkout</h2><div className="mt-6 flex justify-between border-b border-slate-700 pb-4"><span>Items</span><strong>K{getTotalPrice().toFixed(2)}</strong></div><button onClick={requestQuote} className="mt-5 w-full rounded-lg border border-slate-600 px-4 py-3 text-left hover:border-indigo-400">{delivery ? `Delivery: K${Number(delivery.total_price || delivery.price).toFixed(2)} · ${delivery.eta || '30-45 min'}` : 'Get delivery estimate'}</button>{quoteError && <p className="mt-2 text-sm text-rose-300">{quoteError}</p>}<div className="mt-5 flex justify-between text-lg"><span>Total</span><strong>K{(getTotalPrice() + Number(delivery?.total_price || 0)).toFixed(2)}</strong></div><button className="mt-6 w-full rounded-lg bg-indigo-500 py-3 font-semibold hover:bg-indigo-400">Confirm order</button></aside>
-  </section>;
+  if (!cart.length) {
+    return (
+      <section className="mx-auto max-w-3xl px-6 py-20 text-center">
+        <h1 className="text-3xl font-bold text-slate-900">Your bag is empty</h1>
+        <p className="mt-3 text-slate-500">Find something that feels like you.</p>
+        <Link to="/products" className="mt-6 inline-block rounded-lg bg-indigo-600 px-6 py-3 font-semibold text-white">Start shopping</Link>
+      </section>
+    );
+  }
+
+  return (
+    <section className="mx-auto grid max-w-6xl gap-8 px-6 py-12 lg:grid-cols-[1fr_360px]">
+      <div>
+        <div className="mb-6">
+          <p className="text-sm font-semibold uppercase tracking-widest text-indigo-600">{step === 'checkout' ? 'Checkout' : 'Your selection'}</p>
+          <h1 className="mt-2 text-3xl font-bold text-slate-900">{step === 'checkout' ? 'Delivery and payment' : 'Shopping bag'}</h1>
+        </div>
+
+        {step === 'bag' && (
+          <div className="space-y-4">
+            {cart.map((item) => {
+              const key = item.lineId || item.id;
+              return (
+                <article key={key} className="flex gap-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+                  <img src={item.image_url || '/images/products/mud-denim.jpg'} alt="" className="h-28 w-24 rounded object-cover" />
+                  <div className="flex flex-1 justify-between gap-4">
+                    <div>
+                      <h2 className="font-semibold text-slate-900">{item.name || item.title}</h2>
+                      <p className="mt-1 text-xs uppercase tracking-wider text-slate-400">{item.store_name || item.sellerName || 'Zamglam'}</p>
+                      {(item.selectedSize || item.selectedColor) && (
+                        <p className="mt-1 text-sm text-slate-500">{[item.selectedSize, item.selectedColor].filter(Boolean).join(' · ')}</p>
+                      )}
+                      <p className="mt-2 text-indigo-700">K{Number(item.price).toFixed(2)}</p>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <div className="flex items-center rounded-lg border border-slate-200">
+                        <button type="button" onClick={() => updateQuantity(key, item.quantity - 1)} className="px-3 py-1 text-lg">-</button>
+                        <input aria-label="Quantity" type="number" min="1" value={item.quantity} onChange={(event) => updateQuantity(key, Number(event.target.value))} className="w-12 border-x px-2 py-1 text-center" />
+                        <button type="button" onClick={() => updateQuantity(key, item.quantity + 1)} className="px-3 py-1 text-lg">+</button>
+                      </div>
+                      <button onClick={() => removeFromCart(key)} className="text-sm text-rose-600">Remove</button>
+                    </div>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        )}
+
+        {step === 'checkout' && (
+          <form id="checkout-form" onSubmit={placeOrder} className="space-y-5 rounded-lg border border-slate-200 bg-white p-6">
+            {!user && (
+              <p className="rounded-lg bg-indigo-50 px-4 py-3 text-sm text-indigo-800">
+                <Link to="/login" state={{ from: location }} className="font-semibold underline">Sign in</Link> to save this order to your account, or continue as a guest.
+              </p>
+            )}
+            <label className="block text-sm font-medium text-slate-700">Delivery address
+              <input required value={checkout.address} onChange={(event) => setCheckout({ ...checkout, address: event.target.value })} placeholder="House number, street, city" className="mt-2 w-full rounded-lg border border-slate-200 px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-300" />
+            </label>
+            <label className="block text-sm font-medium text-slate-700">Phone
+              <input required value={checkout.phone} onChange={(event) => setCheckout({ ...checkout, phone: event.target.value })} placeholder="+260 ..." className="mt-2 w-full rounded-lg border border-slate-200 px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-300" />
+            </label>
+            <fieldset>
+              <legend className="text-sm font-medium text-slate-700">Payment method</legend>
+              <div className="mt-3 space-y-2">
+                {payments.map((method) => (
+                  <label key={method.id} className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3 ${checkout.paymentMethod === method.id ? 'border-indigo-600 bg-indigo-50' : 'border-slate-200'}`}>
+                    <input type="radio" name="payment" checked={checkout.paymentMethod === method.id} onChange={() => setCheckout({ ...checkout, paymentMethod: method.id })} className="mt-1" />
+                    <span>
+                      <span className="block font-semibold text-slate-900">{method.id}</span>
+                      <span className="text-sm text-slate-500">{method.detail}</span>
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+          </form>
+        )}
+      </div>
+
+      <aside className="h-fit rounded-lg bg-slate-900 p-6 text-white">
+        <h2 className="text-xl font-bold">{step === 'checkout' ? 'Place order' : 'Checkout'}</h2>
+        <div className="mt-6 flex justify-between border-b border-slate-700 pb-4">
+          <span>Items</span>
+          <strong>K{getTotalPrice().toFixed(2)}</strong>
+        </div>
+        <p className="mt-5 text-sm text-slate-300">
+          {step === 'checkout' ? 'Confirm delivery and payment to place the order. You can rate the seller after you receive it.' : 'Review your bag, then add delivery and payment.'}
+        </p>
+        <div className="mt-5 flex justify-between text-lg">
+          <span>Total</span>
+          <strong>K{getTotalPrice().toFixed(2)}</strong>
+        </div>
+        {step === 'bag' ? (
+          <button onClick={() => setStep('checkout')} className="mt-6 w-full rounded-lg bg-indigo-500 py-3 font-semibold hover:bg-indigo-400">Continue to checkout</button>
+        ) : (
+          <div className="mt-6 space-y-3">
+            <button form="checkout-form" type="submit" className="w-full rounded-lg bg-indigo-500 py-3 font-semibold hover:bg-indigo-400">Place order</button>
+            <button type="button" onClick={() => setStep('bag')} className="w-full rounded-lg border border-slate-600 py-3 font-semibold text-slate-200 hover:border-slate-400">Back to bag</button>
+          </div>
+        )}
+      </aside>
+    </section>
+  );
 }

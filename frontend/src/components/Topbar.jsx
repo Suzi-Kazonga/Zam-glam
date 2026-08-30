@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import CartIcon from './CartIcon';
 import SearchBar from './SearchBar';
+import { getStorefrontPath } from '../utils/storeLogos';
 
 export default function Topbar({ onSearch }) {
   const { user, logout } = useAuth();

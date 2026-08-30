@@ -12,19 +12,31 @@ const config = {
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
+  decimalNumbers: true,
+  connectTimeout: 5000,
 };
 
 const pool = mysql.createPool(config);
 
 export async function initializeDatabase() {
-  const adminConnection = await mysql.createConnection({
-    host: config.host,
-    user: config.user,
-    password: config.password,
-  });
+  try {
+    let adminConnection;
+    let lastError;
+    for (let attempt = 1; attempt <= 10; attempt += 1) {
+      try {
+        adminConnection = await mysql.createConnection({
+          host: config.host,
+          user: config.user,
+          password: config.password,
+        });
+        break;
+      } catch (error) {
+        lastError = error;
+        await new Promise((resolve) => setTimeout(resolve, 3000));
+      }
+    }
 
-  await adminConnection.query(`CREATE DATABASE IF NOT EXISTS \`${config.database}\`;`);
-  await adminConnection.end();
+    if (!adminConnection) throw lastError;
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS users (
@@ -169,7 +181,45 @@ export async function initializeDatabase() {
     WHERE NOT EXISTS (SELECT 1 FROM categories WHERE name = 'General')
   `);
 
-  return pool;
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS order_items (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        order_id INT NOT NULL,
+        product_id INT NOT NULL,
+        quantity INT NOT NULL DEFAULT 1,
+        price DECIMAL(10,2) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
+        FOREIGN KEY (product_id) REFERENCES products(id)
+      );
+    `);
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS courier (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        order_id INT NOT NULL,
+        driver_name VARCHAR(255),
+        driver_phone VARCHAR(50),
+        price DECIMAL(10,2) NOT NULL,
+        distance VARCHAR(100),
+        direction VARCHAR(255),
+        status VARCHAR(50) DEFAULT 'pending',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
+      );
+    `);
+
+    // Insert default category
+    await pool.query(`
+      INSERT IGNORE INTO categories (name, description)
+      VALUES ('General', 'Zamglam products');
+    `);
+
+    return pool;
+  } catch (error) {
+    console.error('Database initialization error:', error.message);
+    throw error;
+  }
 }
 
 export async function testConnection() {

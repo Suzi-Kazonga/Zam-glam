@@ -1,7 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import apiClient from '../api/axios';
 import DashboardCard from '../components/DashboardCard';
+import ProductCard from '../components/ProductCard';
+import TrackingTimeline from '../components/TrackingTimeline';
+import SellerRatingForm from '../components/SellerRatingForm';
 import Sidebar from '../components/Sidebar';
 import Topbar from '../components/Topbar';
 import HeroBanner from '../components/HeroBanner';
@@ -12,13 +15,17 @@ import FeaturedDeals from '../components/FeaturedDeals';
 import { getAllStores } from '../api/storeApi';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
+import { getCustomerOrders, sellersFromOrder, updateOrderStatus } from '../utils/orderStore';
+import { getRatings } from '../utils/ratingStore';
+import { mergeShopProducts } from '../utils/shopCatalog';
 
 const sections = ['Overview', 'Orders', 'Cart', 'Profile', 'Wishlist'];
 const fallbackStores = [{ name: 'Mud', file: 'mud' }, { name: 'Jets', file: 'jets' }, { name: 'Bata', file: 'bata' }, { name: 'Pep', file: 'pep' }, { name: 'Mr Price Zambia', file: 'mrprice' }, { name: 'Fashions Galore', file: 'fashionsgalore' }].map((store, id) => ({ id: id + 1, name: store.name, logo_url: `/images/logos/${store.file}.png` }));
 
 export default function CustomerDashboard() {
   const { user } = useAuth();
-  const { cart, getTotalItems, getTotalPrice } = useCart();
+  const { getTotalItems, getTotalPrice } = useCart();
+  const navigate = useNavigate();
   const [active, setActive] = useState('Overview');
   const [query, setQuery] = useState('');
   const [orders, setOrders] = useState([]);

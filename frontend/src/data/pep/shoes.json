@@ -1,0 +1,4 @@
+[
+  { "id": 403, "name": "Pep Casual Sandals", "price": 240, "stock": 10, "category": "shoes", "image_url": "/images/products/pep-sandals.jpg", "store_name": "Pep" },
+  { "id": 404, "name": "Pep Street Trainers", "price": 390, "stock": 4, "category": "shoes", "image_url": "/images/products/jets-sneakers.jpg", "store_name": "Pep" }
+]

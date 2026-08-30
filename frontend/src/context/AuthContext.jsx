@@ -1,5 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import * as authApi from '../api/authApi';
+import { loginAsLocalAdmin } from '../utils/adminAuth';
+import { loginAsLocalCustomer } from '../utils/customerAuth';
+import { loginAsLocalSeller } from '../utils/sellerAuth';
 
 const AuthContext = createContext();
 
@@ -34,6 +37,21 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     try {
       setError(null);
+      const localAdmin = loginAsLocalAdmin(email, password);
+      if (localAdmin) {
+        setUser(localAdmin.user);
+        return localAdmin;
+      }
+      const localCustomer = loginAsLocalCustomer(email, password);
+      if (localCustomer) {
+        setUser(localCustomer.user);
+        return localCustomer;
+      }
+      const localSeller = loginAsLocalSeller(email, password);
+      if (localSeller) {
+        setUser(localSeller.user);
+        return localSeller;
+      }
       const data = await authApi.login(email, password);
       setUser(data.user);
       return data;

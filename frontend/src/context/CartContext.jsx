@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import apiClient from '../api/axios';
 
 const CartContext = createContext();
 
@@ -11,51 +10,57 @@ export const useCart = () => {
   return context;
 };
 
+const makeLineId = (product) => `${product.id}::${product.selectedSize || 'default'}::${product.selectedColor || 'default'}`;
+
+const toCartItem = (product, quantity, lineId) => ({
+  id: product.id,
+  lineId,
+  name: product.name || product.title,
+  title: product.name || product.title,
+  price: Number(product.price || product.sale_price || 0),
+  quantity,
+  image_url: product.image_url || product.image || product.images?.[0] || '',
+  selectedSize: product.selectedSize,
+  selectedColor: product.selectedColor,
+  store_name: product.store_name || product.sellerName || product.shopName,
+  sellerName: product.sellerName || product.store_name,
+  sellerEmail: product.sellerEmail,
+  stock: product.stock,
+});
+
 export const CartProvider = ({ children }) => {
-  const [cart, setCart] = useState([]);
-
-  // Load cart from localStorage on mount
-  useEffect(() => {
-    const savedCart = localStorage.getItem('cart');
-    if (savedCart) {
-      try {
-        const parsedCart = JSON.parse(savedCart);
-        if (Array.isArray(parsedCart)) setCart(parsedCart);
-      } catch {
-        localStorage.removeItem('cart');
-      }
+  const [cart, setCart] = useState(() => {
+    try {
+      const savedCart = localStorage.getItem('cart');
+      const parsedCart = savedCart ? JSON.parse(savedCart) : [];
+      return Array.isArray(parsedCart) ? parsedCart : [];
+    } catch {
+      localStorage.removeItem('cart');
+      return [];
     }
-  }, []);
+  });
 
-  useEffect(() => {
-    if (!localStorage.getItem('token')) return;
-    apiClient.get('/cart').then(({ data }) => { if (Array.isArray(data)) setCart(data); }).catch(() => {});
-  }, []);
-
-  // Save cart to localStorage whenever it changes
   useEffect(() => {
     localStorage.setItem('cart', JSON.stringify(cart));
   }, [cart]);
 
   const addToCart = (product, quantity = 1) => {
-    if (localStorage.getItem('token')) apiClient.post('/cart', { product_id: product.id, quantity }).catch(() => {});
+    const lineId = product.lineId || makeLineId(product);
     setCart((prevCart) => {
-      const existingItem = prevCart.find((item) => item.id === product.id);
-
+      const existingItem = prevCart.find((item) => item.lineId === lineId || (!item.lineId && item.id === product.id));
       if (existingItem) {
-        return prevCart.map((item) =>
-          item.id === product.id
-            ? { ...item, quantity: item.quantity + quantity }
-            : item,
-        );
+        return prevCart.map((item) => (
+          (item.lineId || item.id) === (existingItem.lineId || existingItem.id)
+            ? { ...item, lineId, quantity: item.quantity + quantity }
+            : item
+        ));
       }
-
-      return [...prevCart, { ...product, quantity }];
+      return [...prevCart, toCartItem(product, quantity, lineId)];
     });
   };
 
   const removeFromCart = (productId) => {
-    setCart((prevCart) => prevCart.filter((item) => item.id !== productId));
+    setCart((prevCart) => prevCart.filter((item) => item.lineId !== productId && item.id !== productId));
   };
 
   const updateQuantity = (productId, quantity) => {
@@ -66,7 +71,7 @@ export const CartProvider = ({ children }) => {
 
     setCart((prevCart) =>
       prevCart.map((item) =>
-        item.id === productId ? { ...item, quantity } : item,
+        item.lineId === productId || item.id === productId ? { ...item, quantity } : item,
       ),
     );
   };
@@ -75,13 +80,9 @@ export const CartProvider = ({ children }) => {
     setCart([]);
   };
 
-  const getTotalItems = () => {
-    return cart.reduce((total, item) => total + item.quantity, 0);
-  };
+  const getTotalItems = () => cart.reduce((total, item) => total + Number(item.quantity || 0), 0);
 
-  const getTotalPrice = () => {
-    return cart.reduce((total, item) => total + item.price * item.quantity, 0);
-  };
+  const getTotalPrice = () => cart.reduce((total, item) => total + Number(item.price || 0) * Number(item.quantity || 0), 0);
 
   return (
     <CartContext.Provider
