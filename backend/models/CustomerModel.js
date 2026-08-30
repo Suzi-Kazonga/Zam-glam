@@ -11,15 +11,22 @@ class CustomerModel extends BaseModel {
       name: data.name,
       email: data.email,
       password: data.password,
-      address: data.address,
-      phone: data.phone,
+      address: data.address || null,
+      phone: data.phone || null,
+      city: data.city || null,
+      country: data.country || 'Zambia',
+      preferred_currency: data.preferred_currency || 'ZMW',
+      newsletter_opt_in: data.newsletter_opt_in ?? true,
+      marketing_opt_in: data.marketing_opt_in ?? false,
+      is_active: data.is_active ?? true,
     });
 
     return result.insertId;
   }
 
   async findByEmail(email) {
-    return this.findOne('email = ?', [email]);
+    const normalizedEmail = String(email || '').trim().toLowerCase();
+    return this.findOne('LOWER(email) = ?', [normalizedEmail]);
   }
 }
 

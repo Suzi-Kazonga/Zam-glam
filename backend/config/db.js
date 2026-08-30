@@ -16,6 +16,30 @@ const config = {
 
 const pool = mysql.createPool(config);
 
+async function ensureCustomerProfileColumns() {
+  const columnDefinitions = [
+    ['city', 'VARCHAR(120) NULL'],
+    ['country', 'VARCHAR(120) NOT NULL DEFAULT "Zambia"'],
+    ['preferred_currency', 'VARCHAR(10) NOT NULL DEFAULT "ZMW"'],
+    ['newsletter_opt_in', 'BOOLEAN NOT NULL DEFAULT TRUE'],
+    ['marketing_opt_in', 'BOOLEAN NOT NULL DEFAULT FALSE'],
+    ['is_active', 'BOOLEAN NOT NULL DEFAULT TRUE'],
+    ['created_at', 'TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP'],
+    ['updated_at', 'TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'],
+  ];
+
+  for (const [columnName, definition] of columnDefinitions) {
+    try {
+      await pool.query(`ALTER TABLE customers ADD COLUMN ${columnName} ${definition}`);
+    } catch (error) {
+      const message = String(error?.message || '');
+      if (!message.includes('Duplicate column name') && !message.includes('already exists')) {
+        throw error;
+      }
+    }
+  }
+}
+
 export async function initializeDatabase() {
   // Connect without database first to ensure DB exists
   const adminConnection = await mysql.createConnection({
@@ -38,9 +62,19 @@ export async function initializeDatabase() {
       email VARCHAR(255) NOT NULL UNIQUE,
       password VARCHAR(255) NOT NULL,
       address VARCHAR(255),
-      phone VARCHAR(50)
+      phone VARCHAR(50),
+      city VARCHAR(120),
+      country VARCHAR(120) DEFAULT 'Zambia',
+      preferred_currency VARCHAR(10) DEFAULT 'ZMW',
+      newsletter_opt_in BOOLEAN DEFAULT TRUE,
+      marketing_opt_in BOOLEAN DEFAULT FALSE,
+      is_active BOOLEAN DEFAULT TRUE,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     );
   `);
+
+  await ensureCustomerProfileColumns();
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS sellers (
