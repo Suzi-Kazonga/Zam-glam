@@ -7,11 +7,11 @@ import Topbar from '../components/Topbar';
 import { useAuth } from '../context/AuthContext';
 import { filesToDataUrls } from '../utils/image';
 import { deleteLocalProduct, getLocalSellerProducts, upsertLocalProduct } from '../utils/productStore';
-import { getSellerOrders, updateOrderStatus } from '../utils/orderStore';
+import { getMyOrders, updateOrderStatus } from '../api/orderApi';
+import { isLocalDemoSession } from '../utils/localSession';
 import { getSellerRatings, getSellerScore, replyToRating } from '../utils/ratingStore';
 import { getStorefrontPath } from '../utils/storeLogos';
 import { createProduct, deleteProduct, getSellerProducts } from '../api/productApi';
-import apiClient from '../api/axios';
 
 const sections = ['Overview', 'Products', 'Orders', 'Reviews', 'Analytics'];
 const emptyForm = { id: '', name: '', description: '', price: '', stock: '', category: 'clothes', image_url: '', imageFiles: [], previews: [] };
@@ -86,10 +86,15 @@ export default function SellerDashboard() {
   const storefront = getStorefrontPath(sellerName);
   const score = getSellerScore(sellerName);
 
+  const loadOrders = () => {
+    if (isLocalDemoSession()) return;
+    getMyOrders().then(setOrders).catch(() => {});
+  };
+
   const loadData = () => {
     const localProducts = getLocalSellerProducts(user?.email);
     setProducts(localProducts);
-    setOrders(getSellerOrders(sellerName));
+    loadOrders();
     setReviews(getSellerRatings(sellerName));
     getSellerProducts().then((remote) => {
       if (Array.isArray(remote) && remote.length) {
@@ -97,17 +102,14 @@ export default function SellerDashboard() {
         setProducts([...localProducts, ...remote.filter((product) => !localIds.has(String(product.id)))]);
       }
     }).catch(() => {});
-    apiClient.get('/orders').then(({ data }) => {
-      if (Array.isArray(data) && data.length) setOrders((current) => [...current, ...data.filter((order) => !current.some((item) => String(item.id) === String(order.id)))]);
-    }).catch(() => {});
   };
 
   useEffect(() => {
     loadData();
     const poll = window.setInterval(() => {
-      setOrders(getSellerOrders(sellerName));
+      loadOrders();
       setReviews(getSellerRatings(sellerName));
-    }, 2500);
+    }, 5000);
     return () => window.clearInterval(poll);
   }, [user?.email, sellerName]);
 
@@ -173,11 +175,15 @@ export default function SellerDashboard() {
     try { await deleteProduct(confirmDelete.id); } catch { /* local delete still applies */ }
   };
 
-  const advanceOrder = (order) => {
+  const advanceOrder = async (order) => {
     const action = nextAction[order.status];
     if (!action) return;
-    updateOrderStatus(order.id, action.status);
-    setOrders(getSellerOrders(sellerName));
+    try {
+      await updateOrderStatus(order.id, action.status);
+      loadOrders();
+    } catch {
+      setMessage('Could not update that order. Please try again.');
+    }
   };
 
   const sendReply = (ratingId) => {

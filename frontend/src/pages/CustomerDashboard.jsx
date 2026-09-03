@@ -14,7 +14,6 @@ import FeaturedDeals from '../components/FeaturedDeals';
 import { getAllStores } from '../api/storeApi';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
-import { getCustomerOrders, sellersFromOrder, updateOrderStatus } from '../utils/orderStore';
 import { getRatings } from '../utils/ratingStore';
 import { mergeShopProducts } from '../utils/shopCatalog';
 

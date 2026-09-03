@@ -22,7 +22,6 @@ const Header = () => {
         {user?.role === 'seller' && <><Link to="/seller/dashboard" className="hover:text-indigo-600 transition">Seller Dashboard</Link><Link to={getStorefrontPath(user.shop_name || user.name)} className="hover:text-indigo-600 transition">View store</Link></>}
         {user?.role === 'admin' && <Link to="/admin/dashboard" className="hover:text-indigo-600 transition">Admin</Link>}
       </nav>
-      <div className="order-3 w-full flex-1 md:order-2 md:w-auto"><SearchBar placeholder="Search all styles" onSearch={(value) => { if (value) navigate(`/products?search=${encodeURIComponent(value)}`); }} /></div>
       <div className="ml-auto flex items-center gap-3">
         {user?.role !== 'admin' && user?.role !== 'seller' && <CartIcon />}
 
@@ -43,7 +42,9 @@ const Header = () => {
             </Link>
           </div>
         )}
-      </div></div>
+      </div>
+      <div className="order-3 w-full flex-1 md:order-2 md:w-auto"><SearchBar placeholder="Search all styles" onSearch={(value) => { if (value) navigate(`/products?search=${encodeURIComponent(value)}`); }} /></div>
+      </div>
     </header>
   );
 };

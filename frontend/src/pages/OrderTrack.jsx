@@ -3,54 +3,50 @@ import { Link, useParams } from 'react-router-dom';
 import CourierInfo from '../components/CourierInfo';
 import TrackingTimeline from '../components/TrackingTimeline';
 import { useAuth } from '../context/AuthContext';
-import { advanceCourierProgress, getOrderById, updateOrderStatus } from '../utils/orderStore';
+import { getOrder, updateOrderStatus } from '../api/orderApi';
+import { isLocalDemoSession, LOCAL_DEMO_ORDER_MESSAGE } from '../utils/localSession';
 
 export default function OrderTrack() {
   const { id } = useParams();
   const { user } = useAuth();
-  const [order, setOrder] = useState(() => getOrderById(id));
+  const [order, setOrder] = useState(null);
+  const [loadError, setLoadError] = useState('');
 
-  const refresh = () => setOrder(getOrderById(id));
+  const refresh = () => {
+    getOrder(id).then(setOrder).catch(() => setLoadError('That order could not be found.'));
+  };
 
   useEffect(() => {
+    if (isLocalDemoSession()) {
+      setLoadError(LOCAL_DEMO_ORDER_MESSAGE);
+      return undefined;
+    }
     refresh();
+    // Poll for updates (e.g. a seller advancing the status) without a manual refresh.
+    const poll = window.setInterval(refresh, 5000);
+    return () => window.clearInterval(poll);
   }, [id]);
 
-  useEffect(() => {
-    if (!order || order.status === 'delivered') return undefined;
-
-    if (order.status === 'placed') {
-      const timer = window.setTimeout(() => {
-        updateOrderStatus(id, 'processing');
-        refresh();
-      }, 5000);
-      return () => window.clearTimeout(timer);
-    }
-
-    if (order.status === 'shipped' && Number(order.courier?.progress || 0) < 100) {
-      const timer = window.setInterval(() => {
-        advanceCourierProgress(id);
-        refresh();
-      }, 900);
-      return () => window.clearInterval(timer);
-    }
-
-    return undefined;
-  }, [id, order?.status, order?.courier?.progress]);
-
-  if (!order) {
+  if (loadError) {
     return (
       <section className="mx-auto max-w-3xl px-6 py-20 text-center">
         <h1 className="text-3xl font-bold text-slate-900">Tracking not found</h1>
-        <p className="mt-3 text-slate-500">That order is not in this browser.</p>
+        <p className="mt-3 text-slate-500">{loadError}</p>
         <Link to="/products" className="mt-6 inline-block rounded-lg bg-indigo-600 px-5 py-3 font-semibold text-white">Back to shop</Link>
       </section>
     );
   }
 
+  if (!order) {
+    return (
+      <section className="mx-auto max-w-3xl px-6 py-20 text-center">
+        <p className="text-slate-500">Loading order…</p>
+      </section>
+    );
+  }
+
   const markReceived = () => {
-    updateOrderStatus(id, 'delivered');
-    refresh();
+    updateOrderStatus(id, 'delivered').then(refresh).catch(() => setLoadError('Could not update this order. Please try again.'));
   };
 
   return (

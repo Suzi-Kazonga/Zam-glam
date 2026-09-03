@@ -66,6 +66,7 @@ CREATE TABLE customers (
     name VARCHAR(150) NOT NULL,
     address TEXT NOT NULL,
     phone VARCHAR(30) NOT NULL,
+    location VARCHAR(150) DEFAULT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
     UNIQUE KEY uk_customers_user (user_id),
@@ -186,7 +187,11 @@ CREATE TABLE orders (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     customer_id INT UNSIGNED NOT NULL,
     total_price DECIMAL(12,2) NOT NULL,
-    status ENUM('pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled') NOT NULL DEFAULT 'pending',
+    status ENUM('placed', 'processing', 'shipped', 'delivered', 'cancelled') NOT NULL DEFAULT 'placed',
+    address VARCHAR(255) DEFAULT NULL,
+    location VARCHAR(150) DEFAULT NULL,
+    phone VARCHAR(30) DEFAULT NULL,
+    payment_method ENUM('airtel_money', 'mtn_momo', 'card') DEFAULT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
     KEY idx_orders_customer (customer_id),
@@ -195,6 +200,21 @@ CREATE TABLE orders (
         FOREIGN KEY (customer_id) REFERENCES customers(id)
         ON UPDATE CASCADE
         ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 9a. Order status history table (per-step tracking timeline)
+CREATE TABLE order_status_history (
+    id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    order_id INT UNSIGNED NOT NULL,
+    status VARCHAR(50) NOT NULL,
+    note VARCHAR(255) DEFAULT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    KEY idx_order_status_history_order (order_id),
+    CONSTRAINT fk_order_status_history_order
+        FOREIGN KEY (order_id) REFERENCES orders(id)
+        ON UPDATE CASCADE
+        ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- 9. Order items table

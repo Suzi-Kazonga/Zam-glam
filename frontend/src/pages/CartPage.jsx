@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
-import { createOrder } from '../utils/orderStore';
+import { createOrder } from '../api/orderApi';
+import { isLocalDemoSession, LOCAL_DEMO_ORDER_MESSAGE } from '../utils/localSession';
 
 const payments = [
   { id: 'Airtel Money', detail: 'Pay with your Airtel number' },
@@ -31,6 +32,8 @@ export default function CartPage() {
   const { cart, updateQuantity, removeFromCart, getTotalPrice, clearCart } = useCart();
   const [step, setStep] = useState('bag');
   const [placedOrder, setPlacedOrder] = useState(null);
+  const [placing, setPlacing] = useState(false);
+  const [placeError, setPlaceError] = useState('');
   const [checkout, setCheckout] = useState({
     address: user?.address || '',
     phone: user?.phone || '',
@@ -46,21 +49,36 @@ export default function CartPage() {
     }));
   }, [checkout.phone]);
 
-  const placeOrder = (event) => {
+  const placeOrder = async (event) => {
     event.preventDefault();
-    const { order } = createOrder({
-      items: cart,
-      customerEmail: user?.email || 'guest',
-      customerName: user?.name || 'Guest shopper',
-      total: getTotalPrice(),
-      address: checkout.address,
-      location: checkout.location,
-      phone: checkout.phone,
-      paymentMethod: checkout.paymentMethod,
-    });
-    clearCart();
-    setPlacedOrder(order);
-    setStep('placed');
+    setPlaceError('');
+
+    if (!user) {
+      setPlaceError('Please sign in to place an order.');
+      return;
+    }
+    if (isLocalDemoSession()) {
+      setPlaceError(LOCAL_DEMO_ORDER_MESSAGE);
+      return;
+    }
+
+    setPlacing(true);
+    try {
+      const order = await createOrder({
+        items: cart,
+        address: checkout.address,
+        location: checkout.location,
+        phone: checkout.phone,
+        paymentMethod: checkout.paymentMethod,
+      });
+      clearCart();
+      setPlacedOrder(order);
+      setStep('placed');
+    } catch (error) {
+      setPlaceError(error.response?.data?.error || error.message || 'Could not place your order. Please try again.');
+    } finally {
+      setPlacing(false);
+    }
   };
 
   if (step === 'placed' && placedOrder) {
@@ -138,8 +156,11 @@ export default function CartPage() {
           <form id="checkout-form" onSubmit={placeOrder} className="space-y-5 rounded-lg border border-slate-200 bg-white p-6">
             {!user && (
               <p className="rounded-lg bg-indigo-50 px-4 py-3 text-sm text-indigo-800">
-                <Link to="/login" state={{ from: location }} className="font-semibold underline">Sign in</Link> to save this order to your account, or continue as a guest.
+                <Link to="/login" state={{ from: location }} className="font-semibold underline">Sign in</Link> to place this order — an account is required so we can save it and let you track delivery.
               </p>
+            )}
+            {placeError && (
+              <p className="rounded-lg bg-rose-50 px-4 py-3 text-sm text-rose-700">{placeError}</p>
             )}
             <label className="block text-sm font-medium text-slate-700">Delivery address
               <input required value={checkout.address} onChange={(event) => setCheckout({ ...checkout, address: event.target.value })} placeholder="House number, street, city" className="mt-2 w-full rounded-lg border border-slate-200 px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-300" />
@@ -185,7 +206,7 @@ export default function CartPage() {
           <button onClick={() => setStep('checkout')} className="mt-6 w-full rounded-lg bg-indigo-500 py-3 font-semibold hover:bg-indigo-400">Continue to checkout</button>
         ) : (
           <div className="mt-6 space-y-3">
-            <button form="checkout-form" type="submit" className="w-full rounded-lg bg-indigo-500 py-3 font-semibold hover:bg-indigo-400">Place order</button>
+            <button form="checkout-form" type="submit" disabled={placing} className="w-full rounded-lg bg-indigo-500 py-3 font-semibold hover:bg-indigo-400 disabled:cursor-not-allowed disabled:opacity-60">{placing ? 'Placing order…' : 'Place order'}</button>
             <button type="button" onClick={() => setStep('bag')} className="w-full rounded-lg border border-slate-600 py-3 font-semibold text-slate-200 hover:border-slate-400">Back to bag</button>
           </div>
         )}

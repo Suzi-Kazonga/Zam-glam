@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { getCustomerOrders } from '../utils/orderStore';
+import { getMyOrders } from '../api/orderApi';
+import { isLocalDemoSession } from '../utils/localSession';
 
 export default function AccountProfile() {
   const { user, logout } = useAuth();
@@ -9,11 +10,13 @@ export default function AccountProfile() {
   const [orders, setOrders] = useState([]);
 
   useEffect(() => {
-    if (user?.email) {
-      const customerOrders = getCustomerOrders(user.email);
-      // Sort orders by most recent first
-      const sorted = customerOrders.sort((a, b) => new Date(b.createdAt || b.placed_at) - new Date(a.createdAt || a.placed_at));
-      setOrders(sorted);
+    if (user?.email && !isLocalDemoSession()) {
+      getMyOrders()
+        .then((customerOrders) => {
+          const sorted = [...customerOrders].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+          setOrders(sorted);
+        })
+        .catch(() => setOrders([]));
     }
   }, [user]);
 

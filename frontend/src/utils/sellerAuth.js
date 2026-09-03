@@ -1,4 +1,3 @@
-import { ensureDemoSellerOrder } from './orderStore';
 import { ensureDemoSellerProducts } from './productStore';
 
 export const SELLER_CREDENTIALS = {
@@ -26,7 +25,6 @@ export function loginAsLocalSeller(email, password) {
   }
 
   ensureDemoSellerProducts(SELLER_USER.email);
-  ensureDemoSellerOrder();
 
   const token = 'seller-local-session';
   localStorage.setItem('token', token);
