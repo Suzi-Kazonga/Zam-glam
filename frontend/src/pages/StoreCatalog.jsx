@@ -34,6 +34,7 @@ export default function StoreCatalog() {
   const [store, setStore] = useState({ name: fallbackCatalog.name });
   const [products, setProducts] = useState([...fallbackCatalog.clothes, ...fallbackCatalog.shoes]);
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const [priceRange, setPriceRange] = useState('all');
 
   useEffect(() => {
     setActiveStore(id);
@@ -58,7 +59,7 @@ export default function StoreCatalog() {
   const filteredProducts = useMemo(() => products.filter((product) => {
     if (selectedCategory === 'All') return true;
     return String(product.category_name || product.category || '').toLowerCase().includes(selectedCategory.toLowerCase().slice(0, -1));
-  }), [products, selectedCategory]);
+  }).sort((a, b) => priceRange === 'low' ? Number(a.price) - Number(b.price) : priceRange === 'high' ? Number(b.price) - Number(a.price) : 0), [products, selectedCategory, priceRange]);
 
   return (
     <main data-active-store={activeStore} className="mx-auto max-w-7xl px-4 py-12">
@@ -72,13 +73,16 @@ export default function StoreCatalog() {
             <p className="mt-2 text-sm text-amber-600">★ {getSellerScore(store.name).average} average from {getSellerScore(store.name).count} customer rating{getSellerScore(store.name).count === 1 ? '' : 's'}</p>
           )}
         </div>
-        <div className="flex rounded-lg bg-slate-100 p-1" aria-label="Product category">
+        <div className="flex flex-wrap gap-2 rounded-lg bg-slate-100 p-1" aria-label="Product category">
           {['All', 'Clothes', 'Shoes'].map((category) => (
             <button key={category} type="button" onClick={() => setSelectedCategory(category)} className={`rounded-md px-4 py-2 text-sm font-semibold transition ${selectedCategory === category ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}>
               {category}
             </button>
           ))}
         </div>
+          <label className="mt-5 block text-sm font-medium text-slate-600">Price
+            <select value={priceRange} onChange={(event) => setPriceRange(event.target.value)} className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2"><option value="all">All prices</option><option value="low">Low to high</option><option value="high">High to low</option></select>
+          </label>
       </div>
       <div className="mt-10 grid gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
         {filteredProducts.map((product) => <ProductCard key={product.id} product={product} />)}

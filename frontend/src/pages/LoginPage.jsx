@@ -25,6 +25,11 @@ function LoginPage() {
   const navigate = useNavigate();
   const from = location.state?.from;
 
+  const handleRoleChange = (nextRole) => {
+    setRole(nextRole);
+    setError('');
+  };
+
   useEffect(() => {
     if (location.state?.signupEmail) {
       setEmail(location.state.signupEmail);
@@ -144,25 +149,10 @@ function LoginPage() {
           </form>
 
           <div className="mt-6 space-y-2 text-center text-sm text-gray-600">
-            {error ? (
-              <div>
-                Already have an account?{' '}
-                <button
-                  type="button"
-                  onClick={() => setError('')}
-                  className="font-semibold text-indigo-600 hover:text-indigo-800"
-                >
-                  Try again
-                </button>
-              </div>
-            ) : (
-              <div>
-                Don’t have an account?{' '}
-                <Link to="/signup" className="font-semibold text-indigo-600 hover:text-indigo-800">
-                  Create one here
-                </Link>
-              </div>
-            )}
+            <div>
+              Don’t have an account?{' '}
+              <Link to="/signup" className="font-semibold text-indigo-600 hover:text-indigo-800">Create one here</Link>
+            </div>
           </div>
         </div>
       </div>

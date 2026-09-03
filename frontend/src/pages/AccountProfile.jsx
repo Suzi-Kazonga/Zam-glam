@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Link, Navigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getCustomerOrders } from '../utils/orderStore';
 
 export default function AccountProfile() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
 
   useEffect(() => {
@@ -73,6 +74,7 @@ export default function AccountProfile() {
           <Link to="/customer/dashboard" className="rounded-lg bg-indigo-600 px-4 py-2 font-semibold text-white transition hover:bg-indigo-700">
             Open dashboard
           </Link>
+          <button type="button" onClick={() => { logout(); navigate('/'); }} className="rounded-lg border border-rose-200 px-4 py-2 font-semibold text-rose-600 transition hover:bg-rose-50">Log out</button>
         </div>
       </div>
 

@@ -134,7 +134,11 @@ export async function initializeDatabase() {
       id INT AUTO_INCREMENT PRIMARY KEY,
       customer_id INT NOT NULL,
       total_price DECIMAL(12,2) NOT NULL DEFAULT 0,
-      status VARCHAR(50) DEFAULT 'pending',
+      status VARCHAR(50) DEFAULT 'placed',
+      address VARCHAR(255),
+      location VARCHAR(150),
+      phone VARCHAR(30),
+      payment_method VARCHAR(30),
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE
     );
@@ -147,20 +151,47 @@ export async function initializeDatabase() {
       product_id INT NOT NULL,
       quantity INT NOT NULL DEFAULT 1,
       price DECIMAL(10,2) NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
       FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
     );
   `);
 
   await pool.query(`
-    CREATE TABLE IF NOT EXISTS courier (
+    CREATE TABLE IF NOT EXISTS order_status_history (
       id INT AUTO_INCREMENT PRIMARY KEY,
       order_id INT NOT NULL,
+      status VARCHAR(50) NOT NULL,
+      note VARCHAR(255),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
+    );
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS payments (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      order_id INT NOT NULL,
+      method VARCHAR(30) NOT NULL,
+      amount DECIMAL(12,2) NOT NULL,
+      status VARCHAR(30) DEFAULT 'pending',
+      transaction_ref VARCHAR(255) UNIQUE,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
+    );
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS courier (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      order_id INT NOT NULL UNIQUE,
       driver_name VARCHAR(255) NOT NULL,
+      driver_phone VARCHAR(50),
       price DECIMAL(10,2) NOT NULL,
       distance VARCHAR(100),
       direction VARCHAR(255),
       status VARCHAR(30) DEFAULT 'assigned',
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
     );
   `);
@@ -177,45 +208,27 @@ export async function initializeDatabase() {
     );
   `);
 
+  // Migration for pre-existing local databases created before the columns/tables above existed.
+  const addColumnIfMissing = async (table, column, definition) => {
+    const [rows] = await pool.query(
+      `SELECT COUNT(*) AS count FROM information_schema.columns
+       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?`,
+      [table, column],
+    );
+    if (Number(rows[0]?.count || 0) === 0) {
+      await pool.query(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
+    }
+  };
+  await addColumnIfMissing('orders', 'address', 'VARCHAR(255)');
+  await addColumnIfMissing('orders', 'location', 'VARCHAR(150)');
+  await addColumnIfMissing('orders', 'phone', 'VARCHAR(30)');
+  await addColumnIfMissing('orders', 'payment_method', 'VARCHAR(30)');
+
   await pool.query(`
     INSERT INTO categories (name, description)
     SELECT 'General', 'Zamglam products'
     WHERE NOT EXISTS (SELECT 1 FROM categories WHERE name = 'General')
   `);
-
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS order_items (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        order_id INT NOT NULL,
-        product_id INT NOT NULL,
-        quantity INT NOT NULL DEFAULT 1,
-        price DECIMAL(10,2) NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
-        FOREIGN KEY (product_id) REFERENCES products(id)
-      );
-    `);
-
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS courier (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        order_id INT NOT NULL,
-        driver_name VARCHAR(255),
-        driver_phone VARCHAR(50),
-        price DECIMAL(10,2) NOT NULL,
-        distance VARCHAR(100),
-        direction VARCHAR(255),
-        status VARCHAR(50) DEFAULT 'pending',
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
-      );
-    `);
-
-    // Insert default category
-    await pool.query(`
-      INSERT IGNORE INTO categories (name, description)
-      VALUES ('General', 'Zamglam products');
-    `);
 
     return pool;
   } catch (error) {

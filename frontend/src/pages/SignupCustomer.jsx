@@ -52,6 +52,7 @@ export default function SignupCustomer() {
         <input className="w-full border p-2 mb-3 rounded focus:outline-none focus:ring-2 focus:ring-black" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="Phone" />
         <button className="w-full bg-black text-white p-2 rounded">Sign Up</button>
       </form>
+      <p className="mt-5 text-center text-sm text-slate-600">Already have an account? <button type="button" onClick={() => navigate('/login', { state: { signupEmail: form.email } })} className="font-semibold text-indigo-600">Log in instead</button></p>
     </div>
   );
 }

@@ -1,4 +1,5 @@
 const STORAGE_KEY = 'zamglam_seller_products';
+const CLICK_STORAGE_KEY = 'zamglam_product_clicks';
 
 function readProducts() {
   try {
@@ -19,6 +20,27 @@ function writeProducts(products) {
 
 export function getLocalProducts() {
   return readProducts();
+}
+
+function readClicks() {
+  try {
+    const stored = localStorage.getItem(CLICK_STORAGE_KEY);
+    const parsed = stored ? JSON.parse(stored) : {};
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+export function recordProductClick(id) {
+  const clicks = readClicks();
+  const key = String(id);
+  clicks[key] = Number(clicks[key] || 0) + 1;
+  localStorage.setItem(CLICK_STORAGE_KEY, JSON.stringify(clicks));
+}
+
+export function getProductClickCount(id) {
+  return Number(readClicks()[String(id)] || 0);
 }
 
 export function getLocalSellerProducts(sellerEmail) {

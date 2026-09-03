@@ -16,8 +16,9 @@ const detectPaymentMethod = (phone) => {
   // 0966... or 096... → MTN (digit at index 3 is 6)
   if (!phone) return 'Airtel Money';
   const cleanPhone = String(phone).replace(/\D/g, '');
-  if (cleanPhone.length >= 4) {
-    const thirdDigitAfterZero = cleanPhone[3];
+  const firstZero = cleanPhone.indexOf('0');
+  if (firstZero >= 0 && cleanPhone.length > firstZero + 3) {
+    const thirdDigitAfterZero = cleanPhone[firstZero + 3];
     if (thirdDigitAfterZero === '7') return 'Airtel Money';
     if (thirdDigitAfterZero === '6') return 'MTN MoMo';
   }
@@ -153,10 +154,10 @@ export default function CartPage() {
               <legend className="text-sm font-medium text-slate-700">Payment method</legend>
               <div className="mt-3 space-y-2">
                 {payments.map((method) => (
-                  <label key={method.id} className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3 ${checkout.paymentMethod === method.id ? 'border-indigo-600 bg-indigo-50' : 'border-slate-200'}`}>
+                  <label key={method.id} className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3 ${checkout.paymentMethod === method.id ? method.id === 'Airtel Money' ? 'border-red-600 bg-red-50' : method.id === 'MTN MoMo' ? 'border-yellow-500 bg-yellow-50' : 'border-indigo-600 bg-indigo-50' : 'border-slate-200'}`}>
                     <input type="radio" name="payment" checked={checkout.paymentMethod === method.id} onChange={() => setCheckout({ ...checkout, paymentMethod: method.id })} className="mt-1" />
                     <span>
-                      <span className="block font-semibold text-slate-900">{method.id}</span>
+                      <span className={`block font-semibold ${method.id === 'Airtel Money' ? 'text-red-700' : method.id === 'MTN MoMo' ? 'text-yellow-700' : 'text-slate-900'}`}>{method.id}</span>
                       <span className="text-sm text-slate-500">{method.detail}</span>
                     </span>
                   </label>

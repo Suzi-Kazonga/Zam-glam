@@ -1,20 +1,14 @@
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import Button from './Button';
 import SearchBar from './SearchBar';
 import CartIcon from './CartIcon';
 import { getStorefrontPath } from '../utils/storeLogos';
 
 const Header = () => {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
-
-  const handleLogout = () => {
-    logout();
-    navigate('/');
-  };
 
   return (
     <header className="border-b border-slate-200 bg-white">
@@ -38,21 +32,14 @@ const Header = () => {
               {user.name?.charAt(0)?.toUpperCase() || 'U'}
             </Link>
             <span className="hidden text-sm font-semibold sm:inline">{user.name}</span>
-            <Button variant="danger" size="sm" onClick={handleLogout}>
-              Logout
-            </Button>
           </div>
         ) : (
           <div className="flex gap-2">
             <Link to="/login" state={{ from: location }}>
-              <Button variant="primary" size="sm">
-                Login
-              </Button>
+              Login
             </Link>
             <Link to="/signup" state={{ from: location }}>
-              <Button variant="secondary" size="sm">
-                Sign Up
-              </Button>
+              Sign Up
             </Link>
           </div>
         )}

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { formatZmwPrice } from '../utils/currency';
 import { getSellerScore } from '../utils/ratingStore';
+import { getProductClickCount, recordProductClick } from '../utils/productStore';
 
 const fallbackImage = '/images/products/mud-denim.jpg';
 
@@ -11,6 +12,7 @@ const ProductCard = ({ product }) => {
   const [added, setAdded] = useState(false);
   const sellerName = product.store_name || product.sellerName;
   const score = getSellerScore(sellerName);
+  const clickCount = getProductClickCount(product.id);
 
   const handleAddToCart = () => {
     addToCart({ ...product, sellerName, store_name: sellerName });
@@ -20,14 +22,14 @@ const ProductCard = ({ product }) => {
 
   return (
     <article className="group overflow-hidden rounded-lg bg-white shadow-md transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
-      <Link to={`/product/${product.id}`} className="block overflow-hidden">
+      <Link to={`/product/${product.id}`} onClick={() => recordProductClick(product.id)} className="block overflow-hidden">
         <div className="relative">
           <img
             src={product.image_url || product.images?.[0] || fallbackImage}
             alt={product.name}
             className="h-64 w-full object-cover transition duration-500 group-hover:scale-105"
           />
-          <span className="absolute left-3 top-3 rounded-full bg-white/95 px-3 py-1 text-xs font-bold text-slate-700 shadow-sm">{product.stock === 0 ? 'Sold out' : Number(product.stock) < 5 ? 'Low Stock' : 'Popular'}</span>
+          <span className="absolute left-3 top-3 rounded-full bg-white/95 px-3 py-1 text-xs font-bold text-slate-700 shadow-sm">{product.stock === 0 ? 'Sold out' : Number(product.stock) < 5 ? 'Low Stock' : clickCount > 0 ? 'Trending' : 'New arrival'}</span>
         </div>
       </Link>
       <div className="p-4">

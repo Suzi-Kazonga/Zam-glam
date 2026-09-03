@@ -133,7 +133,7 @@ export function getSellerOrders(sellerName) {
   return readOrders().filter((order) => order.items.some((item) => String(item.sellerName || item.store_name || '').toLowerCase() === name));
 }
 
-export function createOrder({ items, customerEmail, customerName, total, address, phone, paymentMethod }) {
+export function createOrder({ items, customerEmail, customerName, total, address, location, phone, paymentMethod }) {
   const order = normalizeOrder({
     id: `ord-${Date.now()}`,
     customerEmail: customerEmail || 'guest',
@@ -142,6 +142,7 @@ export function createOrder({ items, customerEmail, customerName, total, address
     createdAt: new Date().toISOString().slice(0, 10),
     total: Number(total || 0),
     address: address || '',
+    location: location || '',
     phone: phone || '',
     paymentMethod: paymentMethod || 'Card',
     items: items.map((item) => ({
