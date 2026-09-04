@@ -205,6 +205,23 @@ export async function initializeDatabase() {
     );
   `);
 
+  // Seller ratings left by customers after a delivery. Ratings were previously kept in the
+  // rater's own browser, so nobody else could see them — the trust signal was decorative.
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS reviews (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      seller_id INT NOT NULL,
+      customer_id INT NOT NULL,
+      order_id INT NULL,
+      rating TINYINT NOT NULL,
+      comment TEXT,
+      reply TEXT NULL,
+      replied_at TIMESTAMP NULL DEFAULT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE KEY uk_review_customer_order_seller (customer_id, order_id, seller_id)
+    );
+  `);
+
   await pool.query(`
     CREATE TABLE IF NOT EXISTS order_status_history (
       id INT AUTO_INCREMENT PRIMARY KEY,

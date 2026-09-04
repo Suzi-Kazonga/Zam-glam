@@ -41,6 +41,7 @@ function adaptOrder(raw) {
     storeName: raw.store_name,
     shipments: (raw.shipments || []).map((shipment) => ({
       id: shipment.id,
+      sellerId: shipment.seller_id,
       storeName: shipment.store_name,
       status: shipment.status,
       driverName: shipment.driver_name,

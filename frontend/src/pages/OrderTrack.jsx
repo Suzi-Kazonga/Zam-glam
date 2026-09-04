@@ -5,12 +5,20 @@ import TrackingTimeline from '../components/TrackingTimeline';
 import { useAuth } from '../context/AuthContext';
 import { getOrder, updateOrderStatus } from '../api/orderApi';
 import { isLocalDemoSession, LOCAL_DEMO_ORDER_MESSAGE } from '../utils/localSession';
+import SellerRatingForm from '../components/SellerRatingForm';
+import { getMyRatings } from '../api/reviewApi';
 
 export default function OrderTrack() {
   const { id } = useParams();
   const { user } = useAuth();
   const [order, setOrder] = useState(null);
   const [loadError, setLoadError] = useState('');
+  const [myRatings, setMyRatings] = useState([]);
+
+  const loadRatings = () => {
+    if (user?.role !== 'customer' || isLocalDemoSession()) return;
+    getMyRatings().then(setMyRatings).catch(() => setMyRatings([]));
+  };
 
   const refresh = () => {
     getOrder(id).then(setOrder).catch(() => setLoadError('That order could not be found.'));
@@ -22,6 +30,7 @@ export default function OrderTrack() {
       return undefined;
     }
     refresh();
+    loadRatings();
     // Poll for updates (e.g. a seller advancing the status) without a manual refresh.
     const poll = window.setInterval(refresh, 5000);
     return () => window.clearInterval(poll);
@@ -82,6 +91,18 @@ export default function OrderTrack() {
                 <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold capitalize text-slate-600">{shipment.status}</span>
               </div>
               <TrackingTimeline order={{ status: shipment.status, tracking: shipment.tracking }} />
+              {/* A delivered parcel can be rated — the shop is scored per order. */}
+              {shipment.status === 'delivered' && user?.role === 'customer' && (
+                <div className="mt-4">
+                  <SellerRatingForm
+                    order={order}
+                    sellerId={shipment.sellerId}
+                    sellerName={shipment.storeName}
+                    existing={myRatings.find((r) => r.order_id === order.id && r.seller_id === shipment.sellerId)}
+                    onSaved={loadRatings}
+                  />
+                </div>
+              )}
               <div className="mt-4">
                 <CourierInfo delivery={{
                   driver_name: shipment.driverName,

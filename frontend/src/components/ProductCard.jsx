@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { formatZmwPrice } from '../utils/currency';
-import { getSellerScore } from '../utils/ratingStore';
 import { getProductClickCount, recordProductClick } from '../utils/productStore';
 import { useAuth } from '../context/AuthContext';
 import { canShop } from '../utils/permissions';
@@ -15,7 +14,8 @@ const ProductCard = ({ product }) => {
   const shopping = canShop(user);
   const [added, setAdded] = useState(false);
   const sellerName = product.store_name || product.sellerName;
-  const score = getSellerScore(sellerName);
+  // The shop's real score, carried on the product from the API.
+  const score = { average: Number(product.store_rating || 0), count: Number(product.store_rating_count || 0) };
   const clickCount = getProductClickCount(product.id);
 
   const handleAddToCart = () => {

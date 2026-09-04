@@ -59,7 +59,10 @@ class Product {
   // it, and the home banner credits the store whose item it is showing.
   static get selectWithStore() {
     return `SELECT p.*, s.name AS store_name, c.name AS category_name,
-                   sel.verification_status AS store_verification
+                   sel.verification_status AS store_verification,
+                   sel.id AS store_seller_id,
+                   COALESCE(ROUND((SELECT AVG(r.rating) FROM reviews r WHERE r.seller_id = sel.id), 1), 0) AS store_rating,
+                   (SELECT COUNT(*) FROM reviews r WHERE r.seller_id = sel.id) AS store_rating_count
             FROM products p
             LEFT JOIN stores s ON s.id = p.store_id
             LEFT JOIN categories c ON c.id = p.category_id

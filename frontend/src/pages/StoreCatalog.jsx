@@ -3,7 +3,6 @@ import { Link, useParams } from 'react-router-dom';
 import ProductCard from '../components/ProductCard';
 import apiClient from '../api/axios';
 import { getStore, getStoreProducts, getMyStore } from '../api/storeApi';
-import { getSellerScore } from '../utils/ratingStore';
 import { useAuth } from '../context/AuthContext';
 import ProductForm from '../components/ProductForm';
 import { useProductEditor } from '../hooks/useProductEditor';
@@ -109,8 +108,10 @@ export default function StoreCatalog() {
             )}
           </div>
           <p className="mt-2 text-slate-500">Clothes and shoes selected from {store.name}.</p>
-          {getSellerScore(store.name).count > 0 && (
-            <p className="mt-2 text-sm text-amber-600">★ {getSellerScore(store.name).average} average from {getSellerScore(store.name).count} customer rating{getSellerScore(store.name).count === 1 ? '' : 's'}</p>
+          {Number(store.rating_count) > 0 && (
+            <p className="mt-2 text-sm text-amber-600">
+              ★ {store.rating_average} average from {store.rating_count} customer rating{Number(store.rating_count) === 1 ? '' : 's'}
+            </p>
           )}
           {isOwner && (
             <div className="mt-4 flex flex-wrap items-center gap-3">

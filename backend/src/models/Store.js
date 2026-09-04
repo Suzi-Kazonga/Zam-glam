@@ -22,7 +22,9 @@ class Store {
   // Stores travel with their seller's verification status so shoppers can see whether the
   // shop has been checked.
   static get selectWithSeller() {
-    return `SELECT st.*, s.verification_status, s.shop_name
+    return `SELECT st.*, s.verification_status, s.shop_name,
+                   COALESCE(ROUND((SELECT AVG(r.rating) FROM reviews r WHERE r.seller_id = s.id), 1), 0) AS rating_average,
+                   (SELECT COUNT(*) FROM reviews r WHERE r.seller_id = s.id) AS rating_count
             FROM stores st JOIN sellers s ON s.id = st.seller_id`;
   }
 

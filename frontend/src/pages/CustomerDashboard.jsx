@@ -4,7 +4,7 @@ import apiClient from '../api/axios';
 import DashboardCard from '../components/DashboardCard';
 import ProductCard from '../components/ProductCard';
 import TrackingTimeline from '../components/TrackingTimeline';
-import SellerRatingForm from '../components/SellerRatingForm';
+
 import Sidebar from '../components/Sidebar';
 import Topbar from '../components/Topbar';
 import HeroBanner from '../components/HeroBanner';
@@ -15,7 +15,7 @@ import { getAllStores } from '../api/storeApi';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { getMyOrders } from '../api/orderApi';
-import { getRatings } from '../utils/ratingStore';
+
 import { mergeShopProducts } from '../utils/shopCatalog';
 
 const sections = ['Overview', 'Orders', 'Cart', 'Profile', 'Wishlist'];

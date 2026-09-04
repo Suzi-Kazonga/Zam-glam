@@ -11,7 +11,7 @@ import { formatWaiting, isOverdue } from '../utils/waiting';
 import { useProductEditor } from '../hooks/useProductEditor';
 import { getMyOrders, updateShipmentStatus } from '../api/orderApi';
 import { isLocalDemoSession } from '../utils/localSession';
-import { getSellerRatings, getSellerScore, replyToRating } from '../utils/ratingStore';
+import { getMyReviews, replyToReview } from '../api/reviewApi';
 import { deleteProduct, getSellerProducts } from '../api/productApi';
 import { getMyStore } from '../api/storeApi';
 
@@ -37,7 +37,17 @@ export default function SellerDashboard() {
   const [replyDrafts, setReplyDrafts] = useState({});
   const [storefront, setStorefront] = useState('/products');
   const sellerName = user?.shop_name || user?.name || 'My Shop';
-  const score = getSellerScore(sellerName);
+  const [score, setScore] = useState({ average: 0, count: 0 });
+
+  const loadReviews = () => {
+    if (isLocalDemoSession()) return;
+    getMyReviews()
+      .then((data) => {
+        setReviews(data.reviews || []);
+        setScore({ average: data.average || 0, count: data.count || 0 });
+      })
+      .catch(() => {});
+  };
 
   const loadOrders = () => {
     if (isLocalDemoSession()) return;
@@ -60,14 +70,14 @@ export default function SellerDashboard() {
   const loadData = () => {
     loadProducts();
     loadOrders();
-    setReviews(getSellerRatings(sellerName));
+    loadReviews();
   };
 
   useEffect(() => {
     loadData();
     const poll = window.setInterval(() => {
       loadOrders();
-      setReviews(getSellerRatings(sellerName));
+      loadReviews();
     }, 5000);
     return () => window.clearInterval(poll);
   }, [user?.email, sellerName]);
@@ -124,9 +134,12 @@ export default function SellerDashboard() {
   const sendReply = (ratingId) => {
     const reply = replyDrafts[ratingId];
     if (!reply?.trim()) return;
-    replyToRating(ratingId, reply.trim());
-    setReviews(getSellerRatings(sellerName));
-    setReplyDrafts((current) => ({ ...current, [ratingId]: '' }));
+    replyToReview(ratingId, reply.trim())
+      .then(() => {
+        loadReviews();
+        setReplyDrafts((current) => ({ ...current, [ratingId]: '' }));
+      })
+      .catch((error) => setMessage(error?.error || 'Could not post that reply.'));
   };
 
   return (
@@ -300,9 +313,11 @@ export default function SellerDashboard() {
               <div className="mt-5 space-y-4">
                 {reviews.length ? reviews.map((review) => (
                   <article key={review.id} className="border-b border-slate-100 pb-4 last:border-0">
-                    <StarRating value={review.stars} readOnly size="sm" />
+                    <StarRating value={review.rating} readOnly size="sm" />
                     <p className="mt-2 text-sm text-slate-600">{review.comment || 'Rated after purchase.'}</p>
-                    <p className="mt-1 text-xs text-slate-400">{review.customerName} · {review.productName} · {review.createdAt}</p>
+                    <p className="mt-1 text-xs text-slate-400">
+                      {review.customer_name || 'Zamglam shopper'} · order #{review.order_id} · {new Date(review.created_at).toLocaleDateString()}
+                    </p>
                     {review.reply ? (
                       <p className="mt-3 rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-600"><strong>Your reply:</strong> {review.reply}</p>
                     ) : (

@@ -4,7 +4,7 @@ import { useCart } from '../context/CartContext';
 import apiClient from '../api/axios';
 import StarRating from '../components/StarRating';
 import { findShopProduct } from '../utils/shopCatalog';
-import { getSellerRatings, getSellerScore } from '../utils/ratingStore';
+import { getSellerReviews } from '../api/reviewApi';
 import { useAuth } from '../context/AuthContext';
 import { canShop, NO_SHOPPING_MESSAGE } from '../utils/permissions';
 
@@ -41,8 +41,15 @@ export default function ProductDetail() {
 
   const gallery = (product.images?.length ? product.images : [product.image_url || fallbackImage]).filter(Boolean);
   const sellerName = product.store_name || product.sellerName;
-  const score = getSellerScore(sellerName);
-  const reviews = getSellerRatings(sellerName);
+  // The shop's score rides along on the product; its reviews are fetched by seller id.
+  const score = { average: Number(product?.store_rating || 0), count: Number(product?.store_rating_count || 0) };
+  const [reviews, setReviews] = useState([]);
+
+  useEffect(() => {
+    const sellerId = product?.store_seller_id;
+    if (!sellerId) return;
+    getSellerReviews(sellerId).then((data) => setReviews(data.reviews || [])).catch(() => setReviews([]));
+  }, [product?.store_seller_id]);
 
   const handleAdd = () => {
     addToCart({ ...product, selectedSize: size, selectedColor: color, sellerName, store_name: sellerName }, quantity);
@@ -103,9 +110,9 @@ export default function ProductDetail() {
             <h2 className="text-xl font-bold">Seller reviews</h2>
             {reviews.length ? reviews.slice(0, 4).map((review) => (
               <article key={review.id} className="mt-4 rounded-lg bg-slate-50 p-4">
-                <p className="text-amber-500">{'★'.repeat(review.stars)}{'☆'.repeat(5 - review.stars)}</p>
+                <p className="text-amber-500">{'★'.repeat(review.rating)}{'☆'.repeat(5 - review.rating)}</p>
                 <p className="mt-2 text-sm text-slate-600">{review.comment || 'Rated after purchase.'}</p>
-                <p className="mt-2 text-xs text-slate-400">{review.customerName} · {review.createdAt}</p>
+                <p className="mt-2 text-xs text-slate-400">{review.customer_name || 'Zamglam shopper'} · {new Date(review.created_at).toLocaleDateString()}</p>
                 {review.reply && <p className="mt-3 text-sm text-slate-500"><strong>Seller:</strong> {review.reply}</p>}
               </article>
             )) : (
