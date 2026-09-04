@@ -15,8 +15,16 @@ const PAYMENT_METHOD_MAP = {
 // Round-robin-ish pick of an active courier account, so every order gets a real courier
 // who is the only one (besides an admin) allowed to mark it delivered.
 async function pickCourierAccount(connection) {
+  // Counts parcels, not the legacy per-order courier row — otherwise every parcel in the
+  // same order lands on one courier, since that row is only written once at the end.
+  // Using the transaction's own connection means parcels already queued for this order
+  // are counted too, so a multi-store order spreads across drivers.
   const [rows] = await connection.query(
-    'SELECT id, name, phone FROM couriers WHERE is_active = 1 ORDER BY (SELECT COUNT(*) FROM courier c WHERE c.courier_id = couriers.id) ASC, id ASC LIMIT 1',
+    `SELECT c.id, c.name, c.phone
+     FROM couriers c
+     WHERE c.is_active = 1
+     ORDER BY (SELECT COUNT(*) FROM shipments s WHERE s.courier_id = c.id AND s.status <> 'delivered') ASC, c.id ASC
+     LIMIT 1`,
   );
   return rows[0] || null;
 }

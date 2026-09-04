@@ -53,6 +53,16 @@ export const getOrder = async (req, res) => {
       // A seller only sees their own line items within a (possibly multi-seller) order.
       const sellerId = await Order.resolveSellerId(req.user.id);
       order.items = order.items.filter((item) => item.seller_id === sellerId);
+      order.shipments = order.shipments.filter((shipment) => shipment.seller_id === sellerId);
+    }
+
+    if (isAssignedCourier) {
+      // A courier sees only the parcels assigned to them — not the other shops' parcels
+      // in the same order, and not another courier's work.
+      const courierId = await Order.resolveCourierId(req.user.id);
+      order.shipments = order.shipments.filter((shipment) => shipment.courier_id === courierId);
+      const mineSellerIds = new Set(order.shipments.map((shipment) => shipment.seller_id));
+      order.items = order.items.filter((item) => mineSellerIds.has(item.seller_id));
     }
 
     // The courier always sees their own assignment; everyone else only after pickup.

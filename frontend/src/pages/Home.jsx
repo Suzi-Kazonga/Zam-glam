@@ -19,19 +19,28 @@ const fallbackStores = withStoreLogos([
 // A seller lands on their own shop, not on a marketplace ad rotating other people's
 // products — their store logo takes the place of the carousel.
 function SellerStoreBanner({ shopName }) {
+  const logo = getStoreLogo(shopName);
   return (
-    <section className="bg-gradient-to-r from-purple-800 to-purple-600">
-      <div className="mx-auto flex max-w-7xl flex-col items-center gap-6 px-4 py-14 text-center sm:flex-row sm:text-left">
+    <section className="relative min-h-[340px] overflow-hidden bg-slate-900">
+      {/* The store's own logo, zoomed in and blurred, is the backdrop. */}
+      <img
+        src={logo}
+        alt=""
+        aria-hidden="true"
+        className="absolute inset-0 h-full w-full scale-150 object-cover blur-sm"
+      />
+      <div className="absolute inset-0 bg-gradient-to-r from-slate-950/85 via-slate-900/55 to-slate-900/25" />
+      <div className="relative mx-auto flex min-h-[340px] max-w-7xl flex-col items-center gap-6 px-4 py-14 text-center sm:flex-row sm:text-left">
         <img
-          src={getStoreLogo(shopName)}
+          src={logo}
           alt={`${shopName} logo`}
-          className="h-24 w-auto max-w-[220px] rounded-lg bg-white object-contain p-3 shadow-lg"
+          className="h-28 w-auto max-w-[240px] rounded-lg bg-white/95 object-contain p-3 shadow-2xl"
         />
         <div>
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-purple-200">Your storefront</p>
-          <h1 className="mt-2 text-4xl font-bold text-white">{shopName}</h1>
-          <div className="mt-4 flex flex-wrap justify-center gap-3 sm:justify-start">
-            <Link to="/seller/dashboard" className="rounded-lg bg-white px-5 py-2 font-semibold text-purple-800 hover:bg-purple-50">Open dashboard</Link>
+          <h1 className="mt-2 text-4xl font-bold text-white drop-shadow sm:text-5xl">{shopName}</h1>
+          <div className="mt-5 flex flex-wrap justify-center gap-3 sm:justify-start">
+            <Link to="/seller/dashboard" className="rounded-lg bg-purple-700 px-5 py-2 font-semibold text-white hover:bg-purple-800">Open dashboard</Link>
             <Link to={getStorefrontPath(shopName)} className="rounded-lg border border-white/60 px-5 py-2 font-semibold text-white hover:bg-white/10">View my shop</Link>
           </div>
         </div>

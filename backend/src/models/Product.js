@@ -55,36 +55,43 @@ class Product {
   }
 
   // Find product by ID
+  // Products always travel with their shop's name — the storefront labels every card with
+  // it, and the home banner credits the store whose item it is showing.
+  static get selectWithStore() {
+    return `SELECT p.*, s.name AS store_name, c.name AS category_name
+            FROM products p
+            LEFT JOIN stores s ON s.id = p.store_id
+            LEFT JOIN categories c ON c.id = p.category_id`;
+  }
+
   static async findById(id) {
-    const query = 'SELECT * FROM products WHERE id = ?';
-    const [rows] = await pool.query(query, [id]);
+    const [rows] = await pool.query(`${Product.selectWithStore} WHERE p.id = ?`, [id]);
     return normalize(rows[0]);
   }
 
   // Get products by store
   static async findByStore(seller_id) {
-    const query = 'SELECT * FROM products WHERE seller_id = ?';
-    const [rows] = await pool.query(query, [seller_id]);
+    const [rows] = await pool.query(`${Product.selectWithStore} WHERE p.seller_id = ?`, [seller_id]);
     return rows.map(normalize);
   }
 
   // Get filtered products (audience + category)
   static async getFiltered(filters = {}) {
-    let query = 'SELECT * FROM products WHERE 1=1';
+    let query = `${Product.selectWithStore} WHERE 1=1`;
     const values = [];
 
     if (filters.store_id) {
-      query += ' AND store_id = ?';
+      query += ' AND p.store_id = ?';
       values.push(filters.store_id);
     }
 
     if (filters.audience) {
-      query += ' AND audience = ?';
+      query += ' AND p.audience = ?';
       values.push(filters.audience);
     }
 
     if (filters.category_id) {
-      query += ' AND category_id = ?';
+      query += ' AND p.category_id = ?';
       values.push(filters.category_id);
     }
 
