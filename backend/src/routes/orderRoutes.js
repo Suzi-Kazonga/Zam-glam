@@ -5,6 +5,8 @@ import { authMiddleware } from '../middleware/auth.js';
 const router = express.Router();
 
 router.get('/', authMiddleware, orderController.getMyOrders);
+// Before '/:id' so "quote" is not read as an order id.
+router.post('/quote', authMiddleware, orderController.quoteOrder);
 router.get('/:id', authMiddleware, orderController.getOrder);
 router.post('/', authMiddleware, orderController.createOrder);
 router.patch('/:id/status', authMiddleware, orderController.updateOrderStatus);

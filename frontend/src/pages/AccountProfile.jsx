@@ -136,6 +136,9 @@ export default function AccountProfile() {
                   </div>
                   <div className="text-right">
                     <p className="text-lg font-bold text-indigo-600">K{Number(order.total).toFixed(2)}</p>
+                    {order.deliveryTotal > 0 && (
+                      <p className="text-xs text-slate-400">incl. K{Number(order.deliveryTotal).toFixed(2)} delivery</p>
+                    )}
                     <Link 
                       to={`/orders/${order.id}`} 
                       className="mt-3 inline-block text-sm font-semibold text-indigo-600 hover:text-indigo-700"

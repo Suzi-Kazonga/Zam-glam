@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
-import { createOrder } from '../api/orderApi';
+import { createOrder, quoteOrder } from '../api/orderApi';
 import { isLocalDemoSession, LOCAL_DEMO_ORDER_MESSAGE } from '../utils/localSession';
 import { canShop, NO_SHOPPING_MESSAGE } from '../utils/permissions';
 
@@ -35,6 +35,7 @@ export default function CartPage() {
   const [placedOrder, setPlacedOrder] = useState(null);
   const [placing, setPlacing] = useState(false);
   const [placeError, setPlaceError] = useState('');
+  const [quote, setQuote] = useState(null);
   const [checkout, setCheckout] = useState({
     address: user?.address || '',
     phone: user?.phone || '',
@@ -49,6 +50,19 @@ export default function CartPage() {
       paymentMethod: detectPaymentMethod(prev.phone),
     }));
   }, [checkout.phone]);
+
+  // Delivery is charged per shop, so the total is only known once the backend has grouped
+  // the basket into parcels. Quote it up front rather than surprising the customer.
+  useEffect(() => {
+    if (!cart.length || !user || isLocalDemoSession()) return;
+    quoteOrder({ items: cart, location: checkout.location })
+      .then(setQuote)
+      .catch(() => setQuote(null));
+  }, [cart, checkout.location, user]);
+
+  const itemsTotal = quote ? quote.items_total : getTotalPrice();
+  const deliveryTotal = quote ? quote.delivery_total : null;
+  const grandTotal = quote ? quote.total : getTotalPrice();
 
   const placeOrder = async (event) => {
     event.preventDefault();
@@ -93,7 +107,14 @@ export default function CartPage() {
           <p><span className="text-slate-500">Location</span> · {placedOrder.location}</p>
           <p><span className="text-slate-500">Phone</span> · {placedOrder.phone}</p>
           <p><span className="text-slate-500">Payment</span> · {placedOrder.paymentMethod}</p>
-          <p><span className="text-slate-500">Total</span> · K{Number(placedOrder.total).toFixed(2)}</p>
+          <p><span className="text-slate-500">Items</span> · K{Number(placedOrder.itemsTotal || placedOrder.total).toFixed(2)}</p>
+          {placedOrder.deliveryTotal > 0 && (
+            <p>
+              <span className="text-slate-500">Delivery</span> · K{Number(placedOrder.deliveryTotal).toFixed(2)}
+              {placedOrder.shipments?.length > 1 && ` (${placedOrder.shipments.length} parcels)`}
+            </p>
+          )}
+          <p className="font-semibold"><span className="text-slate-500">Total paid</span> · K{Number(placedOrder.total).toFixed(2)}</p>
           <p className="capitalize"><span className="text-slate-500">Status</span> · {placedOrder.status}</p>
         </div>
         <div className="mt-8 flex flex-wrap gap-3">
@@ -205,16 +226,35 @@ export default function CartPage() {
 
       <aside className="h-fit rounded-lg bg-slate-900 p-6 text-white">
         <h2 className="text-xl font-bold">{step === 'checkout' ? 'Place order' : 'Checkout'}</h2>
-        <div className="mt-6 flex justify-between border-b border-slate-700 pb-4">
-          <span>Items</span>
-          <strong>K{getTotalPrice().toFixed(2)}</strong>
+        <div className="mt-6 space-y-2 border-b border-slate-700 pb-4">
+          <div className="flex justify-between">
+            <span>Items</span>
+            <strong>K{Number(itemsTotal).toFixed(2)}</strong>
+          </div>
+          {deliveryTotal !== null && (
+            <div className="flex justify-between text-sm text-slate-300">
+              <span>
+                Delivery
+                {quote?.parcels?.length > 1 && ` · ${quote.parcels.length} parcels`}
+              </span>
+              <span>K{Number(deliveryTotal).toFixed(2)}</span>
+            </div>
+          )}
+          {quote?.parcels?.length > 1 && quote.parcels.map((parcel) => (
+            <div key={parcel.store_name} className="flex justify-between text-xs text-slate-400">
+              <span>{parcel.store_name} · {parcel.distance}</span>
+              <span>K{Number(parcel.delivery_fee).toFixed(2)}</span>
+            </div>
+          ))}
         </div>
         <p className="mt-5 text-sm text-slate-300">
-          {step === 'checkout' ? 'Confirm delivery and payment to place the order. You can rate the seller after you receive it.' : 'Review your bag, then add delivery and payment.'}
+          {quote?.parcels?.length > 1
+            ? `Your items come from ${quote.parcels.length} shops, so each is delivered separately and charged its own fee.`
+            : step === 'checkout' ? 'Confirm delivery and payment to place the order. You can rate the seller after you receive it.' : 'Review your bag, then add delivery and payment.'}
         </p>
         <div className="mt-5 flex justify-between text-lg">
           <span>Total</span>
-          <strong>K{getTotalPrice().toFixed(2)}</strong>
+          <strong>K{Number(grandTotal).toFixed(2)}</strong>
         </div>
         {step === 'bag' ? (
           <button onClick={() => setStep('checkout')} className="mt-6 w-full rounded-lg bg-indigo-500 py-3 font-semibold hover:bg-indigo-400">Continue to checkout</button>

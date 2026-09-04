@@ -18,6 +18,29 @@ export const createOrder = async (req, res) => {
   }
 };
 
+// Price a basket before it is placed, so checkout can show the delivery cost per shop.
+// Creates nothing; uses the same calculation as order creation.
+export const quoteOrder = async (req, res) => {
+  try {
+    const { items, location } = req.body;
+    const quote = await Order.quoteForItems({ items, location });
+    res.json({
+      parcels: quote.parcels.map((parcel) => ({
+        store_name: parcel.store_name,
+        items_total: parcel.items_total,
+        delivery_fee: parcel.delivery_fee,
+        distance: parcel.distance,
+        item_count: parcel.items.reduce((sum, line) => sum + line.quantity, 0),
+      })),
+      items_total: quote.items_total,
+      delivery_total: quote.delivery_total,
+      total: quote.total,
+    });
+  } catch (error) {
+    res.status(error.status || 500).json({ error: error.message });
+  }
+};
+
 // List the current user's orders (their own orders for a customer, their store's orders for a seller)
 export const getMyOrders = async (req, res) => {
   try {

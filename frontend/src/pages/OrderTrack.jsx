@@ -110,7 +110,14 @@ export default function OrderTrack() {
           <div className="mt-3 space-y-2 text-sm text-slate-700">
             <p><span className="font-semibold">Payment:</span> {order.paymentMethod || '—'}</p>
             <p><span className="font-semibold">Phone:</span> {order.phone || '—'}</p>
-            <p><span className="font-semibold">Total:</span> K{Number(order.total || 0).toFixed(2)}</p>
+            <p><span className="font-semibold">Items:</span> K{Number(order.itemsTotal || order.total || 0).toFixed(2)}</p>
+            {order.deliveryTotal > 0 && (
+              <p>
+                <span className="font-semibold">Delivery:</span> K{Number(order.deliveryTotal).toFixed(2)}
+                {order.shipments?.length > 1 && ` · ${order.shipments.length} parcels`}
+              </p>
+            )}
+            <p><span className="font-semibold">Total paid:</span> K{Number(order.total || 0).toFixed(2)}</p>
             <p className="capitalize"><span className="font-semibold">Status:</span> {order.status}</p>
           </div>
           {order.status !== 'delivered' && (

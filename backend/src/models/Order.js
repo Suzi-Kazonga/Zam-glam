@@ -29,9 +29,10 @@ async function pickCourierAccount(connection) {
   return rows[0] || null;
 }
 
+// Keyed on the seller, never the order, so the fee quoted at checkout is exactly the fee
+// charged when the order is placed — an order id does not exist yet at quote time.
+// (No geocoding from a free-text address yet; this is a stand-in for a real distance.)
 function estimateDelivery(seed, destination) {
-  // No real geocoding from a free-text address yet, so estimate a plausible distance the
-  // same way the previous frontend mock did, keyed off the order id for a stable value.
   const distanceKm = 2 + (Math.abs(Number(seed) || 0) % 9);
   const price = Number((20 + distanceKm * 5).toFixed(2));
   const driver = DRIVERS[Math.abs(Number(seed) || 0) % DRIVERS.length];
@@ -44,6 +45,66 @@ function estimateDelivery(seed, destination) {
 }
 
 class Order {
+  // Prices a basket without creating anything: one parcel per store, each with its own
+  // delivery fee, because each shop is a separate pickup. Used both by the checkout quote
+  // and by order creation, so what the customer is shown is what they are charged.
+  static async quoteForItems({ items, location, connection = pool }) {
+    if (!Array.isArray(items) || items.length === 0) {
+      throw Object.assign(new Error('At least one item is required'), { status: 400 });
+    }
+
+    const lineItems = [];
+    for (const item of items) {
+      const quantity = Number(item.quantity) || 1;
+      if (quantity < 1) throw Object.assign(new Error('Quantity must be at least 1'), { status: 400 });
+      const [rows] = await connection.query(
+        `SELECT p.id, p.name, p.price, p.stock, p.seller_id, s.name AS store_name
+         FROM products p LEFT JOIN stores s ON s.id = p.store_id WHERE p.id = ?`,
+        [item.product_id],
+      );
+      const product = rows[0];
+      if (!product) throw Object.assign(new Error(`Product ${item.product_id} not found`), { status: 404 });
+      if (Number(product.stock) < quantity) {
+        throw Object.assign(new Error(`Not enough stock for ${product.name}`), { status: 409 });
+      }
+      lineItems.push({
+        product_id: product.id,
+        name: product.name,
+        quantity,
+        price: Number(product.price),
+        seller_id: product.seller_id,
+        store_name: product.store_name,
+      });
+    }
+
+    const parcels = [];
+    for (const sellerId of [...new Set(lineItems.map((line) => line.seller_id))]) {
+      const parcelItems = lineItems.filter((line) => line.seller_id === sellerId);
+      const courier = estimateDelivery(sellerId, location);
+      parcels.push({
+        seller_id: sellerId,
+        store_name: parcelItems[0].store_name,
+        items: parcelItems,
+        items_total: Number(parcelItems.reduce((sum, line) => sum + line.price * line.quantity, 0).toFixed(2)),
+        delivery_fee: courier.price,
+        distance: courier.distance,
+        direction: courier.direction,
+        driver_name: courier.driver_name,
+      });
+    }
+
+    const itemsTotal = Number(lineItems.reduce((sum, line) => sum + line.price * line.quantity, 0).toFixed(2));
+    const deliveryTotal = Number(parcels.reduce((sum, parcel) => sum + parcel.delivery_fee, 0).toFixed(2));
+
+    return {
+      lineItems,
+      parcels,
+      items_total: itemsTotal,
+      delivery_total: deliveryTotal,
+      total: Number((itemsTotal + deliveryTotal).toFixed(2)),
+    };
+  }
+
   // Account-id resolution lives in utils/accounts.js — see the note there on the two
   // account schema shapes.
   static hasColumn(table, column) {
@@ -91,24 +152,24 @@ class Order {
     try {
       await connection.beginTransaction();
 
-      const lineItems = [];
-      for (const item of items) {
-        const quantity = Number(item.quantity) || 1;
-        if (quantity < 1) throw Object.assign(new Error('Quantity must be at least 1'), { status: 400 });
-        const [rows] = await connection.query('SELECT id, price, stock, seller_id FROM products WHERE id = ? FOR UPDATE', [item.product_id]);
-        const product = rows[0];
-        if (!product) throw Object.assign(new Error(`Product ${item.product_id} not found`), { status: 404 });
-        if (Number(product.stock) < quantity) throw Object.assign(new Error(`Not enough stock for product ${item.product_id}`), { status: 409 });
-        lineItems.push({ product_id: product.id, quantity, price: Number(product.price), seller_id: product.seller_id });
-      }
-
-      const total = lineItems.reduce((sum, line) => sum + line.price * line.quantity, 0);
+      // Same calculation the checkout quote used, so the customer is charged what they saw.
+      const quote = await Order.quoteForItems({ items, location: location || address, connection });
+      const { lineItems, parcels } = quote;
       const normalizedPaymentMethod = PAYMENT_METHOD_MAP[paymentMethod] || null;
 
       const [orderResult] = await connection.query(
-        `INSERT INTO orders (customer_id, total_price, status, address, location, phone, payment_method)
-         VALUES (?, ?, 'placed', ?, ?, ?, ?)`,
-        [customerId, total, address || '', location || '', phone || '', normalizedPaymentMethod],
+        `INSERT INTO orders (customer_id, total_price, items_total, delivery_total, status, address, location, phone, payment_method)
+         VALUES (?, ?, ?, ?, 'placed', ?, ?, ?, ?)`,
+        [
+          customerId,
+          quote.total,
+          quote.items_total,
+          quote.delivery_total,
+          address || '',
+          location || '',
+          phone || '',
+          normalizedPaymentMethod,
+        ],
       );
       const orderId = orderResult.insertId;
 
@@ -129,30 +190,28 @@ class Order {
       await connection.query(
         `INSERT INTO payments (order_id, method, amount, status, transaction_ref)
          VALUES (?, ?, ?, 'successful', ?)`,
-        [orderId, paymentMethodColumn, total, `zg-${orderId}-${Date.now()}`],
+        [orderId, paymentMethodColumn, quote.total, `zg-${orderId}-${Date.now()}`],
       );
 
       // One parcel per store: each store packs and hands over independently, and each parcel
       // gets its own courier, because the goods start in different physical shops.
-      const sellerIds = [...new Set(lineItems.map((line) => line.seller_id))];
       let firstCourier = null;
-      for (const sellerId of sellerIds) {
-        const courier = estimateDelivery(orderId + sellerId, location || address);
+      for (const parcel of parcels) {
         const courierAccount = await pickCourierAccount(connection);
-        if (!firstCourier) firstCourier = { courier, courierAccount };
+        if (!firstCourier) firstCourier = { parcel, courierAccount };
         await connection.query(
           `INSERT INTO shipments
              (order_id, seller_id, status, courier_id, driver_name, driver_phone, price, distance, direction)
            VALUES (?, ?, 'placed', ?, ?, ?, ?, ?, ?)`,
           [
             orderId,
-            sellerId,
+            parcel.seller_id,
             courierAccount?.id || null,
-            courierAccount?.name || courier.driver_name,
+            courierAccount?.name || parcel.driver_name,
             courierAccount?.phone || null,
-            courier.price,
-            courier.distance,
-            courier.direction,
+            parcel.delivery_fee,
+            parcel.distance,
+            parcel.direction,
           ],
         );
       }
@@ -165,11 +224,11 @@ class Order {
         [
           orderId,
           firstCourier?.courierAccount?.id || null,
-          firstCourier?.courierAccount?.name || firstCourier?.courier.driver_name || null,
+          firstCourier?.courierAccount?.name || firstCourier?.parcel.driver_name || null,
           firstCourier?.courierAccount?.phone || null,
-          firstCourier?.courier.price || 0,
-          firstCourier?.courier.distance || null,
-          firstCourier?.courier.direction || null,
+          firstCourier?.parcel.delivery_fee || 0,
+          firstCourier?.parcel.distance || null,
+          firstCourier?.parcel.direction || null,
         ],
       );
 

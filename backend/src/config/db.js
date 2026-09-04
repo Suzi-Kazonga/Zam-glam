@@ -261,6 +261,12 @@ export async function initializeDatabase() {
   };
 
   await addColumnIfMissing('orders', 'total_price', 'DECIMAL(12,2) NOT NULL DEFAULT 0');
+  // total_price is the grand total; these break it down for the receipt.
+  await addColumnIfMissing('orders', 'items_total', 'DECIMAL(12,2) NOT NULL DEFAULT 0');
+  await addColumnIfMissing('orders', 'delivery_total', 'DECIMAL(10,2) NOT NULL DEFAULT 0');
+  // Orders placed before delivery was billed were charged for items only. Record that
+  // honestly rather than leaving items_total at 0 and showing a broken receipt.
+  await pool.query('UPDATE orders SET items_total = total_price WHERE items_total = 0 AND total_price > 0');
   await addColumnIfMissing('orders', 'address', 'VARCHAR(255)');
   await addColumnIfMissing('orders', 'location', 'VARCHAR(150)');
   await addColumnIfMissing('orders', 'phone', 'VARCHAR(30)');

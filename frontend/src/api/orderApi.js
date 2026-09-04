@@ -67,6 +67,8 @@ function adaptOrder(raw) {
     status,
     createdAt: raw.created_at,
     total: Number(raw.total_price || 0),
+    itemsTotal: Number(raw.items_total || 0),
+    deliveryTotal: Number(raw.delivery_total || 0),
     address: raw.address || '',
     location: raw.location || '',
     phone: raw.phone || '',
@@ -100,6 +102,15 @@ export async function createOrder({ items, address, location, phone, paymentMeth
   // The create endpoint only returns {id, status}; fetch the full record (with the
   // auto-assigned courier/tracking row) so the confirmation screen has everything to show.
   return getOrder(data.id);
+}
+
+// Price the basket before placing it, so checkout can show delivery per shop.
+export async function quoteOrder({ items, location }) {
+  const { data } = await apiClient.post('/orders/quote', {
+    items: items.map((item) => ({ product_id: item.id, quantity: item.quantity })),
+    location,
+  });
+  return data;
 }
 
 export async function getMyOrders() {
