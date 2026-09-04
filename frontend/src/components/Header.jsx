@@ -28,7 +28,7 @@ const Header = () => {
       <Link to="/" className={`text-2xl font-bold tracking-tight transition ${brandClass}`}>Zamglam</Link>
       {themed && <span className="rounded-full bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-white">{theme.label}</span>}
       <nav className={`hidden gap-8 text-sm font-semibold lg:flex ${navClass}`}>
-        <Link to="/" className={linkClass}>Home</Link>
+        {/* No Home item: the Zamglam wordmark is the way back to the home page. */}
         <Link to="/collections" className={linkClass}>Collections</Link>
         <Link to="/products" className={linkClass}>All Products</Link>
         {user?.role === 'customer' && <Link to="/customer/dashboard" className={linkClass}>Dashboard</Link>}

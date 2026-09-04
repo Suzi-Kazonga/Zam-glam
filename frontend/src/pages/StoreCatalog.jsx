@@ -95,7 +95,8 @@ export default function StoreCatalog() {
 
   return (
     <main data-active-store={activeStore} className="mx-auto max-w-7xl px-4 py-12">
-      <Link to="/" className="mb-6 inline-block text-sm font-semibold text-indigo-600 transition hover:text-indigo-800">← Back to Stores</Link>
+      {/* Points at the stores listing rather than home — the wordmark covers home. */}
+      <Link to="/collections" className="mb-6 inline-block text-sm font-semibold text-indigo-600 transition hover:text-indigo-800">← Back to Stores</Link>
       <div className="flex flex-wrap items-end justify-between gap-5">
         <div>
           <p className="text-sm font-semibold uppercase tracking-widest text-indigo-600">Store catalog</p>

@@ -4,7 +4,8 @@ import DashboardCard from '../components/DashboardCard';
 import Sidebar from '../components/Sidebar';
 import Topbar from '../components/Topbar';
 import { useAuth } from '../context/AuthContext';
-import { getAvailableParcels, getMyOrders, getShift, pickUpParcel, setShift, updateShipmentStatus } from '../api/orderApi';
+import { getAvailableParcels, getMyOrders, getShift, pickUpParcel, updateShipmentStatus } from '../api/orderApi';
+import CourierShiftToggle from '../components/CourierShiftToggle';
 import { formatWaiting, isOverdue } from '../utils/waiting';
 import { formatZmwPrice } from '../utils/currency';
 
@@ -34,17 +35,6 @@ export default function CourierDashboard() {
     const poll = window.setInterval(load, 5000);
     return () => window.clearInterval(poll);
   }, []);
-
-  const toggleShift = async () => {
-    try {
-      const next = await setShift(!onShift);
-      setOnShift(next.on_shift);
-      setMessage(next.on_shift ? 'You are on duty — parcels waiting for pickup are shown below.' : 'You are off duty. You will not see the pool or be given parcels.');
-      load();
-    } catch (error) {
-      setMessage(error.response?.data?.error || 'Could not change your duty status.');
-    }
-  };
 
   const matchesQuery = (order) => `${order.id} ${order.address} ${order.customerName || ''}`
     .toLowerCase()
@@ -126,6 +116,11 @@ export default function CourierDashboard() {
         )}
       </div>
       <div className="flex flex-col items-end gap-2">
+        {/* Only parcels this courier holds can be opened — an unclaimed pool parcel is
+            not theirs to inspect yet. */}
+        {order.status !== 'shipped' && (
+          <Link to={`/orders/${order.id}`} className="text-xs font-semibold text-emerald-800 hover:underline">View order →</Link>
+        )}
         <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold capitalize text-slate-600">{order.status}</span>
         {/* This parcel's goods and its own fee — not the whole basket's total. */}
         <span className="text-sm font-bold text-slate-700">{formatZmwPrice(order.parcelTotal ?? 0)}</span>
@@ -148,30 +143,21 @@ export default function CourierDashboard() {
           </div>
 
           {/* Duty status decides whether this courier is offered work at all. */}
-          <div className={`flex flex-wrap items-center justify-between gap-3 rounded-lg border p-4 ${onShift ? 'border-emerald-200 bg-emerald-50' : 'border-slate-200 bg-slate-50'}`}>
-            <div>
-              <p className="font-semibold text-slate-900">{onShift ? 'On duty' : 'Off duty'}</p>
-              <p className="text-sm text-slate-500">
-                {onShift
-                  ? 'You can see parcels waiting for pickup, and unclaimed parcels can be assigned to you.'
-                  : 'Go on duty to see parcels waiting for pickup.'}
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={toggleShift}
-              className={`rounded-lg px-5 py-2 font-semibold text-white ${onShift ? 'bg-slate-700 hover:bg-slate-800' : 'bg-emerald-700 hover:bg-emerald-800'}`}
-            >
-              {onShift ? 'Go off duty' : 'Go on duty'}
-            </button>
-          </div>
+          <CourierShiftToggle onChange={(next) => { setOnShift(next); load(); }} />
 
           {message && <p className="rounded-lg bg-emerald-50 px-4 py-3 text-sm text-emerald-900">{message}</p>}
 
+          {/* Each figure opens the section it summarises. */}
           <div className="grid gap-4 sm:grid-cols-3">
-            <DashboardCard title="Available to pick up" value={availableParcels.length} detail="Released by shops, unclaimed" />
-            <DashboardCard title="Out for delivery" value={myDeliveries.length} detail="You collected these" />
-            <DashboardCard title="Delivered" value={deliveredParcels.length} detail="Completed by you" />
+            <button type="button" onClick={() => setActive('Available')} className="text-left">
+              <DashboardCard title="Available to pick up" value={availableParcels.length} detail="Released by shops, unclaimed" />
+            </button>
+            <button type="button" onClick={() => setActive('Deliveries')} className="text-left">
+              <DashboardCard title="Out for delivery" value={myDeliveries.length} detail="You collected these" />
+            </button>
+            <button type="button" onClick={() => setActive('Completed')} className="text-left">
+              <DashboardCard title="Delivered" value={deliveredParcels.length} detail="Completed by you" />
+            </button>
           </div>
 
           {active === 'Available' && (

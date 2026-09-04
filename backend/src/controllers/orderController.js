@@ -126,7 +126,9 @@ export const getShift = async (req, res) => {
   try {
     const shift = await Order.getCourierShift(req.user.id);
     if (!shift) return res.status(404).json({ error: 'Courier profile not found' });
-    res.json({ on_shift: Boolean(shift.on_shift), shift_changed_at: shift.shift_changed_at });
+    // carrying > 0 means they cannot clock off yet.
+    const carrying = await Order.countCarriedParcels(shift.id);
+    res.json({ on_shift: Boolean(shift.on_shift), shift_changed_at: shift.shift_changed_at, carrying });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

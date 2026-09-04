@@ -6,7 +6,7 @@ export default function Navbar() {
       <div className="flex items-center gap-4">
         <Link to="/" className="text-2xl font-bold text-black">Zamglam</Link>
         <div className="hidden md:flex gap-4 text-sm text-gray-700">
-          <Link to="/">Home</Link>
+          {/* No Home item: the Zamglam wordmark links home. */}
           <Link to="/products">Products</Link>
           <Link to="/customer/dashboard">Dashboard</Link>
         </div>

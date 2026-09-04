@@ -419,9 +419,31 @@ class Order {
     return rows[0] || null;
   }
 
+  // Parcels a courier is currently carrying: collected but not yet delivered.
+  static async countCarriedParcels(courierId) {
+    const [rows] = await pool.query(
+      "SELECT COUNT(*) AS count FROM shipments WHERE courier_id = ? AND status = 'picked_up'",
+      [courierId],
+    );
+    return Number(rows[0]?.count || 0);
+  }
+
   static async setCourierShift(user_id, onShift) {
     const courierId = await resolveCourierId(user_id);
     if (!courierId) throw Object.assign(new Error('Courier profile not found'), { status: 404 });
+
+    // A courier holding somebody's parcel cannot clock off — the parcel would be stranded
+    // with nobody able to deliver it, since only the courier who collected it can.
+    if (!onShift) {
+      const carrying = await Order.countCarriedParcels(courierId);
+      if (carrying > 0) {
+        throw Object.assign(
+          new Error(`You are carrying ${carrying} parcel${carrying === 1 ? '' : 's'}. Deliver ${carrying === 1 ? 'it' : 'them'} before going off duty.`),
+          { status: 409 },
+        );
+      }
+    }
+
     await pool.query(
       'UPDATE couriers SET on_shift = ?, shift_changed_at = CURRENT_TIMESTAMP WHERE id = ?',
       [onShift ? 1 : 0, courierId],
