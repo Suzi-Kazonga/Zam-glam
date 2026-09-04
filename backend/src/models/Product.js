@@ -1,5 +1,24 @@
 import { pool } from '../config/db.js';
 
+// On MariaDB, JSON is an alias for LONGTEXT, so the driver hands these columns back as
+// raw strings rather than parsed values. Always return real arrays to the API, or callers
+// end up doing images[0] on a string and getting "[".
+function parseJsonArray(value) {
+  if (Array.isArray(value)) return value;
+  if (typeof value !== 'string' || !value) return [];
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function normalize(row) {
+  if (!row) return row;
+  return { ...row, sizes: parseJsonArray(row.sizes), images: parseJsonArray(row.images) };
+}
+
 class Product {
   // Create a new product
   static async create({
@@ -13,9 +32,10 @@ class Product {
     image_url,
     audience,
     sizes,
+    images,
   }) {
     const query =
-      'INSERT INTO products (seller_id, store_id, category_id, name, description, price, stock, image_url, audience, sizes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+      'INSERT INTO products (seller_id, store_id, category_id, name, description, price, stock, image_url, audience, sizes, images) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
 
     const [result] = await pool.query(query, [
       seller_id,
@@ -28,6 +48,7 @@ class Product {
       image_url,
       audience,
       JSON.stringify(sizes || []),
+      JSON.stringify(images || []),
     ]);
 
     return result.insertId;
@@ -37,14 +58,14 @@ class Product {
   static async findById(id) {
     const query = 'SELECT * FROM products WHERE id = ?';
     const [rows] = await pool.query(query, [id]);
-    return rows[0];
+    return normalize(rows[0]);
   }
 
   // Get products by store
   static async findByStore(seller_id) {
     const query = 'SELECT * FROM products WHERE seller_id = ?';
     const [rows] = await pool.query(query, [seller_id]);
-    return rows;
+    return rows.map(normalize);
   }
 
   // Get filtered products (audience + category)
@@ -68,24 +89,21 @@ class Product {
     }
 
     const [rows] = await pool.query(query, values);
-    return rows;
+    return rows.map(normalize);
   }
 
-  // Update product
+  // Update product. Only real columns may be written: the seller form also sends helper
+  // fields (sellerEmail, store_name, category, …) which would otherwise land in the SQL
+  // and fail with "Unknown column".
   static async update(id, data) {
+    const updatable = ['category_id', 'name', 'description', 'price', 'stock', 'image_url', 'audience', 'sizes', 'images'];
     const fields = [];
     const values = [];
 
     Object.entries(data).forEach(([key, value]) => {
-      if (key !== 'id' && key !== 'store_id') {
-        if (key === 'sizes') {
-          fields.push(`${key} = ?`);
-          values.push(JSON.stringify(value));
-        } else {
-          fields.push(`${key} = ?`);
-          values.push(value);
-        }
-      }
+      if (!updatable.includes(key) || value === undefined) return;
+      fields.push(`${key} = ?`);
+      values.push(key === 'sizes' || key === 'images' ? JSON.stringify(value ?? []) : value);
     });
 
     if (fields.length === 0) return null;

@@ -10,7 +10,7 @@ import { getMyOrders, updateShipmentStatus } from '../api/orderApi';
 import { isLocalDemoSession } from '../utils/localSession';
 import { getSellerRatings, getSellerScore, replyToRating } from '../utils/ratingStore';
 import { getStorefrontPath } from '../utils/storeLogos';
-import { createProduct, deleteProduct, getSellerProducts } from '../api/productApi';
+import { createProduct, deleteProduct, getSellerProducts, updateProduct } from '../api/productApi';
 
 const sections = ['Overview', 'Products', 'Orders', 'Reviews', 'Analytics'];
 const emptyForm = { id: '', name: '', description: '', price: '', stock: '', category: 'clothes', image_url: '', imageFiles: [], previews: [] };
@@ -49,12 +49,16 @@ function ProductForm({ form, setForm, message, onClose, onImages, onSubmit }) {
             </select>
           </label>
           <label className="block rounded-lg border border-dashed border-slate-300 p-3 text-sm text-slate-500">
-            Upload product images
+            {form.id ? 'Replace product images (optional)' : 'Upload product images (required)'}
             <input type="file" accept="image/*" multiple onChange={(event) => onImages(event.target.files)} className="mt-2 w-full text-xs" />
+            <span className="mt-1 block text-xs text-slate-400">Up to 6 photos, max 5MB each. The first is used as the main image.</span>
           </label>
           {form.previews.length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              {form.previews.map((src) => <img key={src} src={src} alt="" className="h-20 w-16 rounded object-cover" />)}
+            <div>
+              <p className="mb-1 text-xs font-semibold text-slate-500">{form.imageFiles.length ? 'New photos' : 'Current photos'}</p>
+              <div className="flex flex-wrap gap-2">
+                {form.previews.map((src) => <img key={src} src={src} alt="" className="h-20 w-16 rounded object-cover" />)}
+              </div>
             </div>
           )}
           {message && <p className="text-sm text-purple-800">{message}</p>}
@@ -137,32 +141,30 @@ export default function SellerDashboard() {
   const submitProduct = async (event) => {
     event.preventDefault();
     setMessage('');
-    const images = form.previews.length ? form.previews : (form.image_url ? [form.image_url] : []);
-    if (!images.length) {
+    const isEdit = Boolean(form.id);
+
+    // New listings must carry photos. When editing, keeping the existing ones is fine.
+    if (!isEdit && !form.imageFiles.length) {
       setMessage('Add at least one product image.');
       return;
     }
     const payload = {
-      id: form.id || undefined,
       name: form.name,
       description: form.description,
       price: Number(form.price),
       stock: Number(form.stock),
       category: form.category,
-      image_url: images[0],
-      images,
-      sellerEmail: user?.email,
-      sellerName,
-      store_name: sellerName,
+      imageFiles: form.imageFiles,
     };
     // Saved straight to the backend: a product that only existed in this browser could be
     // browsed but never ordered, because checkout looks products up server-side.
     try {
-      await createProduct({ ...payload, imageFile: form.imageFiles[0] || null });
+      if (isEdit) await updateProduct(form.id, payload);
+      else await createProduct(payload);
       setSavedProduct(payload);
       setForm(emptyForm);
       setShowForm(false);
-      setMessage(form.id ? 'Product updated.' : 'Product listed on your storefront.');
+      setMessage(isEdit ? 'Product updated.' : 'Product listed on your storefront.');
       loadProducts();
     } catch (error) {
       setMessage(error?.error || error?.message || 'Could not save that product. Please try again.');
@@ -297,7 +299,7 @@ export default function SellerDashboard() {
                         <td>{product.stock}</td>
                         <td>{Number(product.stock) === 0 ? <span className="text-rose-600">Sold out</span> : Number(product.stock) < 5 ? <span className="text-amber-600">Low stock</span> : <span className="text-emerald-600">In stock</span>}</td>
                         <td className="text-right">
-                          <button type="button" onClick={() => { setForm({ id: product.id, name: product.name, description: product.description || '', price: product.price, stock: product.stock, category: product.category || 'clothes', image_url: product.image_url || '', imageFiles: [], previews: product.images || (product.image_url ? [product.image_url] : []) }); setShowForm(true); }} className="mr-2 font-semibold text-purple-700">Edit</button>
+                          <button type="button" onClick={() => { setForm({ id: product.id, name: product.name, description: product.description || '', price: product.price, stock: product.stock, category: product.category || 'clothes', image_url: product.image_url || '', imageFiles: [], previews: Array.isArray(product.images) && product.images.length ? product.images : (product.image_url ? [product.image_url] : []) }); setShowForm(true); }} className="mr-2 font-semibold text-purple-700">Edit</button>
                           <button type="button" onClick={() => setConfirmDelete(product)} className="font-semibold text-rose-600">Delete</button>
                         </td>
                       </tr>

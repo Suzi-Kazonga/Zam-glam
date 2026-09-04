@@ -10,9 +10,12 @@ router.get('/', productController.getFilteredProducts);
 router.get('/:id', productController.getProduct);
 
 // Seller routes (protected)
-router.post('/', authMiddleware, roleMiddleware('seller'), upload.single('image'), productController.createProduct);
+// Up to 6 photos per listing; 'image' is kept for older single-file callers.
+const productImages = upload.fields([{ name: 'images', maxCount: 6 }, { name: 'image', maxCount: 1 }]);
+
+router.post('/', authMiddleware, roleMiddleware('seller'), productImages, productController.createProduct);
 router.get('/seller/my-products', authMiddleware, roleMiddleware('seller'), productController.getSellerProducts);
-router.put('/:id', authMiddleware, roleMiddleware('seller'), productController.updateProduct);
+router.put('/:id', authMiddleware, roleMiddleware('seller'), productImages, productController.updateProduct);
 router.delete('/:id', authMiddleware, roleMiddleware('seller'), productController.deleteProduct);
 
 export default router;

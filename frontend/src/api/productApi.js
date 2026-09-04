@@ -29,16 +29,26 @@ export const getCart = async () => {
   }
 };
 
+// Product photos must reach the server as real files: a base64 preview does not fit the
+// image_url column, and a listing with no usable photo is rejected by the API.
+function toProductPayload({ imageFiles = [], ...fields }) {
+  if (!imageFiles.length) return fields;
+  const formData = new FormData();
+  Object.entries(fields).forEach(([key, value]) => {
+    if (value === undefined || value === null) return;
+    // Skip data-URL previews; the files themselves are appended below.
+    if (key === 'image_url' && String(value).startsWith('data:')) return;
+    if (key === 'images' || key === 'previews') return;
+    formData.append(key, value);
+  });
+  imageFiles.forEach((file) => formData.append('images', file));
+  return formData;
+}
+
 // Create product
 export const createProduct = async (productData) => {
   try {
-    const payload = productData.imageFile ? (() => {
-      const formData = new FormData();
-      Object.entries(productData).forEach(([key, value]) => { if (key !== 'imageFile') formData.append(key, value); });
-      formData.append('image', productData.imageFile);
-      return formData;
-    })() : productData;
-    const response = await apiClient.post('/products', payload);
+    const response = await apiClient.post('/products', toProductPayload(productData));
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;
@@ -48,7 +58,7 @@ export const createProduct = async (productData) => {
 // Update product
 export const updateProduct = async (id, productData) => {
   try {
-    const response = await apiClient.put(`/products/${id}`, productData);
+    const response = await apiClient.put(`/products/${id}`, toProductPayload(productData));
     return response.data;
   } catch (error) {
     throw error.response?.data || error.message;

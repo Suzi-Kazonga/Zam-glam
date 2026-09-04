@@ -270,6 +270,8 @@ export async function initializeDatabase() {
   await addColumnIfMissing('courier', 'driver_phone', 'VARCHAR(50)');
   await addColumnIfMissing('courier', 'courier_id', 'INT NULL');
   await addColumnIfMissing('customers', 'location', 'VARCHAR(150)');
+  // Products carry a gallery; image_url stays as the primary/thumbnail image.
+  await addColumnIfMissing('products', 'images', 'JSON');
   // Tracking events belong to a specific parcel; NULL means an order-wide event.
   await addColumnIfMissing('order_status_history', 'shipment_id', 'INT NULL');
 

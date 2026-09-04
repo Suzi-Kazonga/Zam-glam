@@ -21,6 +21,7 @@ const fileFilter = (req, file, cb) => {
     'image/jpeg',
     'image/png',
     'image/gif',
+    'image/webp',
     'application/pdf',
   ];
   if (allowedMimes.includes(file.mimetype)) {

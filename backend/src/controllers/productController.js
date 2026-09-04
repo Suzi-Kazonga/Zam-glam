@@ -1,12 +1,23 @@
 import Product from '../models/Product.js';
 import { resolveSellerId, resolveStoreIdForSeller, resolveCategoryId } from '../utils/accounts.js';
 
+// multer is mounted with .array('images'), but a single-file 'image' field is still
+// accepted so older callers keep working.
+function uploadedImagePaths(req) {
+  let files = [];
+  if (Array.isArray(req.files)) files = req.files;
+  else if (req.files && typeof req.files === 'object') files = [...(req.files.images || []), ...(req.files.image || [])];
+  else if (req.file) files = [req.file];
+  return files.map((file) => `/uploads/${file.filename}`);
+}
+
 // Create product
 export const createProduct = async (req, res) => {
   try {
     const { store_id, category_id, category, name, description, price, stock, image_url, audience, sizes } =
       req.body;
-    const uploadedImageUrl = req.file ? `/uploads/${req.file.filename}` : image_url;
+    const uploaded = uploadedImagePaths(req);
+    const uploadedImageUrl = uploaded[0] || image_url;
     const sellerId = await resolveSellerId(req.user.id);
 
     if (!sellerId) {
@@ -17,9 +28,10 @@ export const createProduct = async (req, res) => {
       return res.status(400).json({ error: 'Name and price are required' });
     }
 
-    // A base64 preview would blow past the image_url column; require a real upload.
-    if (!req.file && typeof uploadedImageUrl === 'string' && uploadedImageUrl.startsWith('data:')) {
-      return res.status(400).json({ error: 'Please attach the image file rather than a preview' });
+    // Every listing needs a real picture: shoppers buy clothing on the photo, and a
+    // base64 preview would blow past the image_url column.
+    if (!uploaded.length) {
+      return res.status(400).json({ error: 'At least one product image is required' });
     }
 
     // The form sends a category name and no store, so derive both server-side.
@@ -40,6 +52,7 @@ export const createProduct = async (req, res) => {
       image_url: uploadedImageUrl,
       audience,
       sizes,
+      images: uploaded,
     });
 
     res.status(201).json({
@@ -115,7 +128,21 @@ export const updateProduct = async (req, res) => {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
-    const success = await Product.update(id, req.body);
+    // Replace the gallery only when new files were attached; otherwise keep what's stored,
+    // so editing a price never silently drops the photos.
+    const uploaded = uploadedImagePaths(req);
+    const { category, ...rest } = req.body;
+    const changes = { ...rest };
+    if (uploaded.length) {
+      changes.images = uploaded;
+      changes.image_url = uploaded[0];
+    } else {
+      delete changes.images;
+      if (typeof changes.image_url === 'string' && changes.image_url.startsWith('data:')) delete changes.image_url;
+    }
+    if (category && !changes.category_id) changes.category_id = await resolveCategoryId(category);
+
+    const success = await Product.update(id, changes);
 
     if (success) {
       res.json({ message: 'Product updated successfully' });
