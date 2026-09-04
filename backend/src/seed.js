@@ -245,6 +245,8 @@ async function seedDatabase() {
           await User.create({ ...courier, role: 'courier' });
           console.log(`✅ Created courier: ${courier.name}`);
         }
+        // Demo couriers start on duty so the pickup pool is visible out of the box.
+        await pool.query('UPDATE couriers SET on_shift = 1 WHERE email = ?', [courier.email]);
       } catch (error) {
         console.log(`⚠️  Courier ${courier.email} creation failed:`, error.message);
       }

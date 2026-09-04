@@ -46,6 +46,7 @@ function adaptOrder(raw) {
       driverName: shipment.driver_name,
       driverPhone: shipment.driver_phone,
       contactAvailable: Boolean(shipment.contact_available),
+      releasedAt: shipment.released_at || null,
       price: Number(shipment.price || 0),
       distance: shipment.distance,
       direction: shipment.direction,
@@ -70,6 +71,9 @@ function adaptOrder(raw) {
     itemsTotal: Number(raw.items_total || 0),
     deliveryTotal: Number(raw.delivery_total || 0),
     // What THIS store earns / THIS parcel is worth, as opposed to the whole basket.
+    releasedAt: raw.released_at || null,
+    assignedToMe: Boolean(raw.assigned_to_me),
+    escalatedAt: raw.escalated_at || null,
     sellerTotal: raw.seller_total != null ? Number(raw.seller_total) : null,
     parcelTotal: raw.parcel_total != null ? Number(raw.parcel_total) : null,
     deliveryFee: raw.delivery_fee != null ? Number(raw.delivery_fee) : null,
@@ -136,6 +140,23 @@ export async function updateOrderStatus(id, status) {
 export async function getAvailableParcels() {
   const { data } = await apiClient.get('/orders/shipments/available');
   return Array.isArray(data) ? data.map(adaptOrder) : [];
+}
+
+// Admin: parcels released by shops that nobody has collected, with waiting time.
+export async function getUnclaimedParcels() {
+  const { data } = await apiClient.get('/orders/shipments/unclaimed');
+  return Array.isArray(data) ? data : [];
+}
+
+// A courier's duty state. Only on-duty couriers see the pool or get escalated parcels.
+export async function getShift() {
+  const { data } = await apiClient.get('/orders/courier/shift');
+  return data;
+}
+
+export async function setShift(onShift) {
+  const { data } = await apiClient.patch('/orders/courier/shift', { on_shift: onShift });
+  return data;
 }
 
 // Claim a parcel by collecting it; this is when the courier's details become visible.

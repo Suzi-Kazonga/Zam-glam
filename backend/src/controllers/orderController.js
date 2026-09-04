@@ -95,13 +95,49 @@ export const getOrder = async (req, res) => {
   }
 };
 
-// Parcels a shop has released that no courier has claimed yet — visible to every courier.
+// Parcels a shop has released that no courier has claimed yet. Only couriers on duty see
+// the pool — an off-duty courier gets an empty list rather than work they will not do.
 export const getAvailableParcels = async (req, res) => {
   try {
-    const parcels = await Order.findAvailableForPickup();
-    res.json(parcels);
+    if (req.user.role === 'admin') return res.json(await Order.findAvailableForPickup());
+    if (req.user.role !== 'courier') return res.status(403).json({ error: 'Forbidden' });
+
+    const shift = await Order.getCourierShift(req.user.id);
+    if (!shift?.on_shift) return res.json([]);
+
+    res.json(await Order.findAvailableForPickup({ courier_user_id: req.user.id }));
   } catch (error) {
     res.status(500).json({ error: error.message });
+  }
+};
+
+// Admin: everything a shop has released but nobody has collected, with how long it has
+// been waiting.
+export const getUnclaimedParcels = async (req, res) => {
+  try {
+    res.json(await Order.findUnclaimed());
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// A courier's duty state.
+export const getShift = async (req, res) => {
+  try {
+    const shift = await Order.getCourierShift(req.user.id);
+    if (!shift) return res.status(404).json({ error: 'Courier profile not found' });
+    res.json({ on_shift: Boolean(shift.on_shift), shift_changed_at: shift.shift_changed_at });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const setShift = async (req, res) => {
+  try {
+    const result = await Order.setCourierShift(req.user.id, Boolean(req.body.on_shift));
+    res.json(result);
+  } catch (error) {
+    res.status(error.status || 500).json({ error: error.message });
   }
 };
 

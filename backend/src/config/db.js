@@ -282,6 +282,21 @@ export async function initializeDatabase() {
   // honestly rather than leaving items_total at 0 and showing a broken receipt.
   await pool.query('UPDATE orders SET items_total = total_price WHERE items_total = 0 AND total_price > 0');
 
+  // When the shop released the parcel — the clock that decides how long it has been
+  // waiting for a courier, and when it should be escalated.
+  await addColumnIfMissing('shipments', 'released_at', 'TIMESTAMP NULL DEFAULT NULL');
+  await addColumnIfMissing('shipments', 'escalated_at', 'TIMESTAMP NULL DEFAULT NULL');
+  // Couriers go on and off duty; only on-duty couriers see the pool or receive escalations.
+  await addColumnIfMissing('couriers', 'on_shift', 'TINYINT(1) NOT NULL DEFAULT 0');
+  await addColumnIfMissing('couriers', 'shift_changed_at', 'TIMESTAMP NULL DEFAULT NULL');
+  // Parcels released before released_at existed: fall back to the order's own timestamp so
+  // their age is roughly right rather than null.
+  await pool.query(`
+    UPDATE shipments s JOIN orders o ON o.id = s.order_id
+    SET s.released_at = o.created_at
+    WHERE s.released_at IS NULL AND s.status IN ('shipped', 'picked_up', 'delivered')
+  `);
+
   // No courier exists until someone picks the parcel up, so the driver columns must accept
   // NULL — they were written NOT NULL back when a courier was assigned at checkout.
   for (const column of ['driver_name', 'price']) {

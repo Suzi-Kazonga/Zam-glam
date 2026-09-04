@@ -327,7 +327,12 @@ class Order {
     const shipment = await Order.findShipmentById(shipmentId);
     if (!shipment) return null;
 
-    await pool.query('UPDATE shipments SET status = ? WHERE id = ?', [status, shipmentId]);
+    // Releasing the parcel starts the clock that the pool ages and escalation watches.
+    if (status === 'shipped') {
+      await pool.query('UPDATE shipments SET status = ?, released_at = CURRENT_TIMESTAMP WHERE id = ?', [status, shipmentId]);
+    } else {
+      await pool.query('UPDATE shipments SET status = ? WHERE id = ?', [status, shipmentId]);
+    }
     await pool.query(
       'INSERT INTO order_status_history (order_id, shipment_id, status, note) VALUES (?, ?, ?, ?)',
       [shipment.order_id, shipmentId, status, note || null],
@@ -405,6 +410,25 @@ class Order {
     return resolveCourierId(user_id);
   }
 
+  // Couriers go on and off duty. Only on-duty couriers see the pool or receive escalated
+  // parcels, so a parcel is never offered to nobody or pushed at someone who has finished.
+  static async getCourierShift(user_id) {
+    const courierId = await resolveCourierId(user_id);
+    if (!courierId) return null;
+    const [rows] = await pool.query('SELECT id, name, on_shift, shift_changed_at FROM couriers WHERE id = ?', [courierId]);
+    return rows[0] || null;
+  }
+
+  static async setCourierShift(user_id, onShift) {
+    const courierId = await resolveCourierId(user_id);
+    if (!courierId) throw Object.assign(new Error('Courier profile not found'), { status: 404 });
+    await pool.query(
+      'UPDATE couriers SET on_shift = ?, shift_changed_at = CURRENT_TIMESTAMP WHERE id = ?',
+      [onShift ? 1 : 0, courierId],
+    );
+    return { on_shift: Boolean(onShift) };
+  }
+
   // A courier's queue: every parcel assigned to them. The order's status tells the UI
   // whether it is still with the shop (placed/processing), ready to deliver (shipped),
   // or finished (delivered).
@@ -455,20 +479,26 @@ class Order {
 
   // Every parcel a shop has released and nobody has claimed yet — the open pool that all
   // couriers can see and pick from.
-  static async findAvailableForPickup() {
+  static async findAvailableForPickup({ courier_user_id = null } = {}) {
+    // Escalated parcels belong to the courier they were escalated to; everyone else sees
+    // only the genuinely unclaimed ones.
+    let mineId = null;
+    if (courier_user_id) mineId = await Order.resolveCourierId(courier_user_id);
+
     const customerFields = await Order.customerFieldsSql();
     const [orders] = await pool.query(
       `SELECT DISTINCT o.*, ${customerFields.select}
        FROM orders o
        JOIN shipments sh ON sh.order_id = o.id
        ${customerFields.join}
-       WHERE sh.status = 'shipped' AND sh.courier_id IS NULL
-       ORDER BY o.created_at ASC`,
+       WHERE sh.status = 'shipped' AND (sh.courier_id IS NULL ${mineId ? 'OR sh.courier_id = ?' : ''})
+       ORDER BY sh.released_at ASC`,
+      mineId ? [mineId] : [],
     );
     const withItems = await Order._attachItems(orders);
 
     return withItems.flatMap((order) => order.shipments
-      .filter((shipment) => shipment.status === 'shipped' && shipment.courier_id === null)
+      .filter((shipment) => shipment.status === 'shipped' && (shipment.courier_id === null || shipment.courier_id === mineId))
       .map((shipment) => ({
         ...order,
         items: shipment.items,
@@ -479,8 +509,72 @@ class Order {
         store_name: shipment.store_name,
         parcel_total: Number(shipment.items.reduce((sum, item) => sum + Number(item.price) * Number(item.quantity), 0).toFixed(2)),
         delivery_fee: Number(shipment.price || 0),
+        released_at: shipment.released_at,
+        // Escalated to this courier rather than free for anyone to take.
+        assigned_to_me: Boolean(mineId && shipment.courier_id === mineId),
+        escalated_at: shipment.escalated_at,
         courier: shipment,
       })));
+  }
+
+  // Parcels a shop released that nobody has collected — the admin's stalled-work view.
+  static async findUnclaimed() {
+    const [rows] = await pool.query(
+      `SELECT sh.id AS shipment_id, sh.order_id, sh.status, sh.released_at, sh.escalated_at,
+              sh.courier_id, sh.price AS delivery_fee,
+              s.shop_name AS store_name, c.name AS courier_name,
+              o.address, o.location,
+              TIMESTAMPDIFF(MINUTE, sh.released_at, CURRENT_TIMESTAMP) AS waiting_minutes
+       FROM shipments sh
+       JOIN sellers s ON s.id = sh.seller_id
+       JOIN orders o ON o.id = sh.order_id
+       LEFT JOIN couriers c ON c.id = sh.courier_id
+       WHERE sh.status = 'shipped'
+       ORDER BY sh.released_at ASC`,
+    );
+    return rows;
+  }
+
+  // A parcel nobody has taken within the threshold is assigned to the least-loaded courier
+  // who is actually on duty, so it cannot sit in the pool forever. Assignment is not
+  // collection: the courier still presses Pick up, which is what reveals their details.
+  static async escalateStaleParcels(thresholdMinutes = 60) {
+    const [stale] = await pool.query(
+      `SELECT id, order_id FROM shipments
+       WHERE status = 'shipped' AND courier_id IS NULL AND released_at IS NOT NULL
+         AND released_at < (CURRENT_TIMESTAMP - INTERVAL ? MINUTE)
+       ORDER BY released_at ASC`,
+      [thresholdMinutes],
+    );
+    if (!stale.length) return [];
+
+    const escalated = [];
+    for (const parcel of stale) {
+      const [couriers] = await pool.query(
+        `SELECT c.id, c.name, c.phone FROM couriers c
+         WHERE c.is_active = 1 AND c.on_shift = 1
+         ORDER BY (SELECT COUNT(*) FROM shipments s WHERE s.courier_id = c.id AND s.status <> 'delivered') ASC, c.id ASC
+         LIMIT 1`,
+      );
+      const courier = couriers[0];
+      // Nobody is on duty: leave it in the pool rather than assigning it to someone who
+      // cannot act. It stays visible to the admin as stalled.
+      if (!courier) break;
+
+      const [result] = await pool.query(
+        `UPDATE shipments SET courier_id = ?, escalated_at = CURRENT_TIMESTAMP
+         WHERE id = ? AND courier_id IS NULL AND status = 'shipped'`,
+        [courier.id, parcel.id],
+      );
+      if (result.affectedRows === 0) continue;
+
+      await pool.query(
+        'INSERT INTO order_status_history (order_id, shipment_id, status, note) VALUES (?, ?, ?, ?)',
+        [parcel.order_id, parcel.id, 'shipped', `Unclaimed for ${thresholdMinutes} minutes — assigned to ${courier.name}.`],
+      );
+      escalated.push({ shipment_id: parcel.id, courier_id: courier.id, courier_name: courier.name });
+    }
+    return escalated;
   }
 
   // Claim a parcel. The WHERE clause carries courier_id IS NULL so that if two couriers
@@ -489,20 +583,26 @@ class Order {
     const courierId = await Order.resolveCourierId(courier_user_id);
     if (!courierId) throw Object.assign(new Error('Courier profile not found'), { status: 404 });
 
-    const [courierRows] = await pool.query('SELECT id, name, phone FROM couriers WHERE id = ?', [courierId]);
+    const [courierRows] = await pool.query('SELECT id, name, phone, on_shift FROM couriers WHERE id = ?', [courierId]);
     const courier = courierRows[0];
 
+    if (!courier.on_shift) {
+      throw Object.assign(new Error('Go on duty before picking up parcels'), { status: 409 });
+    }
+
+    // Unclaimed parcels are first come, first served; a parcel escalated to this courier is
+    // already theirs, so they may collect that one too.
     const [result] = await pool.query(
       `UPDATE shipments
        SET courier_id = ?, driver_name = ?, driver_phone = ?, status = 'picked_up'
-       WHERE id = ? AND courier_id IS NULL AND status = 'shipped'`,
-      [courierId, courier.name, courier.phone || null, shipmentId],
+       WHERE id = ? AND status = 'shipped' AND (courier_id IS NULL OR courier_id = ?)`,
+      [courierId, courier.name, courier.phone || null, shipmentId, courierId],
     );
 
     if (result.affectedRows === 0) {
       const existing = await Order.findShipmentById(shipmentId);
       if (!existing) throw Object.assign(new Error('Parcel not found'), { status: 404 });
-      if (existing.courier_id) throw Object.assign(new Error('Another courier has already picked up this parcel'), { status: 409 });
+      if (existing.courier_id) throw Object.assign(new Error('Another courier has already taken this parcel'), { status: 409 });
       throw Object.assign(new Error('This parcel has not been released by the shop yet'), { status: 409 });
     }
 

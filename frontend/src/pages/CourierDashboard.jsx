@@ -4,7 +4,8 @@ import DashboardCard from '../components/DashboardCard';
 import Sidebar from '../components/Sidebar';
 import Topbar from '../components/Topbar';
 import { useAuth } from '../context/AuthContext';
-import { getAvailableParcels, getMyOrders, pickUpParcel, updateShipmentStatus } from '../api/orderApi';
+import { getAvailableParcels, getMyOrders, getShift, pickUpParcel, setShift, updateShipmentStatus } from '../api/orderApi';
+import { formatWaiting, isOverdue } from '../utils/waiting';
 import { formatZmwPrice } from '../utils/currency';
 
 const sections = ['Available', 'Deliveries', 'Completed', 'Stores'];
@@ -20,10 +21,12 @@ export default function CourierDashboard() {
   const [available, setAvailable] = useState([]);
   const [message, setMessage] = useState('');
   const [busyId, setBusyId] = useState(null);
+  const [onShift, setOnShift] = useState(false);
 
   const load = () => {
     getMyOrders().then(setOrders).catch(() => setMessage('Could not load your parcels.'));
     getAvailableParcels().then(setAvailable).catch(() => {});
+    getShift().then((s) => setOnShift(Boolean(s.on_shift))).catch(() => {});
   };
 
   useEffect(() => {
@@ -31,6 +34,17 @@ export default function CourierDashboard() {
     const poll = window.setInterval(load, 5000);
     return () => window.clearInterval(poll);
   }, []);
+
+  const toggleShift = async () => {
+    try {
+      const next = await setShift(!onShift);
+      setOnShift(next.on_shift);
+      setMessage(next.on_shift ? 'You are on duty — parcels waiting for pickup are shown below.' : 'You are off duty. You will not see the pool or be given parcels.');
+      load();
+    } catch (error) {
+      setMessage(error.response?.data?.error || 'Could not change your duty status.');
+    }
+  };
 
   const matchesQuery = (order) => `${order.id} ${order.address} ${order.customerName || ''}`
     .toLowerCase()
@@ -93,6 +107,13 @@ export default function CourierDashboard() {
       <div className="min-w-0">
         <p className="font-semibold text-slate-900">Pick up from {order.storeName || 'shop'}</p>
         <p className="text-xs text-slate-400">Order #{order.id} · parcel #{order.shipmentId}</p>
+        {order.status === 'shipped' && order.releasedAt && (
+          <p className={`mt-1 text-xs font-semibold ${isOverdue(order.releasedAt) ? 'text-rose-600' : 'text-slate-500'}`}>
+            Waiting {formatWaiting(order.releasedAt)}
+            {order.assignedToMe && ' · assigned to you'}
+            {isOverdue(order.releasedAt) && !order.assignedToMe && ' · overdue'}
+          </p>
+        )}
         <p className="mt-1 text-sm text-slate-600">Deliver to {order.customerName || 'Customer'} · {order.phone || 'No phone'}</p>
         <p className="text-sm text-slate-500">{order.address}{order.location ? `, ${order.location}` : ''}</p>
         <p className="mt-1 text-xs text-slate-400">
@@ -126,6 +147,25 @@ export default function CourierDashboard() {
             <p className="mt-1 text-slate-500">Parcels assigned to you. Only you can confirm one has been delivered.</p>
           </div>
 
+          {/* Duty status decides whether this courier is offered work at all. */}
+          <div className={`flex flex-wrap items-center justify-between gap-3 rounded-lg border p-4 ${onShift ? 'border-emerald-200 bg-emerald-50' : 'border-slate-200 bg-slate-50'}`}>
+            <div>
+              <p className="font-semibold text-slate-900">{onShift ? 'On duty' : 'Off duty'}</p>
+              <p className="text-sm text-slate-500">
+                {onShift
+                  ? 'You can see parcels waiting for pickup, and unclaimed parcels can be assigned to you.'
+                  : 'Go on duty to see parcels waiting for pickup.'}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={toggleShift}
+              className={`rounded-lg px-5 py-2 font-semibold text-white ${onShift ? 'bg-slate-700 hover:bg-slate-800' : 'bg-emerald-700 hover:bg-emerald-800'}`}
+            >
+              {onShift ? 'Go off duty' : 'Go on duty'}
+            </button>
+          </div>
+
           {message && <p className="rounded-lg bg-emerald-50 px-4 py-3 text-sm text-emerald-900">{message}</p>}
 
           <div className="grid gap-4 sm:grid-cols-3">
@@ -155,7 +195,13 @@ export default function CourierDashboard() {
                     </button>
                   )}
                 />
-              )) : <p className="rounded-lg border border-dashed border-slate-300 p-6 text-center text-slate-500">No parcels are waiting for pickup right now.</p>}
+              )) : (
+                <p className="rounded-lg border border-dashed border-slate-300 p-6 text-center text-slate-500">
+                  {onShift
+                    ? 'No parcels are waiting for pickup right now.'
+                    : 'You are off duty — go on duty to see parcels waiting for pickup.'}
+                </p>
+              )}
             </section>
           )}
 

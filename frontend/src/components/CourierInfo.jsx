@@ -1,4 +1,5 @@
 import { formatZmwPrice } from '../utils/currency';
+import { formatWaiting } from '../utils/waiting';
 
 export default function CourierInfo({ delivery }) {
   if (!delivery) return null;
@@ -12,7 +13,9 @@ export default function CourierInfo({ delivery }) {
         <p><span className="font-semibold">Provider:</span> {delivery.provider || 'Zamglam Courier'}</p>
         {delivery.contact_available === false ? (
           <p className="rounded bg-white px-3 py-2 text-xs text-slate-500">
-            No courier has collected this parcel yet. Whoever picks it up is shown here, with their phone number.
+            {delivery.released_at
+              ? `Waiting for a courier to collect it (${formatWaiting(delivery.released_at)} so far). Whoever picks it up is shown here, with their phone number.`
+              : 'No courier has collected this parcel yet. Whoever picks it up is shown here, with their phone number.'}
           </p>
         ) : (
           <>

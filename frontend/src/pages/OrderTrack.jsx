@@ -87,6 +87,7 @@ export default function OrderTrack() {
                   driver_name: shipment.driverName,
                   driver_phone: shipment.driverPhone,
                   contact_available: shipment.contactAvailable,
+                  released_at: shipment.releasedAt,
                   price: shipment.price,
                   distance: shipment.distance,
                   direction: shipment.direction,

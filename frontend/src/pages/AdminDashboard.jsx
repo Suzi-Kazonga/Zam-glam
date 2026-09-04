@@ -3,9 +3,10 @@ import DashboardCard from '../components/DashboardCard';
 import Sidebar from '../components/Sidebar';
 import Topbar from '../components/Topbar';
 import SellerVerificationQueue from '../components/SellerVerificationQueue';
+import UnclaimedParcels from '../components/UnclaimedParcels';
 import { createAccount, deleteAccount, getAccountStats, getAccounts, updateAccount } from '../utils/accountStore';
 
-const sections = ['Overview', 'Sellers', 'Customers', 'Verification'];
+const sections = ['Overview', 'Sellers', 'Customers', 'Verification', 'Deliveries'];
 const emptyForm = {
   name: '',
   email: '',
@@ -172,7 +173,14 @@ export default function AdminDashboard() {
             </DashboardCard>
           )}
 
-          {active !== 'Verification' && (
+          {active === 'Deliveries' && (
+            <DashboardCard title="Parcels waiting for a courier">
+              <p className="mt-1 text-sm text-slate-500">Released by a shop but not yet collected. Anything unclaimed for an hour is assigned to an on-duty courier automatically.</p>
+              <div className="mt-4"><UnclaimedParcels /></div>
+            </DashboardCard>
+          )}
+
+          {active !== 'Verification' && active !== 'Deliveries' && (
           <DashboardCard title={active === 'Overview' ? 'Recent accounts' : `${active} accounts`} className="overflow-hidden">
             <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
               <div className="flex flex-wrap gap-2">

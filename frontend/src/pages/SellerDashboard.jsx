@@ -7,6 +7,7 @@ import Topbar from '../components/Topbar';
 import { useAuth } from '../context/AuthContext';
 import ProductForm from '../components/ProductForm';
 import VerificationPanel from '../components/VerificationPanel';
+import { formatWaiting, isOverdue } from '../utils/waiting';
 import { useProductEditor } from '../hooks/useProductEditor';
 import { getMyOrders, updateShipmentStatus } from '../api/orderApi';
 import { isLocalDemoSession } from '../utils/localSession';
@@ -269,6 +270,12 @@ export default function SellerDashboard() {
                         {action ? (
                           <button type="button" onClick={() => advanceOrder(order)} className="rounded-lg bg-purple-700 px-3 py-2 text-sm font-semibold text-white hover:bg-purple-800">{action.label}</button>
                         ) : order.status === 'shipped' ? (
+                          <span className={`text-right text-sm font-semibold ${isOverdue(order.releasedAt) ? 'text-rose-600' : 'text-amber-700'}`}>
+                            Waiting for a courier
+                            {order.releasedAt && <span className="block text-xs font-normal">released {formatWaiting(order.releasedAt)} ago</span>}
+                            {isOverdue(order.releasedAt) && <span className="block text-xs font-normal">overdue — being assigned</span>}
+                          </span>
+                        ) : order.status === 'picked_up' ? (
                           <span className="text-right text-sm font-semibold text-amber-700">
                             With courier{order.courier?.driver_name ? ` · ${order.courier.driver_name}` : ''}
                             {order.courier?.driver_phone && (
