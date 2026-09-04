@@ -10,6 +10,17 @@ export const getAllStores = async () => {
   }
 };
 
+// The signed-in seller's own store — use this rather than guessing the storefront path
+// from the shop name.
+export const getMyStore = async () => {
+  try {
+    const response = await apiClient.get('/stores/mine');
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error.message;
+  }
+};
+
 // Get store by ID
 export const getStore = async (id) => {
   try {

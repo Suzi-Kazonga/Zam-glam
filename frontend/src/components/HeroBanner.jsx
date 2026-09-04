@@ -57,12 +57,17 @@ export default function HeroBanner() {
               ? `${formatZmwPrice(slide.price)} · in stock now at ${slide.store}`
               : 'Discover clothing and footwear from registered Zambian stores, delivered to your door.'}
           </p>
-          <Link
-            to={slide ? `/product/${slide.id}` : '/products'}
-            className="mt-8 inline-block rounded-lg bg-indigo-600 px-6 py-3 font-semibold text-white hover:bg-indigo-700"
-          >
-            {slide ? 'Shop this item' : 'Shop Now'}
-          </Link>
+          <div className="mt-8 flex flex-wrap items-center gap-3">
+            {/* Primary route into the full, filterable catalogue across every store. */}
+            <Link to="/products" className="inline-block rounded-lg bg-indigo-600 px-6 py-3 font-semibold text-white hover:bg-indigo-700">
+              Shop Now
+            </Link>
+            {slide && (
+              <Link to={`/product/${slide.id}`} className="inline-block rounded-lg border border-white/60 px-6 py-3 font-semibold text-white hover:bg-white/10">
+                View this item
+              </Link>
+            )}
+          </div>
         </div>
       </div>
       {slides.length > 1 && (

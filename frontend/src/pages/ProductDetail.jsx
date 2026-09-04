@@ -5,12 +5,16 @@ import apiClient from '../api/axios';
 import StarRating from '../components/StarRating';
 import { findShopProduct } from '../utils/shopCatalog';
 import { getSellerRatings, getSellerScore } from '../utils/ratingStore';
+import { useAuth } from '../context/AuthContext';
+import { canShop, NO_SHOPPING_MESSAGE } from '../utils/permissions';
 
 const fallbackImage = '/images/products/mud-shirt.jpg';
 
 export default function ProductDetail() {
   const { id } = useParams();
   const { addToCart } = useCart();
+  const { user } = useAuth();
+  const shopping = canShop(user);
   const [product, setProduct] = useState(() => findShopProduct(id));
   const [image, setImage] = useState('');
   const [size, setSize] = useState('M');
@@ -83,12 +87,18 @@ export default function ProductDetail() {
               <button onClick={() => setColor('Stone')} aria-label="Stone" className="h-8 w-8 rounded-full border-2 border-white bg-stone-300 shadow" />
             </div>
           </div>
-          <label className="mt-6 block text-sm font-semibold text-slate-700">Quantity
-            <input type="number" min="1" value={quantity} onChange={(event) => setQuantity(Math.max(1, Number(event.target.value) || 1))} className="mt-2 w-24 rounded-lg border border-slate-200 px-3 py-2" />
-          </label>
-          <button onClick={handleAdd} disabled={product.stock === 0} className={`mt-10 w-full rounded-lg py-4 text-lg font-bold text-white ${added ? 'bg-emerald-600' : 'bg-indigo-600 hover:bg-indigo-700'} disabled:bg-slate-300`}>
-            {product.stock === 0 ? 'Sold out' : added ? 'Added to cart' : 'Add to cart'}
-          </button>
+          {shopping && (
+            <label className="mt-6 block text-sm font-semibold text-slate-700">Quantity
+              <input type="number" min="1" value={quantity} onChange={(event) => setQuantity(Math.max(1, Number(event.target.value) || 1))} className="mt-2 w-24 rounded-lg border border-slate-200 px-3 py-2" />
+            </label>
+          )}
+          {shopping ? (
+            <button onClick={handleAdd} disabled={product.stock === 0} className={`mt-10 w-full rounded-lg py-4 text-lg font-bold text-white ${added ? 'bg-emerald-600' : 'bg-indigo-600 hover:bg-indigo-700'} disabled:bg-slate-300`}>
+              {product.stock === 0 ? 'Sold out' : added ? 'Added to cart' : 'Add to cart'}
+            </button>
+          ) : (
+            <p className="mt-10 rounded-lg bg-emerald-50 px-4 py-3 text-sm text-emerald-900">{NO_SHOPPING_MESSAGE}</p>
+          )}
           <section className="mt-10 border-t border-slate-200 pt-8">
             <h2 className="text-xl font-bold">Seller reviews</h2>
             {reviews.length ? reviews.slice(0, 4).map((review) => (

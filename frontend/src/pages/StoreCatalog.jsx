@@ -2,8 +2,12 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import ProductCard from '../components/ProductCard';
 import apiClient from '../api/axios';
-import { getStore, getStoreProducts } from '../api/storeApi';
+import { getStore, getStoreProducts, getMyStore } from '../api/storeApi';
 import { getSellerScore } from '../utils/ratingStore';
+import { useAuth } from '../context/AuthContext';
+import ProductForm from '../components/ProductForm';
+import { useProductEditor } from '../hooks/useProductEditor';
+import { isLocalDemoSession } from '../utils/localSession';
 import pepClothes from '../data/pep/clothes.json';
 import pepShoes from '../data/pep/shoes.json';
 import jetsClothes from '../data/jets/clothes.json';
@@ -37,6 +41,23 @@ export default function StoreCatalog() {
   const [products, setProducts] = useState(() => sampleProducts(fallbackCatalog));
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [priceRange, setPriceRange] = useState('all');
+  const { user } = useAuth();
+  const [myStoreId, setMyStoreId] = useState(null);
+  // Ownership comes from the seller's real store id, never from a shop-name match.
+  const isOwner = user?.role === 'seller' && myStoreId != null && String(myStoreId) === String(id);
+
+  const loadStoreProducts = () => {
+    getStoreProducts(id)
+      .then((list) => { if (Array.isArray(list) && list.length) setProducts(list); })
+      .catch(() => {});
+  };
+
+  const editor = useProductEditor({ onSaved: loadStoreProducts });
+
+  useEffect(() => {
+    if (user?.role !== 'seller' || isLocalDemoSession()) return;
+    getMyStore().then((store) => setMyStoreId(store?.id ?? null)).catch(() => setMyStoreId(null));
+  }, [user?.role, user?.email]);
 
   useEffect(() => {
     setActiveStore(id);
@@ -72,6 +93,13 @@ export default function StoreCatalog() {
           {getSellerScore(store.name).count > 0 && (
             <p className="mt-2 text-sm text-amber-600">★ {getSellerScore(store.name).average} average from {getSellerScore(store.name).count} customer rating{getSellerScore(store.name).count === 1 ? '' : 's'}</p>
           )}
+          {isOwner && (
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              <button type="button" onClick={editor.openCreate} className="rounded-lg bg-purple-700 px-4 py-2 font-semibold text-white hover:bg-purple-800">Add product to catalogue</button>
+              <Link to="/seller/dashboard" className="text-sm font-semibold text-purple-700">Manage in dashboard →</Link>
+              <span className="text-xs text-slate-400">You are viewing your own shop</span>
+            </div>
+          )}
         </div>
         <div className="flex flex-wrap gap-2 rounded-lg bg-slate-100 p-1" aria-label="Product category">
           {['All', 'Clothes', 'Shoes'].map((category) => (
@@ -85,9 +113,34 @@ export default function StoreCatalog() {
           </label>
       </div>
       <div className="mt-10 grid gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-        {filteredProducts.map((product) => <ProductCard key={product.id} product={product} />)}
+        {filteredProducts.map((product) => (
+          <div key={product.id}>
+            <ProductCard product={product} />
+            {isOwner && (
+              <button
+                type="button"
+                onClick={() => editor.openEdit(product)}
+                className="mt-2 w-full rounded-lg border border-purple-700 px-4 py-2 text-sm font-semibold text-purple-700 hover:bg-purple-50"
+              >
+                Edit details
+              </button>
+            )}
+          </div>
+        ))}
         {!filteredProducts.length && <p className="col-span-full py-16 text-center text-slate-500">No products match this category.</p>}
       </div>
+
+      {editor.showForm && (
+        <ProductForm
+          form={editor.form}
+          setForm={editor.setForm}
+          message={editor.message}
+          saving={editor.saving}
+          onClose={editor.close}
+          onImages={editor.handleImages}
+          onSubmit={editor.submit}
+        />
+      )}
     </main>
   );
 }

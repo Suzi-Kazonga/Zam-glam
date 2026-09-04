@@ -1,11 +1,33 @@
 import Store from '../models/Store.js';
 import Document from '../models/Document.js';
+import { resolveSellerId } from '../utils/accounts.js';
+
+// The signed-in seller's own store. The frontend needs the real store id to know which
+// storefront belongs to them — guessing it from the shop name sends new sellers to
+// someone else's shop.
+export const getMyStore = async (req, res) => {
+  try {
+    const sellerId = await resolveSellerId(req.user.id);
+    if (!sellerId) return res.status(404).json({ error: 'Seller profile not found' });
+
+    const store = await Store.findBySellerId(sellerId);
+    if (!store) return res.status(404).json({ error: 'This seller has no store yet' });
+
+    res.json(store);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
 
 // Create store
 export const createStore = async (req, res) => {
   try {
     const { name, description, logo_url, location, open_hours } = req.body;
-    const seller_id = req.user.id;
+    const seller_id = await resolveSellerId(req.user.id);
+
+    if (!seller_id) {
+      return res.status(404).json({ error: 'Seller profile not found' });
+    }
 
     if (!name) {
       return res.status(400).json({ error: 'Store name is required' });
@@ -82,7 +104,8 @@ export const updateStore = async (req, res) => {
       return res.status(404).json({ error: 'Store not found' });
     }
 
-    if (store.seller_id !== req.user.id) {
+    const sellerId = await resolveSellerId(req.user.id);
+    if (!sellerId || store.seller_id !== sellerId) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 

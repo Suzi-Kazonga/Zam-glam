@@ -3,9 +3,14 @@ import { Link } from 'react-router-dom';
 import HeroBanner from '../components/HeroBanner';
 import StoreCard from '../components/StoreCard';
 import FeaturedDeals from '../components/FeaturedDeals';
-import { getAllStores } from '../api/storeApi';
-import { withStoreLogos, getStoreLogo, getStorefrontPath } from '../utils/storeLogos';
+import { getAllStores, getMyStore } from '../api/storeApi';
+import { getSellerProducts } from '../api/productApi';
+import { withStoreLogos, getStoreLogo } from '../utils/storeLogos';
 import { useAuth } from '../context/AuthContext';
+import ProductForm from '../components/ProductForm';
+import { useProductEditor } from '../hooks/useProductEditor';
+import { isLocalDemoSession } from '../utils/localSession';
+import { formatZmwPrice } from '../utils/currency';
 
 const fallbackStores = withStoreLogos([
   { id: 1, name: 'Mud' },
@@ -18,7 +23,60 @@ const fallbackStores = withStoreLogos([
 
 // A seller lands on their own shop, not on a marketplace ad rotating other people's
 // products — their store logo takes the place of the carousel.
-function SellerStoreBanner({ shopName }) {
+// A seller's own catalogue, shown on their home page so they can fix a listing without
+// first going to the dashboard. Preview only — the dashboard remains the full manager.
+const HOME_PREVIEW_LIMIT = 8;
+
+function SellerProducts({ products, onAdd, onEdit, storefront }) {
+  return (
+    <section className="mb-16">
+      <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <p className="text-sm font-semibold uppercase tracking-widest text-purple-700">Your catalogue</p>
+          <h2 className="mt-2 text-3xl font-bold text-slate-900">Your products</h2>
+          <p className="mt-1 text-slate-500">Only your shop's items appear here.</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <button type="button" onClick={onAdd} className="rounded-lg bg-purple-700 px-4 py-2 font-semibold text-white hover:bg-purple-800">Add product</button>
+          <Link to="/seller/dashboard" className="rounded-lg border border-slate-300 px-4 py-2 font-semibold text-slate-700 hover:border-purple-700 hover:text-purple-700">Manage all products →</Link>
+        </div>
+      </div>
+
+      {products.length ? (
+        <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+          {products.slice(0, HOME_PREVIEW_LIMIT).map((product) => (
+            <article key={product.id} className="overflow-hidden rounded-lg bg-white shadow-md">
+              <img src={product.image_url || product.images?.[0] || '/images/products/mud-denim.jpg'} alt={product.name} className="h-52 w-full object-cover" />
+              <div className="p-4">
+                <h3 className="truncate font-semibold text-slate-900">{product.name}</h3>
+                <p className="mt-1 text-lg font-bold text-purple-800">{formatZmwPrice(product.price)}</p>
+                <p className="mt-1 text-xs text-slate-500">
+                  {Number(product.stock) === 0 ? <span className="text-rose-600">Sold out</span> : `${product.stock} in stock`}
+                </p>
+                <button type="button" onClick={() => onEdit(product)} className="mt-3 w-full rounded-lg border border-purple-700 px-4 py-2 text-sm font-semibold text-purple-700 hover:bg-purple-50">
+                  Edit details
+                </button>
+              </div>
+            </article>
+          ))}
+        </div>
+      ) : (
+        <div className="rounded-lg border border-dashed border-slate-300 p-10 text-center">
+          <p className="text-slate-500">You have not listed anything yet.</p>
+          <button type="button" onClick={onAdd} className="mt-4 rounded-lg bg-purple-700 px-5 py-2 font-semibold text-white hover:bg-purple-800">List your first product</button>
+        </div>
+      )}
+
+      {products.length > HOME_PREVIEW_LIMIT && (
+        <p className="mt-4 text-sm text-slate-500">
+          Showing {HOME_PREVIEW_LIMIT} of {products.length}. <Link to={storefront} className="font-semibold text-purple-700">See them all on your shop page →</Link>
+        </p>
+      )}
+    </section>
+  );
+}
+
+function SellerStoreBanner({ shopName, storefront }) {
   const logo = getStoreLogo(shopName);
   return (
     <section className="relative min-h-[340px] overflow-hidden bg-slate-900">
@@ -41,7 +99,7 @@ function SellerStoreBanner({ shopName }) {
           <h1 className="mt-2 text-4xl font-bold text-white drop-shadow sm:text-5xl">{shopName}</h1>
           <div className="mt-5 flex flex-wrap justify-center gap-3 sm:justify-start">
             <Link to="/seller/dashboard" className="rounded-lg bg-purple-700 px-5 py-2 font-semibold text-white hover:bg-purple-800">Open dashboard</Link>
-            <Link to={getStorefrontPath(shopName)} className="rounded-lg border border-white/60 px-5 py-2 font-semibold text-white hover:bg-white/10">View my shop</Link>
+            <Link to={storefront} className="rounded-lg border border-white/60 px-5 py-2 font-semibold text-white hover:bg-white/10">View my shop</Link>
           </div>
         </div>
       </div>
@@ -54,6 +112,14 @@ export default function Home() {
   const isSeller = user?.role === 'seller';
   const shopName = user?.shop_name || user?.name || 'My Shop';
   const [stores, setStores] = useState(fallbackStores);
+  const [myProducts, setMyProducts] = useState([]);
+  const [storefront, setStorefront] = useState('/products');
+
+  const loadMyProducts = () => {
+    getSellerProducts().then((list) => setMyProducts(Array.isArray(list) ? list : [])).catch(() => setMyProducts([]));
+  };
+
+  const editor = useProductEditor({ onSaved: loadMyProducts });
 
   useEffect(() => {
     if (isSeller) return;
@@ -66,10 +132,36 @@ export default function Home() {
       .catch(() => setStores(fallbackStores));
   }, [isSeller]);
 
+  useEffect(() => {
+    if (!isSeller || isLocalDemoSession()) return;
+    loadMyProducts();
+    getMyStore().then((store) => { if (store?.id) setStorefront(`/stores/${store.id}`); }).catch(() => {});
+  }, [isSeller, user?.email]);
+
   return (
     <>
-      {isSeller ? <SellerStoreBanner shopName={shopName} /> : <HeroBanner />}
+      {isSeller ? <SellerStoreBanner shopName={shopName} storefront={storefront} /> : <HeroBanner />}
+      {editor.showForm && (
+        <ProductForm
+          form={editor.form}
+          setForm={editor.setForm}
+          message={editor.message}
+          saving={editor.saving}
+          onClose={editor.close}
+          onImages={editor.handleImages}
+          onSubmit={editor.submit}
+        />
+      )}
       <main className="mx-auto max-w-7xl px-4 py-12">
+        {isSeller && (
+          <SellerProducts
+            products={myProducts}
+            onAdd={editor.openCreate}
+            onEdit={editor.openEdit}
+            storefront={storefront}
+          />
+        )}
+
         {/* Quick Navigation */}
         <section className="mb-16">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

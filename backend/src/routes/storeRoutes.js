@@ -7,6 +7,8 @@ const router = express.Router();
 
 // Public routes
 router.get('/', storeController.getAllStores);
+// Must precede '/:id', or Express matches "mine" as a store id.
+router.get('/mine', authMiddleware, roleMiddleware('seller'), storeController.getMyStore);
 router.get('/:id', storeController.getStore);
 router.get('/:id/products', storeController.getStoreProducts);
 

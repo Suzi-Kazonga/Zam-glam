@@ -1,4 +1,5 @@
 import { pool } from '../config/db.js';
+import Product from './Product.js';
 
 class Store {
   // Create a new store
@@ -39,24 +40,15 @@ class Store {
     return rows;
   }
 
-  // Get products for a store with filters
+  // Get products for a store with filters. Delegates to Product so storefront products
+  // carry store/category names and have their JSON columns parsed — MariaDB returns those
+  // as raw strings, which would leave images as a string rather than an array.
   static async getProducts(store_id, filters = {}) {
-    let query = `SELECT p.*, c.name AS category_name
-      FROM products p JOIN categories c ON c.id = p.category_id WHERE p.store_id = ?`;
-    const values = [store_id];
-
-    if (filters.audience) {
-      query += ' AND audience = ?';
-      values.push(filters.audience);
-    }
-
-    if (filters.category) {
-      query += ' AND p.category_id = ?';
-      values.push(filters.category);
-    }
-
-    const [rows] = await pool.query(query, values);
-    return rows;
+    return Product.getFiltered({
+      store_id,
+      audience: filters.audience,
+      category_id: filters.category,
+    });
   }
 
   // Update store

@@ -5,72 +5,21 @@ import Sidebar from '../components/Sidebar';
 import StarRating from '../components/StarRating';
 import Topbar from '../components/Topbar';
 import { useAuth } from '../context/AuthContext';
-import { filesToDataUrls } from '../utils/image';
+import ProductForm from '../components/ProductForm';
+import { useProductEditor } from '../hooks/useProductEditor';
 import { getMyOrders, updateShipmentStatus } from '../api/orderApi';
 import { isLocalDemoSession } from '../utils/localSession';
 import { getSellerRatings, getSellerScore, replyToRating } from '../utils/ratingStore';
-import { getStorefrontPath } from '../utils/storeLogos';
-import { createProduct, deleteProduct, getSellerProducts, updateProduct } from '../api/productApi';
+import { deleteProduct, getSellerProducts } from '../api/productApi';
+import { getMyStore } from '../api/storeApi';
 
 const sections = ['Overview', 'Products', 'Orders', 'Reviews', 'Analytics'];
-const emptyForm = { id: '', name: '', description: '', price: '', stock: '', category: 'clothes', image_url: '', imageFiles: [], previews: [] };
 // A seller hands the parcel over and stops there — only the assigned courier can
 // declare it delivered, so there is deliberately no 'shipped' action here.
 const nextAction = {
   placed: { status: 'processing', label: 'Start packing' },
   processing: { status: 'shipped', label: 'Hand to courier' },
 };
-
-function ProductForm({ form, setForm, message, onClose, onImages, onSubmit }) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4">
-      <form onSubmit={onSubmit} className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl bg-white p-6 shadow-xl">
-        <h2 className="text-xl font-bold text-slate-900">{form.id ? 'Edit product' : 'Add product'}</h2>
-        <p className="mt-1 text-sm text-slate-500">Customers will see this on your storefront.</p>
-        <div className="mt-5 space-y-3">
-          <label className="block text-sm font-medium text-slate-600">Product name
-            <input required value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} className="mt-1 w-full rounded-lg border border-slate-200 px-4 py-2 outline-none focus:ring-2 focus:ring-purple-300" />
-          </label>
-          <label className="block text-sm font-medium text-slate-600">Description
-            <input value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} className="mt-1 w-full rounded-lg border border-slate-200 px-4 py-2 outline-none focus:ring-2 focus:ring-purple-300" />
-          </label>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <label className="block text-sm font-medium text-slate-600">Price (ZMW)
-              <input required type="number" value={form.price} onChange={(event) => setForm({ ...form, price: event.target.value })} className="mt-1 w-full rounded-lg border border-slate-200 px-4 py-2 outline-none focus:ring-2 focus:ring-purple-300" />
-            </label>
-            <label className="block text-sm font-medium text-slate-600">Stock
-              <input required type="number" value={form.stock} onChange={(event) => setForm({ ...form, stock: event.target.value })} className="mt-1 w-full rounded-lg border border-slate-200 px-4 py-2 outline-none focus:ring-2 focus:ring-purple-300" />
-            </label>
-          </div>
-          <label className="block text-sm font-medium text-slate-600">Category
-            <select value={form.category} onChange={(event) => setForm({ ...form, category: event.target.value })} className="mt-1 w-full rounded-lg border border-slate-200 px-4 py-2 outline-none focus:ring-2 focus:ring-purple-300">
-              <option value="clothes">Clothes</option>
-              <option value="shoes">Shoes</option>
-            </select>
-          </label>
-          <label className="block rounded-lg border border-dashed border-slate-300 p-3 text-sm text-slate-500">
-            {form.id ? 'Replace product images (optional)' : 'Upload product images (required)'}
-            <input type="file" accept="image/*" multiple onChange={(event) => onImages(event.target.files)} className="mt-2 w-full text-xs" />
-            <span className="mt-1 block text-xs text-slate-400">Up to 6 photos, max 5MB each. The first is used as the main image.</span>
-          </label>
-          {form.previews.length > 0 && (
-            <div>
-              <p className="mb-1 text-xs font-semibold text-slate-500">{form.imageFiles.length ? 'New photos' : 'Current photos'}</p>
-              <div className="flex flex-wrap gap-2">
-                {form.previews.map((src) => <img key={src} src={src} alt="" className="h-20 w-16 rounded object-cover" />)}
-              </div>
-            </div>
-          )}
-          {message && <p className="text-sm text-purple-800">{message}</p>}
-        </div>
-        <div className="mt-6 flex justify-end gap-3">
-          <button type="button" onClick={onClose} className="rounded-lg border border-slate-300 px-4 py-2 font-semibold text-slate-700">Cancel</button>
-          <button className="rounded-lg bg-purple-700 px-4 py-2 font-semibold text-white hover:bg-purple-800">Save product</button>
-        </div>
-      </form>
-    </div>
-  );
-}
 
 export default function SellerDashboard() {
   const { user } = useAuth();
@@ -80,14 +29,12 @@ export default function SellerDashboard() {
   const [orders, setOrders] = useState([]);
   const [reviews, setReviews] = useState([]);
   const [message, setMessage] = useState('');
-  const [form, setForm] = useState(emptyForm);
-  const [showForm, setShowForm] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [savedProduct, setSavedProduct] = useState(null);
   const [orderFilter, setOrderFilter] = useState('action');
   const [replyDrafts, setReplyDrafts] = useState({});
+  const [storefront, setStorefront] = useState('/products');
   const sellerName = user?.shop_name || user?.name || 'My Shop';
-  const storefront = getStorefrontPath(sellerName);
   const score = getSellerScore(sellerName);
 
   const loadOrders = () => {
@@ -100,6 +47,13 @@ export default function SellerDashboard() {
       .then((remote) => setProducts(Array.isArray(remote) ? remote : []))
       .catch(() => setMessage('Could not load your products.'));
   };
+
+  const editor = useProductEditor({
+    onSaved: (note) => {
+      setMessage(note);
+      loadProducts();
+    },
+  });
 
   const loadData = () => {
     loadProducts();
@@ -116,6 +70,13 @@ export default function SellerDashboard() {
     return () => window.clearInterval(poll);
   }, [user?.email, sellerName]);
 
+  // The storefront path comes from the seller's real store id — matching on shop name
+  // sends anyone outside the six seeded shops to the wrong storefront.
+  useEffect(() => {
+    if (isLocalDemoSession()) return;
+    getMyStore().then((store) => { if (store?.id) setStorefront(`/stores/${store.id}`); }).catch(() => {});
+  }, [user?.email]);
+
   const filteredProducts = useMemo(
     () => products.filter((product) => `${product.name} ${product.description || ''}`.toLowerCase().includes(query.toLowerCase())),
     [products, query],
@@ -131,44 +92,6 @@ export default function SellerDashboard() {
     processing: orders.filter((order) => order.status === 'processing').length,
     shipped: orders.filter((order) => order.status === 'shipped').length,
     delivered: orders.filter((order) => order.status === 'delivered').length,
-  };
-
-  const handleImages = async (files) => {
-    const previews = await filesToDataUrls(files);
-    setForm((current) => ({ ...current, imageFiles: Array.from(files), previews, image_url: previews[0] || current.image_url }));
-  };
-
-  const submitProduct = async (event) => {
-    event.preventDefault();
-    setMessage('');
-    const isEdit = Boolean(form.id);
-
-    // New listings must carry photos. When editing, keeping the existing ones is fine.
-    if (!isEdit && !form.imageFiles.length) {
-      setMessage('Add at least one product image.');
-      return;
-    }
-    const payload = {
-      name: form.name,
-      description: form.description,
-      price: Number(form.price),
-      stock: Number(form.stock),
-      category: form.category,
-      imageFiles: form.imageFiles,
-    };
-    // Saved straight to the backend: a product that only existed in this browser could be
-    // browsed but never ordered, because checkout looks products up server-side.
-    try {
-      if (isEdit) await updateProduct(form.id, payload);
-      else await createProduct(payload);
-      setSavedProduct(payload);
-      setForm(emptyForm);
-      setShowForm(false);
-      setMessage(isEdit ? 'Product updated.' : 'Product listed on your storefront.');
-      loadProducts();
-    } catch (error) {
-      setMessage(error?.error || error?.message || 'Could not save that product. Please try again.');
-    }
   };
 
   const removeProduct = async () => {
@@ -263,7 +186,7 @@ export default function SellerDashboard() {
           {active === 'Products' && (
             <DashboardCard title="Your listings" className="overflow-hidden">
               <div className="mt-4 flex justify-end">
-                <button type="button" onClick={() => { setForm(emptyForm); setShowForm(true); setMessage(''); }} className="rounded-lg bg-purple-700 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-800">Add product</button>
+                <button type="button" onClick={editor.openCreate} className="rounded-lg bg-purple-700 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-800">Add product</button>
               </div>
               {savedProduct && (
                 <div className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 p-4">
@@ -299,7 +222,7 @@ export default function SellerDashboard() {
                         <td>{product.stock}</td>
                         <td>{Number(product.stock) === 0 ? <span className="text-rose-600">Sold out</span> : Number(product.stock) < 5 ? <span className="text-amber-600">Low stock</span> : <span className="text-emerald-600">In stock</span>}</td>
                         <td className="text-right">
-                          <button type="button" onClick={() => { setForm({ id: product.id, name: product.name, description: product.description || '', price: product.price, stock: product.stock, category: product.category || 'clothes', image_url: product.image_url || '', imageFiles: [], previews: Array.isArray(product.images) && product.images.length ? product.images : (product.image_url ? [product.image_url] : []) }); setShowForm(true); }} className="mr-2 font-semibold text-purple-700">Edit</button>
+                          <button type="button" onClick={() => editor.openEdit(product)} className="mr-2 font-semibold text-purple-700">Edit</button>
                           <button type="button" onClick={() => setConfirmDelete(product)} className="font-semibold text-rose-600">Delete</button>
                         </td>
                       </tr>
@@ -389,7 +312,17 @@ export default function SellerDashboard() {
         </main>
       </div>
 
-      {showForm && <ProductForm form={form} setForm={setForm} message={message} onClose={() => setShowForm(false)} onImages={handleImages} onSubmit={submitProduct} />}
+      {editor.showForm && (
+        <ProductForm
+          form={editor.form}
+          setForm={editor.setForm}
+          message={editor.message}
+          saving={editor.saving}
+          onClose={editor.close}
+          onImages={editor.handleImages}
+          onSubmit={editor.submit}
+        />
+      )}
 
       {confirmDelete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4">
