@@ -56,3 +56,7 @@ uploads/*
 *.tmp
 *.temp
 .turbo/
+
+# Uploaded seller documents and product images are user data, not source
+backend/uploads/*
+!backend/uploads/.gitkeep
