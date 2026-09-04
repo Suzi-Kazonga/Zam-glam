@@ -11,6 +11,9 @@ router.get('/:id', authMiddleware, orderController.getOrder);
 router.post('/', authMiddleware, orderController.createOrder);
 router.patch('/:id/status', authMiddleware, orderController.updateOrderStatus);
 // Per-store parcel within an order (multi-vendor orders ship as one parcel per store).
+// The open pool must be declared before '/shipments/:id/...' so "available" is not an id.
+router.get('/shipments/available', authMiddleware, orderController.getAvailableParcels);
+router.patch('/shipments/:id/pickup', authMiddleware, orderController.pickUpParcel);
 router.patch('/shipments/:id/status', authMiddleware, orderController.updateShipmentStatus);
 
 export default router;

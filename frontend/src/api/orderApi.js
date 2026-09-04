@@ -132,6 +132,18 @@ export async function updateOrderStatus(id, status) {
   return data;
 }
 
+// Parcels released by shops that no courier has claimed — every courier sees these.
+export async function getAvailableParcels() {
+  const { data } = await apiClient.get('/orders/shipments/available');
+  return Array.isArray(data) ? data.map(adaptOrder) : [];
+}
+
+// Claim a parcel by collecting it; this is when the courier's details become visible.
+export async function pickUpParcel(shipmentId) {
+  const { data } = await apiClient.patch(`/orders/shipments/${shipmentId}/pickup`);
+  return data;
+}
+
 // Move a single store's parcel within an order, leaving the other stores' parcels alone.
 export async function updateShipmentStatus(shipmentId, status) {
   const { data } = await apiClient.patch(`/orders/shipments/${shipmentId}/status`, { status });

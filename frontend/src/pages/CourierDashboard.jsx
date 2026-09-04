@@ -4,25 +4,26 @@ import DashboardCard from '../components/DashboardCard';
 import Sidebar from '../components/Sidebar';
 import Topbar from '../components/Topbar';
 import { useAuth } from '../context/AuthContext';
-import { getMyOrders, updateShipmentStatus } from '../api/orderApi';
+import { getAvailableParcels, getMyOrders, pickUpParcel, updateShipmentStatus } from '../api/orderApi';
 import { formatZmwPrice } from '../utils/currency';
 
-const sections = ['Deliveries', 'Completed', 'Stores'];
+const sections = ['Available', 'Deliveries', 'Completed', 'Stores'];
 
-// A parcel only enters the active queue once the shop has handed it over ('shipped').
-const isReadyToDeliver = (order) => order.status === 'shipped';
-const isAwaitingShop = (order) => order.status === 'placed' || order.status === 'processing';
+// Once a courier has collected a parcel it is theirs to deliver.
+const isOutForDelivery = (order) => order.status === 'picked_up';
 
 export default function CourierDashboard() {
   const { user } = useAuth();
-  const [active, setActive] = useState('Deliveries');
+  const [active, setActive] = useState('Available');
   const [query, setQuery] = useState('');
   const [orders, setOrders] = useState([]);
+  const [available, setAvailable] = useState([]);
   const [message, setMessage] = useState('');
   const [busyId, setBusyId] = useState(null);
 
   const load = () => {
     getMyOrders().then(setOrders).catch(() => setMessage('Could not load your parcels.'));
+    getAvailableParcels().then(setAvailable).catch(() => {});
   };
 
   useEffect(() => {
@@ -35,8 +36,8 @@ export default function CourierDashboard() {
     .toLowerCase()
     .includes(query.toLowerCase());
 
-  const readyParcels = useMemo(() => orders.filter((o) => isReadyToDeliver(o) && matchesQuery(o)), [orders, query]);
-  const upcomingParcels = useMemo(() => orders.filter((o) => isAwaitingShop(o) && matchesQuery(o)), [orders, query]);
+  const availableParcels = useMemo(() => available.filter(matchesQuery), [available, query]);
+  const myDeliveries = useMemo(() => orders.filter((o) => isOutForDelivery(o) && matchesQuery(o)), [orders, query]);
   const deliveredParcels = useMemo(() => orders.filter((o) => o.status === 'delivered' && matchesQuery(o)), [orders, query]);
 
   // Which shops this courier collects from most, counted from their own parcels — a
@@ -55,6 +56,23 @@ export default function CourierDashboard() {
   const busiestCount = storeVisits[0]?.pickups || 1;
 
   if (user && user.role !== 'courier') return <Navigate to="/" replace />;
+
+  const pickUp = async (order) => {
+    setBusyId(order.shipmentId);
+    setMessage('');
+    try {
+      await pickUpParcel(order.shipmentId);
+      setMessage(`You picked up the parcel from ${order.storeName || 'the shop'}. The customer can now see your details.`);
+      load();
+      setActive('Deliveries');
+    } catch (error) {
+      // Another courier may have taken it a moment earlier.
+      setMessage(error.response?.data?.error || 'Could not pick up that parcel.');
+      load();
+    } finally {
+      setBusyId(null);
+    }
+  };
 
   const markDelivered = async (order) => {
     setBusyId(order.shipmentId);
@@ -111,40 +129,59 @@ export default function CourierDashboard() {
           {message && <p className="rounded-lg bg-emerald-50 px-4 py-3 text-sm text-emerald-900">{message}</p>}
 
           <div className="grid gap-4 sm:grid-cols-3">
-            <DashboardCard title="Ready to deliver" value={readyParcels.length} detail="Collected from the shop" />
-            <DashboardCard title="Awaiting the shop" value={upcomingParcels.length} detail="Not handed over yet" />
+            <DashboardCard title="Available to pick up" value={availableParcels.length} detail="Released by shops, unclaimed" />
+            <DashboardCard title="Out for delivery" value={myDeliveries.length} detail="You collected these" />
             <DashboardCard title="Delivered" value={deliveredParcels.length} detail="Completed by you" />
           </div>
 
-          {active === 'Deliveries' && (
-            <div className="space-y-6">
-              <section className="space-y-3">
-                <h2 className="text-xl font-bold text-slate-900">Ready to deliver</h2>
-                {readyParcels.length ? readyParcels.map((order) => (
-                  <ParcelCard
-                    key={order.shipmentId}
-                    order={order}
-                    action={(
-                      <button
-                        type="button"
-                        disabled={busyId === order.shipmentId}
-                        onClick={() => markDelivered(order)}
-                        className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
-                      >
-                        {busyId === order.shipmentId ? 'Saving…' : 'Mark delivered'}
-                      </button>
-                    )}
-                  />
-                )) : <p className="rounded-lg border border-dashed border-slate-300 p-6 text-center text-slate-500">No parcels are ready for delivery right now.</p>}
-              </section>
+          {active === 'Available' && (
+            <section className="space-y-3">
+              <div>
+                <h2 className="text-xl font-bold text-slate-900">Parcels waiting for a courier</h2>
+                <p className="mt-1 text-slate-500">Any courier can take these. Once you pick one up it is yours to deliver, and the customer sees your details.</p>
+              </div>
+              {availableParcels.length ? availableParcels.map((order) => (
+                <ParcelCard
+                  key={order.shipmentId}
+                  order={order}
+                  action={(
+                    <button
+                      type="button"
+                      disabled={busyId === order.shipmentId}
+                      onClick={() => pickUp(order)}
+                      className="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-60"
+                    >
+                      {busyId === order.shipmentId ? 'Picking up…' : 'Pick up'}
+                    </button>
+                  )}
+                />
+              )) : <p className="rounded-lg border border-dashed border-slate-300 p-6 text-center text-slate-500">No parcels are waiting for pickup right now.</p>}
+            </section>
+          )}
 
-              <section className="space-y-3">
-                <h2 className="text-xl font-bold text-slate-900">Awaiting the shop</h2>
-                {upcomingParcels.length ? upcomingParcels.map((order) => (
-                  <ParcelCard key={order.shipmentId} order={order} action={<span className="text-xs text-slate-400">Waiting for hand-over</span>} />
-                )) : <p className="rounded-lg border border-dashed border-slate-300 p-6 text-center text-slate-500">Nothing waiting on a shop.</p>}
-              </section>
-            </div>
+          {active === 'Deliveries' && (
+            <section className="space-y-3">
+              <div>
+                <h2 className="text-xl font-bold text-slate-900">Out for delivery</h2>
+                <p className="mt-1 text-slate-500">Parcels you picked up. Only you can mark these delivered.</p>
+              </div>
+              {myDeliveries.length ? myDeliveries.map((order) => (
+                <ParcelCard
+                  key={order.shipmentId}
+                  order={order}
+                  action={(
+                    <button
+                      type="button"
+                      disabled={busyId === order.shipmentId}
+                      onClick={() => markDelivered(order)}
+                      className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
+                    >
+                      {busyId === order.shipmentId ? 'Saving…' : 'Mark delivered'}
+                    </button>
+                  )}
+                />
+              )) : <p className="rounded-lg border border-dashed border-slate-300 p-6 text-center text-slate-500">You have not picked up any parcels yet.</p>}
+            </section>
           )}
 
           {active === 'Stores' && (

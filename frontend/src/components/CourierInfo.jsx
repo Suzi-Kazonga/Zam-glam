@@ -12,7 +12,7 @@ export default function CourierInfo({ delivery }) {
         <p><span className="font-semibold">Provider:</span> {delivery.provider || 'Zamglam Courier'}</p>
         {delivery.contact_available === false ? (
           <p className="rounded bg-white px-3 py-2 text-xs text-slate-500">
-            A courier is assigned. Their name and phone number appear here once they collect the parcel from the shop.
+            No courier has collected this parcel yet. Whoever picks it up is shown here, with their phone number.
           </p>
         ) : (
           <>

@@ -95,6 +95,28 @@ export const getOrder = async (req, res) => {
   }
 };
 
+// Parcels a shop has released that no courier has claimed yet — visible to every courier.
+export const getAvailableParcels = async (req, res) => {
+  try {
+    const parcels = await Order.findAvailableForPickup();
+    res.json(parcels);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// A courier claims a parcel by collecting it. This is the moment their details become
+// visible to the customer and the shop.
+export const pickUpParcel = async (req, res) => {
+  try {
+    if (req.user.role !== 'courier') return res.status(403).json({ error: 'Only couriers can pick up parcels' });
+    const result = await Order.claimShipment(req.params.id, req.user.id);
+    res.json({ message: 'Parcel picked up', ...result });
+  } catch (error) {
+    res.status(error.status || 500).json({ error: error.message });
+  }
+};
+
 // Update ONE parcel (shipment) within an order. Each store's parcel moves independently,
 // so one shop packing or handing over never changes another shop's parcel. Delivery stays
 // the courier's call alone.
@@ -110,7 +132,14 @@ export const updateShipmentStatus = async (req, res) => {
     if (status === 'delivered') {
       const isAssignedCourier = req.user.role === 'courier' && await Order.courierOwnsShipment(id, req.user.id);
       if (!isAdmin && !isAssignedCourier) {
-        return res.status(403).json({ error: 'Only the assigned courier can mark a parcel delivered' });
+        return res.status(403).json({ error: 'Only the courier who picked up this parcel can mark it delivered' });
+      }
+      // Delivery only follows a real pickup — nothing can jump straight from the shop's
+      // shelf to delivered.
+      const shipment = await Order.findShipmentById(id);
+      if (!shipment) return res.status(404).json({ error: 'Parcel not found' });
+      if (shipment.status !== 'picked_up') {
+        return res.status(409).json({ error: 'This parcel has not been picked up yet' });
       }
     } else {
       const isOwningSeller = req.user.role === 'seller' && await Order.sellerOwnsShipment(id, req.user.id);

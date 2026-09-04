@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { getMyOrders } from '../api/orderApi';
+import { getAvailableParcels } from '../api/orderApi';
 import { isLocalDemoSession } from '../utils/localSession';
 
-// Courier equivalent of the cart badge: shows how many parcels are waiting to be
-// delivered right now (the shop has handed them over) so a driver notices new work
-// without sitting on the dashboard.
+// Courier equivalent of the cart badge: how many parcels shops have released that no
+// courier has claimed yet, so a driver notices new work without sitting on the dashboard.
 export default function DeliveryIcon() {
   const [count, setCount] = useState(0);
 
@@ -14,10 +13,10 @@ export default function DeliveryIcon() {
 
     let cancelled = false;
     const check = () => {
-      getMyOrders()
+      getAvailableParcels()
         .then((parcels) => {
           if (cancelled) return;
-          setCount(parcels.filter((parcel) => parcel.status === 'shipped').length);
+          setCount(parcels.length);
         })
         .catch(() => {});
     };
@@ -33,8 +32,8 @@ export default function DeliveryIcon() {
   return (
     <Link
       to="/courier/dashboard"
-      aria-label={`${count} parcel${count === 1 ? '' : 's'} ready to deliver`}
-      title={count ? `${count} parcel${count === 1 ? '' : 's'} ready to deliver` : 'No parcels waiting'}
+      aria-label={`${count} parcel${count === 1 ? '' : 's'} available to pick up`}
+      title={count ? `${count} parcel${count === 1 ? '' : 's'} available to pick up` : 'No parcels waiting for pickup'}
       className="relative inline-flex h-10 w-10 items-center justify-center rounded-lg text-xl hover:bg-white/10"
     >
       📦

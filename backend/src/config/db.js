@@ -281,6 +281,24 @@ export async function initializeDatabase() {
   // Orders placed before delivery was billed were charged for items only. Record that
   // honestly rather than leaving items_total at 0 and showing a broken receipt.
   await pool.query('UPDATE orders SET items_total = total_price WHERE items_total = 0 AND total_price > 0');
+
+  // No courier exists until someone picks the parcel up, so the driver columns must accept
+  // NULL — they were written NOT NULL back when a courier was assigned at checkout.
+  for (const column of ['driver_name', 'price']) {
+    const info = await columnInfo('courier', column);
+    if (info && info.IS_NULLABLE === 'NO') {
+      await pool.query(`ALTER TABLE courier MODIFY COLUMN ${column} ${info.COLUMN_TYPE} NULL`);
+    }
+  }
+
+  // Couriers used to be assigned at checkout; parcels are now claimed on pickup. A legacy
+  // parcel that is 'shipped' and already has a courier was, in the new model, picked up.
+  await pool.query("UPDATE shipments SET status = 'picked_up' WHERE status = 'shipped' AND courier_id IS NOT NULL");
+  await pool.query(`
+    UPDATE orders o SET o.status = 'picked_up'
+    WHERE o.status = 'shipped'
+      AND NOT EXISTS (SELECT 1 FROM shipments s WHERE s.order_id = o.id AND s.status <> 'picked_up' AND s.status <> 'delivered')
+  `);
   await addColumnIfMissing('orders', 'address', 'VARCHAR(255)');
   await addColumnIfMissing('orders', 'location', 'VARCHAR(150)');
   await addColumnIfMissing('orders', 'phone', 'VARCHAR(30)');

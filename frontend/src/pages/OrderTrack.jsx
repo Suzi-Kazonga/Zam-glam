@@ -123,8 +123,8 @@ export default function OrderTrack() {
           {order.status !== 'delivered' && (
             <p className="mt-5 rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-500">
               {order.courier?.driver_name
-                ? `${order.courier.driver_name} will confirm the delivery once the parcel reaches you.`
-                : 'Your courier will confirm the delivery once the parcel reaches you.'}
+                ? `${order.courier.driver_name} collected your parcel and will confirm the delivery.`
+                : 'Once a courier collects your parcel, their name and number appear here.'}
             </p>
           )}
           {order.status === 'delivered' && (

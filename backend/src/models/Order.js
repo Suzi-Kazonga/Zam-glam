@@ -2,7 +2,10 @@ import { pool } from '../config/db.js';
 import { hasColumn, resolveCustomerId, resolveSellerId, resolveCourierId } from '../utils/accounts.js';
 
 const DRIVERS =['Mwansa Phiri', 'Joseph Banda', 'Thandiwe Zulu', 'Natasha Mulenga'];
-const TRACK_ORDER = ['placed', 'processing', 'shipped', 'delivered'];
+// 'shipped' means the shop has released the parcel — it is then open to every courier.
+// 'picked_up' means one courier has claimed and collected it; only that courier can
+// deliver it, and only their details are shown to the customer and the shop.
+const TRACK_ORDER = ['placed', 'processing', 'shipped', 'picked_up', 'delivered'];
 const PAYMENT_METHOD_MAP = {
   'Airtel Money': 'airtel_money',
   airtel_money: 'airtel_money',
@@ -195,41 +198,25 @@ class Order {
 
       // One parcel per store: each store packs and hands over independently, and each parcel
       // gets its own courier, because the goods start in different physical shops.
-      let firstCourier = null;
+      // No courier is assigned here. A parcel is offered to every courier once the shop
+      // releases it, and whoever picks it up claims it — so courier_id stays null until
+      // then, and with it the driver's details.
       for (const parcel of parcels) {
-        const courierAccount = await pickCourierAccount(connection);
-        if (!firstCourier) firstCourier = { parcel, courierAccount };
         await connection.query(
           `INSERT INTO shipments
-             (order_id, seller_id, status, courier_id, driver_name, driver_phone, price, distance, direction)
-           VALUES (?, ?, 'placed', ?, ?, ?, ?, ?, ?)`,
-          [
-            orderId,
-            parcel.seller_id,
-            courierAccount?.id || null,
-            courierAccount?.name || parcel.driver_name,
-            courierAccount?.phone || null,
-            parcel.delivery_fee,
-            parcel.distance,
-            parcel.direction,
-          ],
+             (order_id, seller_id, status, courier_id, price, distance, direction)
+           VALUES (?, ?, 'placed', NULL, ?, ?, ?)`,
+          [orderId, parcel.seller_id, parcel.delivery_fee, parcel.distance, parcel.direction],
         );
       }
+      const firstParcel = parcels[0];
 
       // Keep the legacy per-order courier row in step with the first parcel so older
       // reads (and the order-level courier panel) still resolve.
       await connection.query(
         `INSERT INTO courier (order_id, courier_id, driver_name, driver_phone, price, distance, direction, status)
-         VALUES (?, ?, ?, ?, ?, ?, ?, 'assigned')`,
-        [
-          orderId,
-          firstCourier?.courierAccount?.id || null,
-          firstCourier?.courierAccount?.name || firstCourier?.parcel.driver_name || null,
-          firstCourier?.courierAccount?.phone || null,
-          firstCourier?.parcel.delivery_fee || 0,
-          firstCourier?.parcel.distance || null,
-          firstCourier?.parcel.direction || null,
-        ],
+         VALUES (?, NULL, NULL, NULL, ?, ?, ?, 'awaiting_pickup')`,
+        [orderId, firstParcel?.delivery_fee || 0, firstParcel?.distance || null, firstParcel?.direction || null],
       );
 
       await connection.commit();
@@ -247,9 +234,12 @@ class Order {
   // assigned, but not how to contact them.
   static withCourierContactVisibility(order) {
     if (!order) return order;
+    // A courier's details are released only once they have actually picked the parcel up.
+    // Before that nobody is assigned, so there is nothing to show; a parcel merely
+    // released by the shop is still sitting in the open pool.
     const gate = (courierish, status) => {
       if (!courierish) return courierish;
-      const pickedUp = status === 'shipped' || status === 'delivered';
+      const pickedUp = (status === 'picked_up' || status === 'delivered') && Boolean(courierish.courier_id);
       return {
         ...courierish,
         contact_available: pickedUp,
@@ -461,6 +451,73 @@ class Order {
       [orderId, courierId, orderId, courierId],
     );
     return rows.length > 0;
+  }
+
+  // Every parcel a shop has released and nobody has claimed yet — the open pool that all
+  // couriers can see and pick from.
+  static async findAvailableForPickup() {
+    const customerFields = await Order.customerFieldsSql();
+    const [orders] = await pool.query(
+      `SELECT DISTINCT o.*, ${customerFields.select}
+       FROM orders o
+       JOIN shipments sh ON sh.order_id = o.id
+       ${customerFields.join}
+       WHERE sh.status = 'shipped' AND sh.courier_id IS NULL
+       ORDER BY o.created_at ASC`,
+    );
+    const withItems = await Order._attachItems(orders);
+
+    return withItems.flatMap((order) => order.shipments
+      .filter((shipment) => shipment.status === 'shipped' && shipment.courier_id === null)
+      .map((shipment) => ({
+        ...order,
+        items: shipment.items,
+        shipments: [shipment],
+        shipment_id: shipment.id,
+        status: shipment.status,
+        order_status: order.status,
+        store_name: shipment.store_name,
+        parcel_total: Number(shipment.items.reduce((sum, item) => sum + Number(item.price) * Number(item.quantity), 0).toFixed(2)),
+        delivery_fee: Number(shipment.price || 0),
+        courier: shipment,
+      })));
+  }
+
+  // Claim a parcel. The WHERE clause carries courier_id IS NULL so that if two couriers
+  // tap "Pick up" at the same moment, exactly one of them wins.
+  static async claimShipment(shipmentId, courier_user_id) {
+    const courierId = await Order.resolveCourierId(courier_user_id);
+    if (!courierId) throw Object.assign(new Error('Courier profile not found'), { status: 404 });
+
+    const [courierRows] = await pool.query('SELECT id, name, phone FROM couriers WHERE id = ?', [courierId]);
+    const courier = courierRows[0];
+
+    const [result] = await pool.query(
+      `UPDATE shipments
+       SET courier_id = ?, driver_name = ?, driver_phone = ?, status = 'picked_up'
+       WHERE id = ? AND courier_id IS NULL AND status = 'shipped'`,
+      [courierId, courier.name, courier.phone || null, shipmentId],
+    );
+
+    if (result.affectedRows === 0) {
+      const existing = await Order.findShipmentById(shipmentId);
+      if (!existing) throw Object.assign(new Error('Parcel not found'), { status: 404 });
+      if (existing.courier_id) throw Object.assign(new Error('Another courier has already picked up this parcel'), { status: 409 });
+      throw Object.assign(new Error('This parcel has not been released by the shop yet'), { status: 409 });
+    }
+
+    const shipment = await Order.findShipmentById(shipmentId);
+    await pool.query(
+      'INSERT INTO order_status_history (order_id, shipment_id, status, note) VALUES (?, ?, ?, ?)',
+      [shipment.order_id, shipmentId, 'picked_up', `Collected by ${courier.name}.`],
+    );
+    await pool.query(
+      "UPDATE courier SET courier_id = ?, driver_name = ?, driver_phone = ?, status = 'in_transit' WHERE order_id = ?",
+      [courierId, courier.name, courier.phone || null, shipment.order_id],
+    );
+    await Order.recomputeOrderStatus(shipment.order_id);
+
+    return { shipment_id: Number(shipmentId), courier_id: courierId, status: 'picked_up' };
   }
 
   static async courierOwnsShipment(shipmentId, courier_user_id) {
