@@ -1,6 +1,7 @@
 import { pool } from '../config/db.js';
+import { hasColumn, resolveCustomerId, resolveSellerId, resolveCourierId } from '../utils/accounts.js';
 
-const DRIVERS = ['Mwansa Phiri', 'Joseph Banda', 'Thandiwe Zulu', 'Natasha Mulenga'];
+const DRIVERS =['Mwansa Phiri', 'Joseph Banda', 'Thandiwe Zulu', 'Natasha Mulenga'];
 const TRACK_ORDER = ['placed', 'processing', 'shipped', 'delivered'];
 const PAYMENT_METHOD_MAP = {
   'Airtel Money': 'airtel_money',
@@ -35,35 +36,18 @@ function estimateDelivery(seed, destination) {
 }
 
 class Order {
-  // Two account schemas exist in the wild (see User.js, which does the same check): either
-  // a central `users` table that customers/sellers link to via user_id, or customers/sellers
-  // rows that hold the login directly. req.user.id means users.id in the first shape and
-  // customers.id / sellers.id in the second, so every lookup has to resolve it accordingly.
-  static async hasColumn(table, column) {
-    const [rows] = await pool.query(
-      `SELECT COUNT(*) AS count FROM information_schema.columns
-       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?`,
-      [table, column],
-    );
-    return Number(rows[0]?.count || 0) > 0;
+  // Account-id resolution lives in utils/accounts.js — see the note there on the two
+  // account schema shapes.
+  static hasColumn(table, column) {
+    return hasColumn(table, column);
   }
 
-  static async resolveCustomerId(user_id) {
-    if (await Order.hasColumn('customers', 'user_id')) {
-      const [rows] = await pool.query('SELECT id FROM customers WHERE user_id = ?', [user_id]);
-      return rows[0]?.id || null;
-    }
-    const [rows] = await pool.query('SELECT id FROM customers WHERE id = ?', [user_id]);
-    return rows[0]?.id || null;
+  static resolveCustomerId(user_id) {
+    return resolveCustomerId(user_id);
   }
 
-  static async resolveSellerId(user_id) {
-    if (await Order.hasColumn('sellers', 'user_id')) {
-      const [rows] = await pool.query('SELECT id FROM sellers WHERE user_id = ?', [user_id]);
-      return rows[0]?.id || null;
-    }
-    const [rows] = await pool.query('SELECT id FROM sellers WHERE id = ?', [user_id]);
-    return rows[0]?.id || null;
+  static resolveSellerId(user_id) {
+    return resolveSellerId(user_id);
   }
 
   // Customer name/email live on the customers row directly, or on the linked users row.
@@ -353,13 +337,8 @@ class Order {
     });
   }
 
-  static async resolveCourierId(user_id) {
-    if (await Order.hasColumn('couriers', 'user_id')) {
-      const [linked] = await pool.query('SELECT id FROM couriers WHERE user_id = ?', [user_id]);
-      if (linked[0]) return linked[0].id;
-    }
-    const [rows] = await pool.query('SELECT id FROM couriers WHERE id = ?', [user_id]);
-    return rows[0]?.id || null;
+  static resolveCourierId(user_id) {
+    return resolveCourierId(user_id);
   }
 
   // A courier's queue: every parcel assigned to them. The order's status tells the UI

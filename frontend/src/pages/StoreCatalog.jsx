@@ -3,7 +3,6 @@ import { Link, useParams } from 'react-router-dom';
 import ProductCard from '../components/ProductCard';
 import apiClient from '../api/axios';
 import { getStore, getStoreProducts } from '../api/storeApi';
-import { getStoreLocalProducts } from '../utils/shopCatalog';
 import { getSellerScore } from '../utils/ratingStore';
 import pepClothes from '../data/pep/clothes.json';
 import pepShoes from '../data/pep/shoes.json';
@@ -32,26 +31,27 @@ export default function StoreCatalog() {
   const fallbackCatalog = storeCatalogs[id] || storeCatalogs[1];
   const [activeStore, setActiveStore] = useState(id);
   const [store, setStore] = useState({ name: fallbackCatalog.name });
-  const [products, setProducts] = useState([...fallbackCatalog.clothes, ...fallbackCatalog.shoes]);
+  // Bundled sample products are shown only until the real catalogue loads, and are marked
+  // unavailable because the backend has no such products to sell.
+  const sampleProducts = (catalog) => [...catalog.clothes, ...catalog.shoes].map((product) => ({ ...product, unavailable: true }));
+  const [products, setProducts] = useState(() => sampleProducts(fallbackCatalog));
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [priceRange, setPriceRange] = useState('all');
 
   useEffect(() => {
     setActiveStore(id);
     const catalog = storeCatalogs[id] || storeCatalogs[1];
-    const localProducts = getStoreLocalProducts(catalog.name);
-    setProducts([...localProducts, ...catalog.clothes, ...catalog.shoes]);
+    setProducts(sampleProducts(catalog));
     setStore({ name: catalog.name });
 
     Promise.allSettled([getStore(id), getStoreProducts(id)]).then(([storeResult, productsResult]) => {
       if (storeResult.status === 'fulfilled' && storeResult.value) setStore(storeResult.value);
-      const extraLocal = getStoreLocalProducts(storeResult.value?.name || catalog.name);
       if (productsResult.status === 'fulfilled' && Array.isArray(productsResult.value) && productsResult.value.length) {
-        setProducts([...extraLocal, ...productsResult.value]);
+        setProducts(productsResult.value);
         return;
       }
       apiClient.get('/products', { params: { store_id: id } }).then(({ data }) => {
-        if (Array.isArray(data) && data.length) setProducts([...extraLocal, ...data]);
+        if (Array.isArray(data) && data.length) setProducts(data);
       }).catch(() => {});
     });
   }, [id]);

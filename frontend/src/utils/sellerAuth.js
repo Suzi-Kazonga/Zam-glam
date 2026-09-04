@@ -1,5 +1,3 @@
-import { ensureDemoSellerProducts } from './productStore';
-
 export const SELLER_CREDENTIALS = {
   email: 'seller@zamglam.local',
   password: 'Seller123!',
@@ -20,8 +18,6 @@ export function loginAsLocalSeller(email, password) {
 
   // Fall through to the real backend login so a real account on this email still works.
   if (password !== SELLER_CREDENTIALS.password) return null;
-
-  ensureDemoSellerProducts(SELLER_USER.email);
 
   const token = 'seller-local-session';
   localStorage.setItem('token', token);

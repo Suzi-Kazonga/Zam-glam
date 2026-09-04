@@ -10,7 +10,9 @@ import mrpriceClothes from '../data/mrprice/clothes.json';
 import mrpriceShoes from '../data/mrprice/shoes.json';
 import fashionsClothes from '../data/fashionsgalore/clothes.json';
 import fashionsShoes from '../data/fashionsgalore/shoes.json';
-import { getLocalProducts } from './productStore';
+// Note: seller products live in MySQL and arrive through the API. Nothing here may add
+// products that the backend does not know about — a shopper could add them to the cart
+// and checkout would then fail with "Product <id> not found".
 
 const fallbackCatalog = [
   ...mudClothes,
@@ -27,23 +29,23 @@ const fallbackCatalog = [
   ...fashionsShoes,
 ];
 
+// These sample products exist only in the frontend bundle, so they cannot be ordered.
+// They are shown only when the backend returns nothing (e.g. it is not running), and are
+// flagged unavailable so the UI can stop anyone trying to buy one.
 export function getFallbackCatalog() {
-  return fallbackCatalog.map((product) => ({ ...product, sellerName: product.store_name }));
+  return fallbackCatalog.map((product) => ({
+    ...product,
+    sellerName: product.store_name,
+    unavailable: true,
+  }));
 }
 
 export function mergeShopProducts(remote = []) {
-  const local = getLocalProducts();
   const remoteItems = Array.isArray(remote) ? remote : [];
-  const base = remoteItems.length ? remoteItems : getFallbackCatalog();
-  const localIds = new Set(local.map((product) => String(product.id)));
-  return [...local, ...base.filter((product) => !localIds.has(String(product.id)))];
+  return remoteItems.length ? remoteItems : getFallbackCatalog();
 }
 
 export function findShopProduct(id, remote = []) {
   return mergeShopProducts(remote).find((product) => String(product.id) === String(id)) || null;
 }
 
-export function getStoreLocalProducts(storeName) {
-  const name = String(storeName || '').toLowerCase();
-  return getLocalProducts().filter((product) => String(product.store_name || product.sellerName || '').toLowerCase() === name);
-}

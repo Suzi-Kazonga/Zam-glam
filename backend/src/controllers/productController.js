@@ -1,16 +1,15 @@
 import Product from '../models/Product.js';
-import { pool } from '../config/db.js';
+import { resolveSellerId, resolveStoreIdForSeller, resolveCategoryId } from '../utils/accounts.js';
 
 // Create product
 export const createProduct = async (req, res) => {
   try {
-    const { store_id, category_id, name, description, price, stock, image_url, audience, sizes } =
+    const { store_id, category_id, category, name, description, price, stock, image_url, audience, sizes } =
       req.body;
     const uploadedImageUrl = req.file ? `/uploads/${req.file.filename}` : image_url;
-    const [sellerRows] = await pool.query('SELECT id FROM sellers WHERE user_id = ?', [req.user.id]);
-    const seller = sellerRows[0];
+    const sellerId = await resolveSellerId(req.user.id);
 
-    if (!seller) {
+    if (!sellerId) {
       return res.status(404).json({ error: 'Seller profile not found' });
     }
 
@@ -18,10 +17,22 @@ export const createProduct = async (req, res) => {
       return res.status(400).json({ error: 'Name and price are required' });
     }
 
+    // A base64 preview would blow past the image_url column; require a real upload.
+    if (!req.file && typeof uploadedImageUrl === 'string' && uploadedImageUrl.startsWith('data:')) {
+      return res.status(400).json({ error: 'Please attach the image file rather than a preview' });
+    }
+
+    // The form sends a category name and no store, so derive both server-side.
+    const resolvedStoreId = store_id || await resolveStoreIdForSeller(sellerId);
+    if (!resolvedStoreId) {
+      return res.status(400).json({ error: 'This seller has no store yet' });
+    }
+    const resolvedCategoryId = category_id || await resolveCategoryId(category);
+
     const productId = await Product.create({
-      seller_id: seller.id,
-      store_id,
-      category_id,
+      seller_id: sellerId,
+      store_id: resolvedStoreId,
+      category_id: resolvedCategoryId,
       name,
       description,
       price,
@@ -33,7 +44,7 @@ export const createProduct = async (req, res) => {
 
     res.status(201).json({
       message: 'Product created successfully',
-      product: { id: productId, seller_id: seller.id, name, price },
+      product: { id: productId, seller_id: sellerId, name, price },
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -76,14 +87,13 @@ export const getFilteredProducts = async (req, res) => {
 // Get seller's products
 export const getSellerProducts = async (req, res) => {
   try {
-    const [sellerRows] = await pool.query('SELECT id FROM sellers WHERE user_id = ?', [req.user.id]);
-    const seller = sellerRows[0];
+    const sellerId = await resolveSellerId(req.user.id);
 
-    if (!seller) {
+    if (!sellerId) {
       return res.status(404).json({ error: 'Seller profile not found' });
     }
 
-    const products = await Product.findByStore(seller.id);
+    const products = await Product.findByStore(sellerId);
     res.json(products);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -100,8 +110,8 @@ export const updateProduct = async (req, res) => {
       return res.status(404).json({ error: 'Product not found' });
     }
 
-    const [sellerRows] = await pool.query('SELECT id FROM sellers WHERE user_id = ?', [req.user.id]);
-    if (!sellerRows[0] || product.seller_id !== sellerRows[0].id) {
+    const sellerId = await resolveSellerId(req.user.id);
+    if (!sellerId || product.seller_id !== sellerId) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
@@ -127,8 +137,8 @@ export const deleteProduct = async (req, res) => {
       return res.status(404).json({ error: 'Product not found' });
     }
 
-    const [sellerRows] = await pool.query('SELECT id FROM sellers WHERE user_id = ?', [req.user.id]);
-    if (!sellerRows[0] || product.seller_id !== sellerRows[0].id) {
+    const sellerId = await resolveSellerId(req.user.id);
+    if (!sellerId || product.seller_id !== sellerId) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 

@@ -6,7 +6,6 @@ import StarRating from '../components/StarRating';
 import Topbar from '../components/Topbar';
 import { useAuth } from '../context/AuthContext';
 import { filesToDataUrls } from '../utils/image';
-import { deleteLocalProduct, getLocalSellerProducts, upsertLocalProduct } from '../utils/productStore';
 import { getMyOrders, updateShipmentStatus } from '../api/orderApi';
 import { isLocalDemoSession } from '../utils/localSession';
 import { getSellerRatings, getSellerScore, replyToRating } from '../utils/ratingStore';
@@ -92,17 +91,16 @@ export default function SellerDashboard() {
     getMyOrders().then(setOrders).catch(() => {});
   };
 
+  const loadProducts = () => {
+    getSellerProducts()
+      .then((remote) => setProducts(Array.isArray(remote) ? remote : []))
+      .catch(() => setMessage('Could not load your products.'));
+  };
+
   const loadData = () => {
-    const localProducts = getLocalSellerProducts(user?.email);
-    setProducts(localProducts);
+    loadProducts();
     loadOrders();
     setReviews(getSellerRatings(sellerName));
-    getSellerProducts().then((remote) => {
-      if (Array.isArray(remote) && remote.length) {
-        const localIds = new Set(localProducts.map((product) => String(product.id)));
-        setProducts([...localProducts, ...remote.filter((product) => !localIds.has(String(product.id)))]);
-      }
-    }).catch(() => {});
   };
 
   useEffect(() => {
@@ -157,25 +155,29 @@ export default function SellerDashboard() {
       sellerName,
       store_name: sellerName,
     };
-    const saved = upsertLocalProduct(payload);
-    const nextProducts = user?.email ? saved.filter((product) => product.sellerEmail === user.email) : saved;
-    setProducts(nextProducts);
-    setSavedProduct(nextProducts.find((product) => product.name === payload.name) || payload);
-    setForm(emptyForm);
-    setShowForm(false);
-    setMessage(form.id ? 'Product updated.' : 'Product listed on your storefront.');
+    // Saved straight to the backend: a product that only existed in this browser could be
+    // browsed but never ordered, because checkout looks products up server-side.
     try {
       await createProduct({ ...payload, imageFile: form.imageFiles[0] || null });
-    } catch {
-      // Frontend-only save is enough when the API is unavailable.
+      setSavedProduct(payload);
+      setForm(emptyForm);
+      setShowForm(false);
+      setMessage(form.id ? 'Product updated.' : 'Product listed on your storefront.');
+      loadProducts();
+    } catch (error) {
+      setMessage(error?.error || error?.message || 'Could not save that product. Please try again.');
     }
   };
 
   const removeProduct = async () => {
-    const remaining = deleteLocalProduct(confirmDelete.id);
-    setProducts(user?.email ? remaining.filter((item) => item.sellerEmail === user.email) : remaining);
-    setConfirmDelete(null);
-    try { await deleteProduct(confirmDelete.id); } catch { /* local delete still applies */ }
+    try {
+      await deleteProduct(confirmDelete.id);
+      setConfirmDelete(null);
+      loadProducts();
+    } catch (error) {
+      setConfirmDelete(null);
+      setMessage(error?.error || error?.message || 'Could not delete that product.');
+    }
   };
 
   // Acts on this store's own parcel only — other stores in the same order are untouched.

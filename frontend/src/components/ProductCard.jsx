@@ -38,9 +38,10 @@ const ProductCard = ({ product }) => {
         {score.count > 0 && <p className="mt-1 text-xs text-amber-500">★ {score.average} · {score.count} seller rating{score.count === 1 ? '' : 's'}</p>}
         <p className="mt-2 text-lg font-bold text-indigo-700">{formatZmwPrice(product.price)}</p>
         <p className="mt-2 text-xs text-slate-500">Same-day delivery in Lusaka | 24-48 hrs intercity</p>
-        <button onClick={handleAddToCart} disabled={product.stock === 0} className={`mt-4 w-full rounded-lg px-4 py-2 font-semibold text-white ${added ? 'bg-emerald-600' : 'bg-indigo-600 hover:bg-indigo-700'} disabled:cursor-not-allowed disabled:bg-slate-300`}>
-          {product.stock === 0 ? 'Sold out' : added ? 'Added to cart' : 'Add to cart'}
+        <button onClick={handleAddToCart} disabled={product.stock === 0 || product.unavailable} className={`mt-4 w-full rounded-lg px-4 py-2 font-semibold text-white ${added ? 'bg-emerald-600' : 'bg-indigo-600 hover:bg-indigo-700'} disabled:cursor-not-allowed disabled:bg-slate-300`}>
+          {product.unavailable ? 'Sample only' : product.stock === 0 ? 'Sold out' : added ? 'Added to cart' : 'Add to cart'}
         </button>
+        {product.unavailable && <p className="mt-2 text-center text-xs text-slate-400">Demo item — not available to order</p>}
       </div>
     </article>
   );

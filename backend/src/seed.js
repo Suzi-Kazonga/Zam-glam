@@ -190,6 +190,17 @@ async function seedDatabase() {
 
     for (const product of products) {
       try {
+        // Sellers and stores are guarded above; products need the same guard or a second
+        // seed run silently doubles the whole catalogue.
+        const [existingProduct] = await pool.query(
+          'SELECT id FROM products WHERE name = ? AND store_id = ? LIMIT 1',
+          [product.name, product.store_id],
+        );
+        if (existingProduct[0]) {
+          console.log(`↷ Product already exists: ${product.name}`);
+          continue;
+        }
+
         const storeIndex = storeIds.indexOf(product.store_id);
         const imageFiles = {
           'Classic Denim Pants': 'mud-denim.jpg', 'Casual Cotton Shirt': 'mud-shirt.jpg', 'Leather Shoes': 'mud-shoes.jpg',
