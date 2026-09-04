@@ -2,9 +2,10 @@ import { useMemo, useState } from 'react';
 import DashboardCard from '../components/DashboardCard';
 import Sidebar from '../components/Sidebar';
 import Topbar from '../components/Topbar';
+import SellerVerificationQueue from '../components/SellerVerificationQueue';
 import { createAccount, deleteAccount, getAccountStats, getAccounts, updateAccount } from '../utils/accountStore';
 
-const sections = ['Overview', 'Sellers', 'Customers'];
+const sections = ['Overview', 'Sellers', 'Customers', 'Verification'];
 const emptyForm = {
   name: '',
   email: '',
@@ -164,6 +165,14 @@ export default function AdminDashboard() {
             </div>
           )}
 
+          {active === 'Verification' && (
+            <DashboardCard title="Vendor verification">
+              <p className="mt-1 text-sm text-slate-500">Check each shop's paperwork before approving it. Verified shops carry a badge shoppers can see.</p>
+              <div className="mt-4"><SellerVerificationQueue /></div>
+            </DashboardCard>
+          )}
+
+          {active !== 'Verification' && (
           <DashboardCard title={active === 'Overview' ? 'Recent accounts' : `${active} accounts`} className="overflow-hidden">
             <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
               <div className="flex flex-wrap gap-2">
@@ -228,6 +237,7 @@ export default function AdminDashboard() {
               </table>
             </div>
           </DashboardCard>
+          )}
         </main>
       </div>
 

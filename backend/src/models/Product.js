@@ -58,10 +58,12 @@ class Product {
   // Products always travel with their shop's name — the storefront labels every card with
   // it, and the home banner credits the store whose item it is showing.
   static get selectWithStore() {
-    return `SELECT p.*, s.name AS store_name, c.name AS category_name
+    return `SELECT p.*, s.name AS store_name, c.name AS category_name,
+                   sel.verification_status AS store_verification
             FROM products p
             LEFT JOIN stores s ON s.id = p.store_id
-            LEFT JOIN categories c ON c.id = p.category_id`;
+            LEFT JOIN categories c ON c.id = p.category_id
+            LEFT JOIN sellers sel ON sel.id = p.seller_id`;
   }
 
   static async findById(id) {

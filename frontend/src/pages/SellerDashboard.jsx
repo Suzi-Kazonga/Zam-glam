@@ -6,6 +6,7 @@ import StarRating from '../components/StarRating';
 import Topbar from '../components/Topbar';
 import { useAuth } from '../context/AuthContext';
 import ProductForm from '../components/ProductForm';
+import VerificationPanel from '../components/VerificationPanel';
 import { useProductEditor } from '../hooks/useProductEditor';
 import { getMyOrders, updateShipmentStatus } from '../api/orderApi';
 import { isLocalDemoSession } from '../utils/localSession';
@@ -13,7 +14,7 @@ import { getSellerRatings, getSellerScore, replyToRating } from '../utils/rating
 import { deleteProduct, getSellerProducts } from '../api/productApi';
 import { getMyStore } from '../api/storeApi';
 
-const sections = ['Overview', 'Products', 'Orders', 'Reviews', 'Analytics'];
+const sections = ['Overview', 'Products', 'Orders', 'Verification', 'Reviews', 'Analytics'];
 // A seller hands the parcel over and stops there — only the assigned courier can
 // declare it delivered, so there is deliberately no 'shipped' action here.
 const nextAction = {
@@ -86,7 +87,9 @@ export default function SellerDashboard() {
   const actionOrders = orders.filter((order) => Boolean(nextAction[order.status]));
   const visibleOrders = (orderFilter === 'action' ? actionOrders : orders).filter((order) => `${order.id} ${order.items?.[0]?.name || ''} ${order.customerName || ''}`.toLowerCase().includes(query.toLowerCase()));
   const lowStock = products.filter((product) => Number(product.stock) > 0 && Number(product.stock) < 5);
-  const revenue = orders.reduce((total, order) => total + Number(order.total || order.price || 0), 0);
+  // Only this store's own line items count towards its revenue — never the rest of a
+  // shared basket, and never the courier's delivery fee.
+  const revenue = orders.reduce((total, order) => total + Number(order.sellerTotal ?? 0), 0);
   const statusCounts = {
     placed: orders.filter((order) => order.status === 'placed').length,
     processing: orders.filter((order) => order.status === 'processing').length,
@@ -233,6 +236,12 @@ export default function SellerDashboard() {
             </DashboardCard>
           )}
 
+          {active === 'Verification' && (
+            <DashboardCard title="Shop verification">
+              <div className="mt-4"><VerificationPanel /></div>
+            </DashboardCard>
+          )}
+
           {active === 'Orders' && (
             <DashboardCard title="Fulfillment">
               <div className="mt-4 flex gap-2">
@@ -252,7 +261,7 @@ export default function SellerDashboard() {
                           <p className="text-sm text-slate-700">{(order.items || []).map((line) => `${line.name} x${line.quantity}`).join(', ') || item.name}</p>
                           <p className="mt-1 text-sm text-slate-600">{order.customerName || 'Customer'} · {order.phone || 'No phone'}</p>
                           <p className="text-sm text-slate-500">{order.address || 'No address'}</p>
-                          <p className="mt-1 text-xs capitalize text-slate-400">{order.status} · K{Number(order.total || item.price || 0).toFixed(2)}</p>
+                          <p className="mt-1 text-xs capitalize text-slate-400">{order.status} · your items K{Number(order.sellerTotal ?? 0).toFixed(2)}</p>
                         </div>
                       </div>
                       <div className="flex flex-wrap items-center gap-2">
@@ -303,7 +312,7 @@ export default function SellerDashboard() {
 
           {active === 'Analytics' && (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <DashboardCard title="Revenue" value={`K${revenue.toFixed(2)}`} detail="From local orders" />
+              <DashboardCard title="Revenue" value={`K${revenue.toFixed(2)}`} detail="Your items only, excluding delivery" />
               <DashboardCard title="Placed" value={statusCounts.placed} detail="Waiting to pack" />
               <DashboardCard title="In transit" value={statusCounts.processing + statusCounts.shipped} detail="Packing or with courier" />
               <DashboardCard title="Delivered" value={statusCounts.delivered} detail="Completed sales" />

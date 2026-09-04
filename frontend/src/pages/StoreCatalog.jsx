@@ -7,6 +7,7 @@ import { getSellerScore } from '../utils/ratingStore';
 import { useAuth } from '../context/AuthContext';
 import ProductForm from '../components/ProductForm';
 import { useProductEditor } from '../hooks/useProductEditor';
+import { getMyOrders } from '../api/orderApi';
 import { isLocalDemoSession } from '../utils/localSession';
 import pepClothes from '../data/pep/clothes.json';
 import pepShoes from '../data/pep/shoes.json';
@@ -43,6 +44,7 @@ export default function StoreCatalog() {
   const [priceRange, setPriceRange] = useState('all');
   const { user } = useAuth();
   const [myStoreId, setMyStoreId] = useState(null);
+  const [ordersNeedingAction, setOrdersNeedingAction] = useState(0);
   // Ownership comes from the seller's real store id, never from a shop-name match.
   const isOwner = user?.role === 'seller' && myStoreId != null && String(myStoreId) === String(id);
 
@@ -55,8 +57,17 @@ export default function StoreCatalog() {
   const editor = useProductEditor({ onSaved: loadStoreProducts });
 
   useEffect(() => {
-    if (user?.role !== 'seller' || isLocalDemoSession()) return;
+    if (user?.role !== 'seller' || isLocalDemoSession()) return undefined;
     getMyStore().then((store) => setMyStoreId(store?.id ?? null)).catch(() => setMyStoreId(null));
+
+    const checkOrders = () => {
+      getMyOrders()
+        .then((orders) => setOrdersNeedingAction(orders.filter((order) => ['placed', 'processing'].includes(order.status)).length))
+        .catch(() => {});
+    };
+    checkOrders();
+    const poll = window.setInterval(checkOrders, 10000);
+    return () => window.clearInterval(poll);
   }, [user?.role, user?.email]);
 
   useEffect(() => {
@@ -88,7 +99,14 @@ export default function StoreCatalog() {
       <div className="flex flex-wrap items-end justify-between gap-5">
         <div>
           <p className="text-sm font-semibold uppercase tracking-widest text-indigo-600">Store catalog</p>
-          <h1 className="mt-2 text-4xl font-bold text-slate-900">{store.name} Store</h1>
+          <div className="mt-2 flex flex-wrap items-center gap-3">
+            <h1 className="text-4xl font-bold text-slate-900">{store.name} Store</h1>
+            {store.verification_status === 'verified' ? (
+              <span title="This shop's documents have been checked by Zamglam" className="rounded-full bg-emerald-100 px-3 py-1 text-sm font-semibold text-emerald-800">✓ Verified shop</span>
+            ) : store.verification_status && (
+              <span className="rounded-full bg-amber-100 px-3 py-1 text-sm font-semibold text-amber-800">Not yet verified</span>
+            )}
+          </div>
           <p className="mt-2 text-slate-500">Clothes and shoes selected from {store.name}.</p>
           {getSellerScore(store.name).count > 0 && (
             <p className="mt-2 text-sm text-amber-600">★ {getSellerScore(store.name).average} average from {getSellerScore(store.name).count} customer rating{getSellerScore(store.name).count === 1 ? '' : 's'}</p>
@@ -96,7 +114,12 @@ export default function StoreCatalog() {
           {isOwner && (
             <div className="mt-4 flex flex-wrap items-center gap-3">
               <button type="button" onClick={editor.openCreate} className="rounded-lg bg-purple-700 px-4 py-2 font-semibold text-white hover:bg-purple-800">Add product to catalogue</button>
-              <Link to="/seller/dashboard" className="text-sm font-semibold text-purple-700">Manage in dashboard →</Link>
+              <Link
+                to="/seller/dashboard"
+                className={`rounded-lg px-4 py-2 font-semibold text-white ${ordersNeedingAction > 0 ? 'bg-rose-600 hover:bg-rose-700' : 'bg-slate-700 hover:bg-slate-800'}`}
+              >
+                {ordersNeedingAction > 0 ? `Work on ${ordersNeedingAction} order${ordersNeedingAction === 1 ? '' : 's'}` : 'Work on orders'}
+              </Link>
               <span className="text-xs text-slate-400">You are viewing your own shop</span>
             </div>
           )}

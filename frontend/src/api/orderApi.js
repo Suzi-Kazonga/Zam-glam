@@ -69,6 +69,10 @@ function adaptOrder(raw) {
     total: Number(raw.total_price || 0),
     itemsTotal: Number(raw.items_total || 0),
     deliveryTotal: Number(raw.delivery_total || 0),
+    // What THIS store earns / THIS parcel is worth, as opposed to the whole basket.
+    sellerTotal: raw.seller_total != null ? Number(raw.seller_total) : null,
+    parcelTotal: raw.parcel_total != null ? Number(raw.parcel_total) : null,
+    deliveryFee: raw.delivery_fee != null ? Number(raw.delivery_fee) : null,
     address: raw.address || '',
     location: raw.location || '',
     phone: raw.phone || '',

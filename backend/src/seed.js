@@ -219,6 +219,17 @@ async function seedDatabase() {
       }
     }
 
+    // The demo shops are pre-verified so the storefront shows the verified state out of
+    // the box. Sellers who register themselves start as 'pending' and go through the
+    // admin review queue.
+    for (const seller of sellers) {
+      await pool.query(
+        "UPDATE sellers SET verification_status = 'verified', verified_at = CURRENT_TIMESTAMP WHERE email = ?",
+        [seller.email],
+      );
+    }
+    console.log('✅ Demo sellers marked verified');
+
     // Create sample couriers. Orders are auto-assigned to one of these at checkout, and
     // only the assigned courier can mark that parcel delivered.
     const couriers = [
@@ -237,6 +248,17 @@ async function seedDatabase() {
       } catch (error) {
         console.log(`⚠️  Courier ${courier.email} creation failed:`, error.message);
       }
+    }
+
+    // Create the admin who reviews vendor verification.
+    try {
+      const adminEmail = 'admin@zamglam.local';
+      if (!(await User.findByEmail(adminEmail))) {
+        await User.create({ name: 'Zamglam Admin', email: adminEmail, password: 'ADMIN123456', role: 'admin' });
+        console.log('✅ Created admin account');
+      }
+    } catch (error) {
+      console.log('⚠️  Admin creation failed:', error.message);
     }
 
     // Create sample customer

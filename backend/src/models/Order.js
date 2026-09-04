@@ -392,13 +392,20 @@ class Order {
     // courier. The order's rollup status is irrelevant to what they can do next.
     return withItems.map((order) => {
       const mine = order.shipments.find((shipment) => shipment.seller_id === sellerId);
+      const myItems = order.items.filter((item) => item.seller_id === sellerId);
+      // Credit this store only for its own lines (price x quantity). The order's
+      // total_price covers every shop in the basket plus delivery, so using it here would
+      // credit each seller for goods they never sold.
+      const sellerTotal = Number(myItems.reduce((sum, item) => sum + Number(item.price) * Number(item.quantity), 0).toFixed(2));
       return {
         ...order,
-        items: order.items.filter((item) => item.seller_id === sellerId),
+        items: myItems,
         shipments: mine ? [mine] : [],
         shipment_id: mine?.id || null,
         status: mine?.status || order.status,
         order_status: order.status,
+        seller_total: sellerTotal,
+        delivery_fee: Number(mine?.price || 0),
         courier: mine || order.courier,
       };
     });
@@ -438,6 +445,9 @@ class Order {
         status: shipment.status,
         order_status: order.status,
         store_name: shipment.store_name,
+        // This parcel's own figures, not the whole basket's.
+        parcel_total: Number(shipment.items.reduce((sum, item) => sum + Number(item.price) * Number(item.quantity), 0).toFixed(2)),
+        delivery_fee: Number(shipment.price || 0),
         courier: shipment,
       })));
   }

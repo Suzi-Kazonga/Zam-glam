@@ -69,6 +69,15 @@ class User {
         return result.insertId;
       }
 
+      if (accountRole === 'admin') {
+        const [result] = await connection.query(
+          'INSERT INTO admins (name, email, password) VALUES (?, ?, ?)',
+          [name, email, hashedPassword],
+        );
+        await connection.commit();
+        return result.insertId;
+      }
+
       const [result] = await connection.query(
         'INSERT INTO customers (name, email, password, address, phone, location) VALUES (?, ?, ?, ?, ?, ?)',
         [name, email, hashedPassword, address || '', phone || '', location || ''],
@@ -134,6 +143,21 @@ class User {
           phone: courierRows[0].phone,
           role: 'courier',
           password_hash: courierRows[0].password,
+        };
+      }
+
+      const [adminRows] = await pool.query(
+        'SELECT id, name, email, password FROM admins WHERE LOWER(email) = ? LIMIT 1',
+        [normalizedEmail],
+      );
+
+      if (adminRows[0]) {
+        return {
+          id: adminRows[0].id,
+          email: adminRows[0].email,
+          name: adminRows[0].name,
+          role: 'admin',
+          password_hash: adminRows[0].password,
         };
       }
 

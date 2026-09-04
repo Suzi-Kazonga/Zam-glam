@@ -19,10 +19,16 @@ class Store {
     return result.insertId;
   }
 
+  // Stores travel with their seller's verification status so shoppers can see whether the
+  // shop has been checked.
+  static get selectWithSeller() {
+    return `SELECT st.*, s.verification_status, s.shop_name
+            FROM stores st JOIN sellers s ON s.id = st.seller_id`;
+  }
+
   // Find store by ID
   static async findById(id) {
-    const query = 'SELECT * FROM stores WHERE id = ?';
-    const [rows] = await pool.query(query, [id]);
+    const [rows] = await pool.query(`${Store.selectWithSeller} WHERE st.id = ?`, [id]);
     return rows[0];
   }
 
@@ -35,8 +41,7 @@ class Store {
 
   // Get all stores
   static async getAll() {
-    const query = 'SELECT * FROM stores WHERE status = "open" ORDER BY id';
-    const [rows] = await pool.query(query);
+    const [rows] = await pool.query(`${Store.selectWithSeller} WHERE st.status = 'open' ORDER BY st.id`);
     return rows;
   }
 

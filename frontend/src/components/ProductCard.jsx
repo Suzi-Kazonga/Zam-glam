@@ -37,7 +37,12 @@ const ProductCard = ({ product }) => {
         </div>
       </Link>
       <div className="p-4">
-        <p className="mb-1 text-xs uppercase tracking-wider text-slate-400">{sellerName || product.audience || 'New arrival'}</p>
+        <p className="mb-1 flex items-center gap-1 text-xs uppercase tracking-wider text-slate-400">
+          {sellerName || product.audience || 'New arrival'}
+          {product.store_verification === 'verified' && (
+            <span title="Verified shop" className="rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] font-bold normal-case text-emerald-800">✓ Verified</span>
+          )}
+        </p>
         <h3 className="truncate font-semibold text-slate-900">{product.name}</h3>
         {score.count > 0 && <p className="mt-1 text-xs text-amber-500">★ {score.average} · {score.count} seller rating{score.count === 1 ? '' : 's'}</p>}
         <p className="mt-2 text-lg font-bold text-indigo-700">{formatZmwPrice(product.price)}</p>

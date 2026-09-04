@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import SearchBar from './SearchBar';
 import CartIcon from './CartIcon';
 import DeliveryIcon from './DeliveryIcon';
+import SellerOrderIcon from './SellerOrderIcon';
 import { getStorefrontPath } from '../utils/storeLogos';
 import { themeForRole } from '../utils/roleTheme';
 
@@ -38,6 +39,7 @@ const Header = () => {
       <div className="ml-auto flex items-center gap-3">
         {user?.role !== 'admin' && user?.role !== 'seller' && user?.role !== 'courier' && <CartIcon />}
         {user?.role === 'courier' && <DeliveryIcon />}
+        {user?.role === 'seller' && <SellerOrderIcon />}
 
         {user ? (
           <div className="flex items-center gap-3">

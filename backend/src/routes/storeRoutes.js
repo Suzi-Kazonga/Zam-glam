@@ -16,8 +16,10 @@ router.get('/:id/products', storeController.getStoreProducts);
 router.post('/', authMiddleware, roleMiddleware('seller'), storeController.createStore);
 router.put('/:id', authMiddleware, roleMiddleware('seller'), storeController.updateStore);
 
-// Document upload routes
-router.post('/documents/upload', authMiddleware, upload.single('file'), storeController.uploadDocuments);
-router.get('/documents/list', authMiddleware, storeController.getDocuments);
+// Vendor verification: sellers submit paperwork, admins review it.
+router.post('/documents/upload', authMiddleware, roleMiddleware('seller'), upload.single('file'), storeController.uploadDocuments);
+router.get('/documents/list', authMiddleware, roleMiddleware('seller'), storeController.getDocuments);
+router.get('/verification/sellers', authMiddleware, roleMiddleware('admin'), storeController.getSellersForReview);
+router.patch('/verification/sellers/:id', authMiddleware, roleMiddleware('admin'), storeController.reviewSeller);
 
 export default router;

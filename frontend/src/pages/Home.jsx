@@ -5,6 +5,7 @@ import StoreCard from '../components/StoreCard';
 import FeaturedDeals from '../components/FeaturedDeals';
 import { getAllStores, getMyStore } from '../api/storeApi';
 import { getSellerProducts } from '../api/productApi';
+import { getMyOrders } from '../api/orderApi';
 import { withStoreLogos, getStoreLogo } from '../utils/storeLogos';
 import { useAuth } from '../context/AuthContext';
 import ProductForm from '../components/ProductForm';
@@ -76,7 +77,7 @@ function SellerProducts({ products, onAdd, onEdit, storefront }) {
   );
 }
 
-function SellerStoreBanner({ shopName, storefront }) {
+function SellerStoreBanner({ shopName, storefront, ordersNeedingAction }) {
   const logo = getStoreLogo(shopName);
   return (
     <section className="relative min-h-[340px] overflow-hidden bg-slate-900">
@@ -98,6 +99,16 @@ function SellerStoreBanner({ shopName, storefront }) {
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-purple-200">Your storefront</p>
           <h1 className="mt-2 text-4xl font-bold text-white drop-shadow sm:text-5xl">{shopName}</h1>
           <div className="mt-5 flex flex-wrap justify-center gap-3 sm:justify-start">
+            {/* Orders waiting on this shop are the most urgent thing on the page. */}
+            <Link
+              to="/seller/dashboard"
+              className={`relative rounded-lg px-5 py-2 font-semibold text-white ${ordersNeedingAction > 0 ? 'bg-rose-600 hover:bg-rose-700' : 'bg-purple-700 hover:bg-purple-800'}`}
+            >
+              {ordersNeedingAction > 0 ? `Work on ${ordersNeedingAction} order${ordersNeedingAction === 1 ? '' : 's'}` : 'Work on orders'}
+              {ordersNeedingAction > 0 && (
+                <span className="absolute -right-2 -top-2 rounded-full bg-white px-2 py-0.5 text-xs font-bold text-rose-700">{ordersNeedingAction}</span>
+              )}
+            </Link>
             <Link to="/seller/dashboard" className="rounded-lg bg-purple-700 px-5 py-2 font-semibold text-white hover:bg-purple-800">Open dashboard</Link>
             <Link to={storefront} className="rounded-lg border border-white/60 px-5 py-2 font-semibold text-white hover:bg-white/10">View my shop</Link>
           </div>
@@ -114,6 +125,7 @@ export default function Home() {
   const [stores, setStores] = useState(fallbackStores);
   const [myProducts, setMyProducts] = useState([]);
   const [storefront, setStorefront] = useState('/products');
+  const [ordersNeedingAction, setOrdersNeedingAction] = useState(0);
 
   const loadMyProducts = () => {
     getSellerProducts().then((list) => setMyProducts(Array.isArray(list) ? list : [])).catch(() => setMyProducts([]));
@@ -133,14 +145,25 @@ export default function Home() {
   }, [isSeller]);
 
   useEffect(() => {
-    if (!isSeller || isLocalDemoSession()) return;
+    if (!isSeller || isLocalDemoSession()) return undefined;
     loadMyProducts();
     getMyStore().then((store) => { if (store?.id) setStorefront(`/stores/${store.id}`); }).catch(() => {});
+
+    const checkOrders = () => {
+      getMyOrders()
+        .then((orders) => setOrdersNeedingAction(orders.filter((order) => ['placed', 'processing'].includes(order.status)).length))
+        .catch(() => {});
+    };
+    checkOrders();
+    const poll = window.setInterval(checkOrders, 10000);
+    return () => window.clearInterval(poll);
   }, [isSeller, user?.email]);
 
   return (
     <>
-      {isSeller ? <SellerStoreBanner shopName={shopName} storefront={storefront} /> : <HeroBanner />}
+      {isSeller
+        ? <SellerStoreBanner shopName={shopName} storefront={storefront} ordersNeedingAction={ordersNeedingAction} />
+        : <HeroBanner />}
       {editor.showForm && (
         <ProductForm
           form={editor.form}

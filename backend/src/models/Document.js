@@ -1,40 +1,48 @@
 import { pool } from '../config/db.js';
 
+// Verification documents belong to a seller. They are keyed by seller_id rather than
+// user_id because documents.user_id is foreign-keyed to `users`, and in this schema shape
+// sellers hold their own logins — a seller id is not a users id, so the old user_id write
+// failed with a foreign key error for every real seller.
 class Document {
-  // Upload a document
-  static async create({ user_id, type, url }) {
-    const query = 'INSERT INTO documents (user_id, type, url) VALUES (?, ?, ?)';
-
-    const [result] = await pool.query(query, [user_id, type, url]);
-
+  static async create({ seller_id, type, url, doc_number }) {
+    const [result] = await pool.query(
+      'INSERT INTO documents (seller_id, type, url, doc_number, status) VALUES (?, ?, ?, ?, ?)',
+      [seller_id, type, url, doc_number || null, 'pending'],
+    );
     return result.insertId;
   }
 
-  // Get documents by user
-  static async findByUser(user_id) {
-    const query = 'SELECT * FROM documents WHERE user_id = ?';
-    const [rows] = await pool.query(query, [user_id]);
+  static async findBySeller(seller_id) {
+    const [rows] = await pool.query('SELECT * FROM documents WHERE seller_id = ? ORDER BY created_at DESC', [seller_id]);
     return rows;
   }
 
-  // Find document by ID
+  // Every seller's documents, for the admin review queue.
+  static async findAllWithSellers() {
+    const [rows] = await pool.query(
+      `SELECT d.*, s.shop_name, s.email AS seller_email, s.verification_status
+       FROM documents d JOIN sellers s ON s.id = d.seller_id
+       ORDER BY d.created_at DESC`,
+    );
+    return rows;
+  }
+
   static async findById(id) {
-    const query = 'SELECT * FROM documents WHERE id = ?';
-    const [rows] = await pool.query(query, [id]);
+    const [rows] = await pool.query('SELECT * FROM documents WHERE id = ?', [id]);
     return rows[0];
   }
 
-  // Update document status
-  static async updateStatus(id, status) {
-    const query = 'UPDATE documents SET status = ? WHERE id = ?';
-    const [result] = await pool.query(query, [status, id]);
+  static async updateStatus(id, status, review_note) {
+    const [result] = await pool.query(
+      'UPDATE documents SET status = ?, review_note = ? WHERE id = ?',
+      [status, review_note || null, id],
+    );
     return result.affectedRows > 0;
   }
 
-  // Delete document
   static async delete(id) {
-    const query = 'DELETE FROM documents WHERE id = ?';
-    const [result] = await pool.query(query, [id]);
+    const [result] = await pool.query('DELETE FROM documents WHERE id = ?', [id]);
     return result.affectedRows > 0;
   }
 }

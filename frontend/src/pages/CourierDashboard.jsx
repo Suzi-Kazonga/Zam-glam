@@ -88,7 +88,9 @@ export default function CourierDashboard() {
       </div>
       <div className="flex flex-col items-end gap-2">
         <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold capitalize text-slate-600">{order.status}</span>
-        <span className="text-sm font-bold text-emerald-800">{formatZmwPrice(order.total)}</span>
+        {/* This parcel's goods and its own fee — not the whole basket's total. */}
+        <span className="text-sm font-bold text-slate-700">{formatZmwPrice(order.parcelTotal ?? 0)}</span>
+        <span className="text-xs font-semibold text-emerald-800">fee {formatZmwPrice(order.deliveryFee ?? 0)}</span>
         {action}
       </div>
     </article>

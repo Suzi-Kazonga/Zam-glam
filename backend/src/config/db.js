@@ -73,6 +73,20 @@ export async function initializeDatabase() {
     );
   `);
 
+  // Admins review vendor verification, so a real admin account has to be able to exist —
+  // previously 'admin' fell through User.create and created a customer row instead.
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS admins (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      user_id INT NULL UNIQUE,
+      name VARCHAR(255) NOT NULL,
+      email VARCHAR(255) NULL UNIQUE,
+      password VARCHAR(255) NULL,
+      role_level VARCHAR(30) NOT NULL DEFAULT 'manager',
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+
   await pool.query(`
     CREATE TABLE IF NOT EXISTS couriers (
       id INT AUTO_INCREMENT PRIMARY KEY,
@@ -276,6 +290,21 @@ export async function initializeDatabase() {
   await addColumnIfMissing('courier', 'driver_phone', 'VARCHAR(50)');
   await addColumnIfMissing('courier', 'courier_id', 'INT NULL');
   await addColumnIfMissing('customers', 'location', 'VARCHAR(150)');
+
+  // Vendor verification: sellers submit ID/licence documents and an admin approves them,
+  // so shoppers can tell a checked shop from an unchecked one.
+  await addColumnIfMissing('sellers', 'verification_status', "VARCHAR(20) NOT NULL DEFAULT 'pending'");
+  await addColumnIfMissing('sellers', 'verified_at', 'TIMESTAMP NULL DEFAULT NULL');
+  await addColumnIfMissing('documents', 'seller_id', 'INT NULL');
+  await addColumnIfMissing('documents', 'doc_number', 'VARCHAR(100)');
+  await addColumnIfMissing('documents', 'review_note', 'VARCHAR(255)');
+  // documents.user_id is foreign-keyed to users, but sellers keep their own logins in this
+  // schema shape, so a seller id is not a users id. Documents are keyed by seller_id
+  // instead; user_id has to be nullable for that to be insertable at all.
+  const userIdColumn = await columnInfo('documents', 'user_id');
+  if (userIdColumn && userIdColumn.IS_NULLABLE === 'NO') {
+    await pool.query(`ALTER TABLE documents MODIFY COLUMN user_id ${userIdColumn.COLUMN_TYPE} NULL`);
+  }
   // Products carry a gallery; image_url stays as the primary/thumbnail image.
   await addColumnIfMissing('products', 'images', 'JSON');
   // Tracking events belong to a specific parcel; NULL means an order-wide event.
