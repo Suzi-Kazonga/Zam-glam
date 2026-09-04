@@ -77,9 +77,21 @@ async function seedDatabase() {
       { seller_id: null, name: 'Fashions Galore', location: 'Lusaka, Zambia', open_hours: { open: '09:00', close: '18:00' } },
     ];
 
+    // sellers rows either link to a users row via user_id, or hold the login directly, in
+    // which case User.create already returned the sellers.id itself (see User.js).
+    const [sellerUserIdColumn] = await pool.query(
+      `SELECT COUNT(*) AS count FROM information_schema.columns
+       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'sellers' AND COLUMN_NAME = 'user_id'`,
+    );
+    const sellersLinkToUsers = Number(sellerUserIdColumn[0]?.count || 0) > 0;
+
     for (let index = 0; index < sellerIds.length; index += 1) {
-      const [sellerRows] = await pool.query('SELECT id FROM sellers WHERE user_id = ?', [sellerIds[index]]);
-      storeData[index].seller_id = sellerRows[0]?.id;
+      if (sellersLinkToUsers) {
+        const [sellerRows] = await pool.query('SELECT id FROM sellers WHERE user_id = ?', [sellerIds[index]]);
+        storeData[index].seller_id = sellerRows[0]?.id;
+      } else {
+        storeData[index].seller_id = sellerIds[index];
+      }
     }
 
     const storeIds = [];
@@ -193,6 +205,26 @@ async function seedDatabase() {
         console.log(`✅ Created product: ${product.name}`);
       } catch (error) {
         console.log(`⚠️  Product ${product.name} creation failed:`, error.message);
+      }
+    }
+
+    // Create sample couriers. Orders are auto-assigned to one of these at checkout, and
+    // only the assigned courier can mark that parcel delivered.
+    const couriers = [
+      { name: 'Mwansa Phiri', email: 'mwansa@zamglamcourier.local', password: 'COURIER123456', phone: '+260-970-111-001' },
+      { name: 'Thandiwe Zulu', email: 'thandiwe@zamglamcourier.local', password: 'COURIER123456', phone: '+260-970-111-002' },
+      { name: 'Joseph Banda', email: 'joseph@zamglamcourier.local', password: 'COURIER123456', phone: '+260-970-111-003' },
+    ];
+
+    for (const courier of couriers) {
+      try {
+        const existing = await User.findByEmail(courier.email);
+        if (!existing) {
+          await User.create({ ...courier, role: 'courier' });
+          console.log(`✅ Created courier: ${courier.name}`);
+        }
+      } catch (error) {
+        console.log(`⚠️  Courier ${courier.email} creation failed:`, error.message);
       }
     }
 

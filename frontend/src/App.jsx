@@ -7,8 +7,10 @@ import ProductDetail from './pages/ProductDetail';
 import LoginPage from './pages/LoginPage';
 import SignupCustomer from './pages/SignupCustomer';
 import SignupSeller from './pages/SignupSeller';
+import SignupCourier from './pages/SignupCourier';
 import CustomerDashboard from './pages/CustomerDashboard';
 import SellerDashboard from './pages/SellerDashboard';
+import CourierDashboard from './pages/CourierDashboard';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminRoute from './components/AdminRoute';
 import Header from './components/Header';
@@ -47,7 +49,7 @@ function SignupChoice() {
   return (
     <div className="max-w-4xl mx-auto p-8 text-center">
       <h1 className="text-3xl font-bold mb-6">Choose your account type</h1>
-      <div className="grid md:grid-cols-2 gap-6">
+      <div className="grid md:grid-cols-3 gap-6">
         <a href="/signup/customer" className="border rounded-lg p-8 shadow hover:shadow-lg transition bg-white">
           <div className="text-4xl mb-4">🛍️</div>
           <h2 className="text-xl font-bold mb-2">Customer</h2>
@@ -57,6 +59,11 @@ function SignupChoice() {
           <div className="text-4xl mb-4">🏪</div>
           <h2 className="text-xl font-bold mb-2">Seller</h2>
           <p>Manage your products, orders, and shop dashboard.</p>
+        </a>
+        <a href="/signup/courier" className="border rounded-lg p-8 shadow hover:shadow-lg transition bg-white">
+          <div className="text-4xl mb-4">🛵</div>
+          <h2 className="text-xl font-bold mb-2">Courier</h2>
+          <p>Collect parcels from shops and confirm deliveries.</p>
         </a>
       </div>
     </div>
@@ -86,9 +93,11 @@ function App() {
             <Route path="/signup" element={<SignupChoice />} />
             <Route path="/signup/customer" element={<SignupCustomer />} />
             <Route path="/signup/seller" element={<SignupSeller />} />
+            <Route path="/signup/courier" element={<SignupCourier />} />
             <Route element={<ProtectedRoute />}>
               <Route path="/customer/dashboard" element={<CustomerDashboard />} />
               <Route path="/seller/dashboard" element={<SellerDashboard />} />
+              <Route path="/courier/dashboard" element={<CourierDashboard />} />
             </Route>
             <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
             <Route element={<AdminRoute />}>

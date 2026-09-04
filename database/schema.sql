@@ -237,10 +237,27 @@ CREATE TABLE order_items (
         ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- 10. Courier table
+-- 9b. Courier accounts (drivers who log in, collect parcels and confirm deliveries)
+CREATE TABLE couriers (
+    id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    user_id INT UNSIGNED DEFAULT NULL,
+    name VARCHAR(150) NOT NULL,
+    email VARCHAR(255) DEFAULT NULL,
+    password VARCHAR(255) DEFAULT NULL,
+    phone VARCHAR(30) DEFAULT NULL,
+    vehicle VARCHAR(100) DEFAULT NULL,
+    is_active TINYINT(1) NOT NULL DEFAULT 1,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_couriers_user (user_id),
+    UNIQUE KEY uk_couriers_email (email)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 10. Courier table (per-order delivery assignment)
 CREATE TABLE courier (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     order_id INT UNSIGNED NOT NULL,
+    courier_id INT UNSIGNED DEFAULT NULL,
     driver_name VARCHAR(150) NOT NULL,
     price DECIMAL(10,2) NOT NULL,
     distance DECIMAL(8,2) NOT NULL,

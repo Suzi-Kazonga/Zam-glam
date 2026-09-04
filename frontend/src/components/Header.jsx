@@ -4,33 +4,45 @@ import { useAuth } from '../context/AuthContext';
 import SearchBar from './SearchBar';
 import CartIcon from './CartIcon';
 import { getStorefrontPath } from '../utils/storeLogos';
+import { themeForRole } from '../utils/roleTheme';
 
 const Header = () => {
   const { user } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
+  // Signed-in visitors get their role's colour bar (matching their login page and
+  // dashboard); signed-out browsing stays neutral white.
+  const theme = themeForRole(user?.role);
+  const themed = Boolean(user);
+  const shellClass = themed ? `${theme.bar} border-b border-black/10` : 'border-b border-slate-200 bg-white';
+  const brandClass = themed ? 'text-white hover:text-white/80' : 'text-slate-900 hover:text-indigo-600';
+  const navClass = themed ? 'text-white/80' : 'text-slate-600';
+  const linkClass = themed ? 'hover:text-white transition' : 'hover:text-indigo-600 transition';
+
   return (
-    <header className="border-b border-slate-200 bg-white">
+    <header className={shellClass}>
       <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-4 px-4 py-4">
-      <Link to="/" className="text-2xl font-bold tracking-tight text-slate-900 transition hover:text-indigo-600">Zamglam</Link>
-      <nav className="hidden gap-8 text-sm font-semibold text-slate-600 lg:flex">
-        <Link to="/" className="hover:text-indigo-600 transition">Home</Link>
-        <Link to="/collections" className="hover:text-indigo-600 transition">Collections</Link>
-        <Link to="/products" className="hover:text-indigo-600 transition">All Products</Link>
-        {user?.role === 'customer' && <Link to="/customer/dashboard" className="hover:text-indigo-600 transition">Dashboard</Link>}
-        {user?.role === 'seller' && <><Link to="/seller/dashboard" className="hover:text-indigo-600 transition">Seller Dashboard</Link><Link to={getStorefrontPath(user.shop_name || user.name)} className="hover:text-indigo-600 transition">View store</Link></>}
-        {user?.role === 'admin' && <Link to="/admin/dashboard" className="hover:text-indigo-600 transition">Admin</Link>}
+      <Link to="/" className={`text-2xl font-bold tracking-tight transition ${brandClass}`}>Zamglam</Link>
+      {themed && <span className="rounded-full bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-white">{theme.label}</span>}
+      <nav className={`hidden gap-8 text-sm font-semibold lg:flex ${navClass}`}>
+        <Link to="/" className={linkClass}>Home</Link>
+        <Link to="/collections" className={linkClass}>Collections</Link>
+        <Link to="/products" className={linkClass}>All Products</Link>
+        {user?.role === 'customer' && <Link to="/customer/dashboard" className={linkClass}>Dashboard</Link>}
+        {user?.role === 'seller' && <><Link to="/seller/dashboard" className={linkClass}>Seller Dashboard</Link><Link to={getStorefrontPath(user.shop_name || user.name)} className={linkClass}>View store</Link></>}
+        {user?.role === 'courier' && <Link to="/courier/dashboard" className={linkClass}>My Deliveries</Link>}
+        {user?.role === 'admin' && <Link to="/admin/dashboard" className={linkClass}>Admin</Link>}
       </nav>
       <div className="ml-auto flex items-center gap-3">
-        {user?.role !== 'admin' && user?.role !== 'seller' && <CartIcon />}
+        {user?.role !== 'admin' && user?.role !== 'seller' && user?.role !== 'courier' && <CartIcon />}
 
         {user ? (
           <div className="flex items-center gap-3">
-            <Link to="/account" className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-indigo-100 text-sm font-bold text-indigo-700 transition hover:bg-indigo-200" title="View profile">
+            <Link to="/account" className={`inline-flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold transition hover:opacity-90 ${theme.avatar}`} title="View profile">
               {user.name?.charAt(0)?.toUpperCase() || 'U'}
             </Link>
-            <span className="hidden text-sm font-semibold sm:inline">{user.name}</span>
+            <span className="hidden text-sm font-semibold text-white sm:inline">{user.name}</span>
           </div>
         ) : (
           <div className="flex gap-2">

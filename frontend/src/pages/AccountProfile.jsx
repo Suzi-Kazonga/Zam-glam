@@ -109,6 +109,22 @@ export default function AccountProfile() {
                         minute: '2-digit'
                       })}
                     </p>
+                    {order.shipments?.length > 0 && (
+                      <div className="mt-2">
+                        <p className="text-sm font-semibold text-slate-700">
+                          {order.shipments.filter((s) => s.status === 'delivered').length} of {order.shipments.length} package{order.shipments.length > 1 ? 's' : ''} delivered
+                          {order.shipments.length > 1 && <span className="font-normal text-slate-500"> · from {order.shipments.length} shops</span>}
+                        </p>
+                        <ul className="mt-1 space-y-1">
+                          {order.shipments.map((shipment, index) => (
+                            <li key={shipment.id} className="text-xs text-slate-500">
+                              Package {index + 1}/{order.shipments.length} · {shipment.storeName} —
+                              <span className="font-semibold capitalize text-slate-700"> {shipment.status}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
                     <p className="mt-2 text-slate-600">
                       Deliver to: <span className="font-semibold">{order.address}</span>
                     </p>

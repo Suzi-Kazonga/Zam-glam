@@ -16,11 +16,9 @@ export function loginAsLocalCustomer(email, password) {
   const normalizedEmail = email.trim().toLowerCase();
   if (normalizedEmail !== CUSTOMER_CREDENTIALS.email) return null;
 
-  if (password !== CUSTOMER_CREDENTIALS.password) {
-    const error = new Error('Invalid customer password');
-    error.error = 'Invalid customer email or password.';
-    throw error;
-  }
+  // A real backend account can share this email (the seeded customer@zamglam.local does).
+  // Fall through to the real login rather than throwing, so the real account stays reachable.
+  if (password !== CUSTOMER_CREDENTIALS.password) return null;
 
   const token = 'customer-local-session';
   localStorage.setItem('token', token);

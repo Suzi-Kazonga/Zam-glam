@@ -1,6 +1,7 @@
 export function dashboardForRole(role) {
   if (role === 'seller') return '/seller/dashboard';
   if (role === 'admin') return '/admin/dashboard';
+  if (role === 'courier') return '/courier/dashboard';
   return '/customer/dashboard';
 }
 
@@ -15,6 +16,7 @@ export function isSafeReturnPath(path, role) {
   if (path.startsWith('/admin') && role !== 'admin') return false;
   if (path.startsWith('/seller') && role !== 'seller') return false;
   if (path.startsWith('/customer') && role !== 'customer') return false;
+  if (path.startsWith('/courier') && role !== 'courier') return false;
   return path.startsWith('/');
 }
 

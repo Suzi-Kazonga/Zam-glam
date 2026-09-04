@@ -35,6 +35,11 @@ class User {
             'INSERT INTO sellers (user_id, shop_name, phone) VALUES (?, ?, ?)',
             [result.insertId, shop_name || `${name}'s store`, phone || ''],
           );
+        } else if (accountRole === 'courier') {
+          await connection.query(
+            'INSERT INTO couriers (user_id, name, phone) VALUES (?, ?, ?)',
+            [result.insertId, name, phone || ''],
+          );
         } else {
           await connection.query(
             'INSERT INTO customers (user_id, name, address, phone, location) VALUES (?, ?, ?, ?, ?)',
@@ -50,6 +55,15 @@ class User {
         const [result] = await connection.query(
           'INSERT INTO sellers (name, email, password, shop_name, phone) VALUES (?, ?, ?, ?, ?)',
           [name, email, hashedPassword, shop_name || `${name}'s store`, phone || ''],
+        );
+        await connection.commit();
+        return result.insertId;
+      }
+
+      if (accountRole === 'courier') {
+        const [result] = await connection.query(
+          'INSERT INTO couriers (name, email, password, phone) VALUES (?, ?, ?, ?)',
+          [name, email, hashedPassword, phone || ''],
         );
         await connection.commit();
         return result.insertId;
@@ -107,15 +121,32 @@ class User {
         };
       }
 
+      const [courierRows] = await pool.query(
+        'SELECT id, name, email, password, phone FROM couriers WHERE LOWER(email) = ? LIMIT 1',
+        [normalizedEmail],
+      );
+
+      if (courierRows[0]) {
+        return {
+          id: courierRows[0].id,
+          email: courierRows[0].email,
+          name: courierRows[0].name,
+          phone: courierRows[0].phone,
+          role: 'courier',
+          password_hash: courierRows[0].password,
+        };
+      }
+
       return undefined;
     }
 
     const query = `SELECT u.id, u.email, u.password AS password_hash, u.role,
-      COALESCE(c.name, s.shop_name, 'Admin') AS name,
-      COALESCE(c.phone, s.phone, '') AS phone
+      COALESCE(c.name, s.shop_name, cr.name, 'Admin') AS name,
+      COALESCE(c.phone, s.phone, cr.phone, '') AS phone
       FROM users u
       LEFT JOIN customers c ON c.user_id = u.id
       LEFT JOIN sellers s ON s.user_id = u.id
+      LEFT JOIN couriers cr ON cr.user_id = u.id
       WHERE u.email = ?`;
     const [rows] = await pool.query(query, [normalizedEmail]);
     return rows[0];
@@ -157,15 +188,32 @@ class User {
         };
       }
 
+      const [courierRows] = await pool.query(
+        'SELECT id, name, email, password, phone FROM couriers WHERE id = ? LIMIT 1',
+        [id],
+      );
+
+      if (courierRows[0]) {
+        return {
+          id: courierRows[0].id,
+          email: courierRows[0].email,
+          name: courierRows[0].name,
+          phone: courierRows[0].phone,
+          role: 'courier',
+          password_hash: courierRows[0].password,
+        };
+      }
+
       return undefined;
     }
 
     const query = `SELECT u.id, u.email, u.role, u.created_at,
-      COALESCE(c.name, s.shop_name, 'Admin') AS name,
-      COALESCE(c.phone, s.phone, '') AS phone
+      COALESCE(c.name, s.shop_name, cr.name, 'Admin') AS name,
+      COALESCE(c.phone, s.phone, cr.phone, '') AS phone
       FROM users u
       LEFT JOIN customers c ON c.user_id = u.id
       LEFT JOIN sellers s ON s.user_id = u.id
+      LEFT JOIN couriers cr ON cr.user_id = u.id
       WHERE u.id = ?`;
     const [rows] = await pool.query(query, [id]);
     return rows[0];

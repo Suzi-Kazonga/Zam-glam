@@ -18,11 +18,8 @@ export function loginAsLocalSeller(email, password) {
   const normalizedEmail = email.trim().toLowerCase();
   if (normalizedEmail !== SELLER_CREDENTIALS.email) return null;
 
-  if (password !== SELLER_CREDENTIALS.password) {
-    const error = new Error('Invalid seller password');
-    error.error = 'Invalid seller email or password.';
-    throw error;
-  }
+  // Fall through to the real backend login so a real account on this email still works.
+  if (password !== SELLER_CREDENTIALS.password) return null;
 
   ensureDemoSellerProducts(SELLER_USER.email);
 

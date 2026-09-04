@@ -1,6 +1,7 @@
 import { pool } from '../config/db.js';
 
 const DRIVERS = ['Mwansa Phiri', 'Joseph Banda', 'Thandiwe Zulu', 'Natasha Mulenga'];
+const TRACK_ORDER = ['placed', 'processing', 'shipped', 'delivered'];
 const PAYMENT_METHOD_MAP = {
   'Airtel Money': 'airtel_money',
   airtel_money: 'airtel_money',
@@ -9,6 +10,15 @@ const PAYMENT_METHOD_MAP = {
   Card: 'card',
   card: 'card',
 };
+
+// Round-robin-ish pick of an active courier account, so every order gets a real courier
+// who is the only one (besides an admin) allowed to mark it delivered.
+async function pickCourierAccount(connection) {
+  const [rows] = await connection.query(
+    'SELECT id, name, phone FROM couriers WHERE is_active = 1 ORDER BY (SELECT COUNT(*) FROM courier c WHERE c.courier_id = couriers.id) ASC, id ASC LIMIT 1',
+  );
+  return rows[0] || null;
+}
 
 function estimateDelivery(seed, destination) {
   // No real geocoding from a free-text address yet, so estimate a plausible distance the
@@ -25,14 +35,49 @@ function estimateDelivery(seed, destination) {
 }
 
 class Order {
+  // Two account schemas exist in the wild (see User.js, which does the same check): either
+  // a central `users` table that customers/sellers link to via user_id, or customers/sellers
+  // rows that hold the login directly. req.user.id means users.id in the first shape and
+  // customers.id / sellers.id in the second, so every lookup has to resolve it accordingly.
+  static async hasColumn(table, column) {
+    const [rows] = await pool.query(
+      `SELECT COUNT(*) AS count FROM information_schema.columns
+       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?`,
+      [table, column],
+    );
+    return Number(rows[0]?.count || 0) > 0;
+  }
+
   static async resolveCustomerId(user_id) {
-    const [rows] = await pool.query('SELECT id FROM customers WHERE user_id = ?', [user_id]);
+    if (await Order.hasColumn('customers', 'user_id')) {
+      const [rows] = await pool.query('SELECT id FROM customers WHERE user_id = ?', [user_id]);
+      return rows[0]?.id || null;
+    }
+    const [rows] = await pool.query('SELECT id FROM customers WHERE id = ?', [user_id]);
     return rows[0]?.id || null;
   }
 
   static async resolveSellerId(user_id) {
-    const [rows] = await pool.query('SELECT id FROM sellers WHERE user_id = ?', [user_id]);
+    if (await Order.hasColumn('sellers', 'user_id')) {
+      const [rows] = await pool.query('SELECT id FROM sellers WHERE user_id = ?', [user_id]);
+      return rows[0]?.id || null;
+    }
+    const [rows] = await pool.query('SELECT id FROM sellers WHERE id = ?', [user_id]);
     return rows[0]?.id || null;
+  }
+
+  // Customer name/email live on the customers row directly, or on the linked users row.
+  static async customerFieldsSql() {
+    if (await Order.hasColumn('customers', 'user_id')) {
+      return {
+        select: 'c.name AS customer_name, u.email AS customer_email',
+        join: 'JOIN customers c ON c.id = o.customer_id JOIN users u ON u.id = c.user_id',
+      };
+    }
+    return {
+      select: 'c.name AS customer_name, c.email AS customer_email',
+      join: 'JOIN customers c ON c.id = o.customer_id',
+    };
   }
 
   // Create an order for the given items, in a transaction. Prices are always read from
@@ -58,11 +103,11 @@ class Order {
       for (const item of items) {
         const quantity = Number(item.quantity) || 1;
         if (quantity < 1) throw Object.assign(new Error('Quantity must be at least 1'), { status: 400 });
-        const [rows] = await connection.query('SELECT id, price, stock FROM products WHERE id = ? FOR UPDATE', [item.product_id]);
+        const [rows] = await connection.query('SELECT id, price, stock, seller_id FROM products WHERE id = ? FOR UPDATE', [item.product_id]);
         const product = rows[0];
         if (!product) throw Object.assign(new Error(`Product ${item.product_id} not found`), { status: 404 });
         if (Number(product.stock) < quantity) throw Object.assign(new Error(`Not enough stock for product ${item.product_id}`), { status: 409 });
-        lineItems.push({ product_id: product.id, quantity, price: Number(product.price) });
+        lineItems.push({ product_id: product.id, quantity, price: Number(product.price), seller_id: product.seller_id });
       }
 
       const total = lineItems.reduce((sum, line) => sum + line.price * line.quantity, 0);
@@ -95,11 +140,45 @@ class Order {
         [orderId, paymentMethodColumn, total, `zg-${orderId}-${Date.now()}`],
       );
 
-      const courier = estimateDelivery(orderId, location || address);
+      // One parcel per store: each store packs and hands over independently, and each parcel
+      // gets its own courier, because the goods start in different physical shops.
+      const sellerIds = [...new Set(lineItems.map((line) => line.seller_id))];
+      let firstCourier = null;
+      for (const sellerId of sellerIds) {
+        const courier = estimateDelivery(orderId + sellerId, location || address);
+        const courierAccount = await pickCourierAccount(connection);
+        if (!firstCourier) firstCourier = { courier, courierAccount };
+        await connection.query(
+          `INSERT INTO shipments
+             (order_id, seller_id, status, courier_id, driver_name, driver_phone, price, distance, direction)
+           VALUES (?, ?, 'placed', ?, ?, ?, ?, ?, ?)`,
+          [
+            orderId,
+            sellerId,
+            courierAccount?.id || null,
+            courierAccount?.name || courier.driver_name,
+            courierAccount?.phone || null,
+            courier.price,
+            courier.distance,
+            courier.direction,
+          ],
+        );
+      }
+
+      // Keep the legacy per-order courier row in step with the first parcel so older
+      // reads (and the order-level courier panel) still resolve.
       await connection.query(
-        `INSERT INTO courier (order_id, driver_name, price, distance, direction, status)
-         VALUES (?, ?, ?, ?, ?, 'assigned')`,
-        [orderId, courier.driver_name, courier.price, courier.distance, courier.direction],
+        `INSERT INTO courier (order_id, courier_id, driver_name, driver_phone, price, distance, direction, status)
+         VALUES (?, ?, ?, ?, ?, ?, ?, 'assigned')`,
+        [
+          orderId,
+          firstCourier?.courierAccount?.id || null,
+          firstCourier?.courierAccount?.name || firstCourier?.courier.driver_name || null,
+          firstCourier?.courierAccount?.phone || null,
+          firstCourier?.courier.price || 0,
+          firstCourier?.courier.distance || null,
+          firstCourier?.courier.direction || null,
+        ],
       );
 
       await connection.commit();
@@ -110,6 +189,47 @@ class Order {
     } finally {
       connection.release();
     }
+  }
+
+  // Courier contact details are released only once the parcel has actually been picked up
+  // (the shop marked it 'shipped'). Before that the customer/seller see that a courier is
+  // assigned, but not how to contact them.
+  static withCourierContactVisibility(order) {
+    if (!order) return order;
+    const gate = (courierish, status) => {
+      if (!courierish) return courierish;
+      const pickedUp = status === 'shipped' || status === 'delivered';
+      return {
+        ...courierish,
+        contact_available: pickedUp,
+        driver_name: pickedUp ? courierish.driver_name : null,
+        driver_phone: pickedUp ? courierish.driver_phone : null,
+      };
+    };
+
+    return {
+      ...order,
+      courier: gate(order.courier, order.status),
+      // Each parcel releases its own courier's details when that parcel is picked up.
+      shipments: (order.shipments || []).map((shipment) => gate(shipment, shipment.status)),
+    };
+  }
+
+  // The order's overall status is the least-advanced of its parcels: an order is only
+  // 'delivered' when every store's parcel has been delivered.
+  static async recomputeOrderStatus(orderId) {
+    const [rows] = await pool.query('SELECT status FROM shipments WHERE order_id = ?', [orderId]);
+    if (!rows.length) return null;
+    const statuses = rows.map((r) => r.status);
+    if (statuses.every((s) => s === 'cancelled')) return Order._setOrderStatus(orderId, 'cancelled');
+    const ranked = statuses.filter((s) => s !== 'cancelled').map((s) => TRACK_ORDER.indexOf(s));
+    const rollup = TRACK_ORDER[Math.min(...ranked)] || 'placed';
+    return Order._setOrderStatus(orderId, rollup);
+  }
+
+  static async _setOrderStatus(orderId, status) {
+    await pool.query('UPDATE orders SET status = ? WHERE id = ?', [status, orderId]);
+    return status;
   }
 
   static async _attachItems(orders) {
@@ -125,21 +245,68 @@ class Order {
     );
     const [couriers] = await pool.query('SELECT * FROM courier WHERE order_id IN (?)', [orderIds]);
     const [history] = await pool.query('SELECT * FROM order_status_history WHERE order_id IN (?) ORDER BY created_at ASC', [orderIds]);
+    const [shipments] = await pool.query(
+      `SELECT sh.*, s.shop_name AS store_name FROM shipments sh
+       LEFT JOIN sellers s ON s.id = sh.seller_id
+       WHERE sh.order_id IN (?)`,
+      [orderIds],
+    );
 
-    return orders.map((order) => ({
-      ...order,
-      items: items.filter((item) => item.order_id === order.id),
-      courier: couriers.find((courier) => courier.order_id === order.id) || null,
-      tracking: history.filter((event) => event.order_id === order.id),
-    }));
+    return orders.map((order) => {
+      const orderItems = items.filter((item) => item.order_id === order.id);
+      return {
+        ...order,
+        items: orderItems,
+        courier: couriers.find((courier) => courier.order_id === order.id) || null,
+        tracking: history.filter((event) => event.order_id === order.id),
+        // Each parcel carries only its own store's items, status and courier.
+        shipments: shipments
+          .filter((shipment) => shipment.order_id === order.id)
+          .map((shipment) => ({
+            ...shipment,
+            items: orderItems.filter((item) => item.seller_id === shipment.seller_id),
+            tracking: history.filter((event) => event.order_id === order.id && event.shipment_id === shipment.id),
+          })),
+      };
+    });
+  }
+
+  static async findShipmentById(shipmentId) {
+    const [rows] = await pool.query(
+      `SELECT sh.*, s.shop_name AS store_name FROM shipments sh
+       LEFT JOIN sellers s ON s.id = sh.seller_id WHERE sh.id = ?`,
+      [shipmentId],
+    );
+    return rows[0] || null;
+  }
+
+  // Move one parcel along, record a tracking event against it, mirror the legacy courier
+  // row, then recompute the parent order's rollup status.
+  static async updateShipmentStatus(shipmentId, status, note) {
+    const shipment = await Order.findShipmentById(shipmentId);
+    if (!shipment) return null;
+
+    await pool.query('UPDATE shipments SET status = ? WHERE id = ?', [status, shipmentId]);
+    await pool.query(
+      'INSERT INTO order_status_history (order_id, shipment_id, status, note) VALUES (?, ?, ?, ?)',
+      [shipment.order_id, shipmentId, status, note || null],
+    );
+
+    if (status === 'shipped' || status === 'delivered') {
+      const courierStatus = status === 'delivered' ? 'delivered' : 'in_transit';
+      await pool.query('UPDATE courier SET status = ? WHERE order_id = ?', [courierStatus, shipment.order_id]);
+    }
+
+    const orderStatus = await Order.recomputeOrderStatus(shipment.order_id);
+    return { shipment_id: shipmentId, order_id: shipment.order_id, status, order_status: orderStatus };
   }
 
   static async findDetailById(id) {
+    const customerFields = await Order.customerFieldsSql();
     const [rows] = await pool.query(
-      `SELECT o.*, c.name AS customer_name, u.email AS customer_email
+      `SELECT o.*, ${customerFields.select}
        FROM orders o
-       JOIN customers c ON c.id = o.customer_id
-       JOIN users u ON u.id = c.user_id
+       ${customerFields.join}
        WHERE o.id = ?`,
       [id],
     );
@@ -158,23 +325,100 @@ class Order {
   static async findBySellerUserId(user_id) {
     const sellerId = await Order.resolveSellerId(user_id);
     if (!sellerId) return [];
+    const customerFields = await Order.customerFieldsSql();
     const [orders] = await pool.query(
-      `SELECT DISTINCT o.*, c.name AS customer_name, u.email AS customer_email
+      `SELECT DISTINCT o.*, ${customerFields.select}
        FROM orders o
        JOIN order_items oi ON oi.order_id = o.id
        JOIN products p ON p.id = oi.product_id
-       JOIN customers c ON c.id = o.customer_id
-       JOIN users u ON u.id = c.user_id
+       ${customerFields.join}
        WHERE p.seller_id = ?
        ORDER BY o.created_at DESC`,
       [sellerId],
     );
     const withItems = await Order._attachItems(orders);
-    // Only show this seller's own line items within each (possibly multi-seller) order.
-    return withItems.map((order) => ({
-      ...order,
-      items: order.items.filter((item) => item.seller_id === sellerId),
-    }));
+    // A seller works on their own parcel only: their items, their parcel status, their
+    // courier. The order's rollup status is irrelevant to what they can do next.
+    return withItems.map((order) => {
+      const mine = order.shipments.find((shipment) => shipment.seller_id === sellerId);
+      return {
+        ...order,
+        items: order.items.filter((item) => item.seller_id === sellerId),
+        shipments: mine ? [mine] : [],
+        shipment_id: mine?.id || null,
+        status: mine?.status || order.status,
+        order_status: order.status,
+        courier: mine || order.courier,
+      };
+    });
+  }
+
+  static async resolveCourierId(user_id) {
+    if (await Order.hasColumn('couriers', 'user_id')) {
+      const [linked] = await pool.query('SELECT id FROM couriers WHERE user_id = ?', [user_id]);
+      if (linked[0]) return linked[0].id;
+    }
+    const [rows] = await pool.query('SELECT id FROM couriers WHERE id = ?', [user_id]);
+    return rows[0]?.id || null;
+  }
+
+  // A courier's queue: every parcel assigned to them. The order's status tells the UI
+  // whether it is still with the shop (placed/processing), ready to deliver (shipped),
+  // or finished (delivered).
+  // A courier's queue is a list of PARCELS (not orders): one row per store pickup, each
+  // with its own status, address and items.
+  static async findByCourierUserId(user_id) {
+    const courierId = await Order.resolveCourierId(user_id);
+    if (!courierId) return [];
+    const customerFields = await Order.customerFieldsSql();
+    const [orders] = await pool.query(
+      `SELECT DISTINCT o.*, ${customerFields.select}
+       FROM orders o
+       JOIN shipments sh ON sh.order_id = o.id
+       ${customerFields.join}
+       WHERE sh.courier_id = ?
+       ORDER BY o.created_at DESC`,
+      [courierId],
+    );
+    const withItems = await Order._attachItems(orders);
+
+    return withItems.flatMap((order) => order.shipments
+      .filter((shipment) => shipment.courier_id === courierId)
+      .map((shipment) => ({
+        ...order,
+        items: shipment.items,
+        shipments: [shipment],
+        shipment_id: shipment.id,
+        status: shipment.status,
+        order_status: order.status,
+        store_name: shipment.store_name,
+        courier: shipment,
+      })));
+  }
+
+  static async courierOwnsOrder(orderId, courier_user_id) {
+    const courierId = await Order.resolveCourierId(courier_user_id);
+    if (!courierId) return false;
+    const [rows] = await pool.query(
+      `SELECT 1 FROM shipments WHERE order_id = ? AND courier_id = ?
+       UNION SELECT 1 FROM courier WHERE order_id = ? AND courier_id = ? LIMIT 1`,
+      [orderId, courierId, orderId, courierId],
+    );
+    return rows.length > 0;
+  }
+
+  static async courierOwnsShipment(shipmentId, courier_user_id) {
+    const courierId = await Order.resolveCourierId(courier_user_id);
+    if (!courierId) return false;
+    const [rows] = await pool.query('SELECT 1 FROM shipments WHERE id = ? AND courier_id = ? LIMIT 1', [shipmentId, courierId]);
+    return rows.length > 0;
+  }
+
+  static async sellerOwnsShipment(shipmentId, seller_user_id) {
+    const sellerId = await Order.resolveSellerId(seller_user_id);
+    if (!sellerId) return false;
+    const [rows] = await pool.query('SELECT 1 FROM shipments WHERE id = ? AND seller_id = ? LIMIT 1', [shipmentId, sellerId]);
+    return rows.length > 0;
   }
 
   static async sellerOwnsOrder(orderId, seller_user_id) {

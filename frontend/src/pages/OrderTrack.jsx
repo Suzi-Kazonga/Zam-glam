@@ -45,9 +45,6 @@ export default function OrderTrack() {
     );
   }
 
-  const markReceived = () => {
-    updateOrderStatus(id, 'delivered').then(refresh).catch(() => setLoadError('Could not update this order. Please try again.'));
-  };
 
   return (
     <main className="mx-auto max-w-4xl px-4 py-12">
@@ -56,12 +53,58 @@ export default function OrderTrack() {
       <h1 className="mt-2 text-3xl font-bold text-slate-900">Order #{order.id}</h1>
       <p className="mt-2 text-slate-500">{order.items?.[0]?.name} · Deliver to {order.address || 'your address'}</p>
 
-      <div className="mt-8 rounded-lg bg-white p-6 shadow-md">
-        <TrackingTimeline order={order} />
-      </div>
+      {order.shipments?.length > 1 ? (
+        <div className="mt-8 space-y-6">
+          <div className="rounded-lg border border-slate-200 bg-white p-5">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="font-bold text-slate-900">
+                {order.shipments.filter((s) => s.status === 'delivered').length} of {order.shipments.length} packages delivered
+              </p>
+              <p className="text-sm text-slate-500">From {order.shipments.length} different shops</p>
+            </div>
+            <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-200">
+              <div
+                className="h-full rounded-full bg-emerald-600 transition-all duration-500"
+                style={{ width: `${(order.shipments.filter((s) => s.status === 'delivered').length / order.shipments.length) * 100}%` }}
+              />
+            </div>
+            <p className="mt-3 text-sm text-slate-500">
+              Each shop packs and hands over its own package, so they arrive separately — at different times, and possibly with different couriers.
+            </p>
+          </div>
+          {order.shipments.map((shipment, index) => (
+            <div key={shipment.id} className="rounded-lg bg-white p-6 shadow-md">
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <h2 className="font-bold text-slate-900">Package {index + 1}/{order.shipments.length} · {shipment.storeName}</h2>
+                  <p className="text-sm text-slate-500">{shipment.items.map((item) => `${item.name} x${item.quantity}`).join(', ')}</p>
+                </div>
+                <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold capitalize text-slate-600">{shipment.status}</span>
+              </div>
+              <TrackingTimeline order={{ status: shipment.status, tracking: shipment.tracking }} />
+              <div className="mt-4">
+                <CourierInfo delivery={{
+                  driver_name: shipment.driverName,
+                  driver_phone: shipment.driverPhone,
+                  contact_available: shipment.contactAvailable,
+                  price: shipment.price,
+                  distance: shipment.distance,
+                  direction: shipment.direction,
+                  progress: shipment.status === 'delivered' ? 100 : shipment.status === 'shipped' ? 40 : 0,
+                  eta: shipment.status === 'delivered' ? 'Delivered' : shipment.status === 'shipped' ? '25-40 min' : 'Pending pickup',
+                }} />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="mt-8 rounded-lg bg-white p-6 shadow-md">
+          <TrackingTimeline order={order} />
+        </div>
+      )}
 
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
-        <CourierInfo delivery={order.courier} />
+        {order.shipments?.length > 1 ? null : <CourierInfo delivery={order.courier} />}
         <div className="rounded-lg border border-slate-200 bg-white p-4">
           <h3 className="font-bold text-lg text-slate-900">Shipment details</h3>
           <div className="mt-3 space-y-2 text-sm text-slate-700">
@@ -71,9 +114,11 @@ export default function OrderTrack() {
             <p className="capitalize"><span className="font-semibold">Status:</span> {order.status}</p>
           </div>
           {order.status !== 'delivered' && (
-            <button type="button" onClick={markReceived} className="mt-5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700">
-              Mark as received
-            </button>
+            <p className="mt-5 rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-500">
+              {order.courier?.driver_name
+                ? `${order.courier.driver_name} will confirm the delivery once the parcel reaches you.`
+                : 'Your courier will confirm the delivery once the parcel reaches you.'}
+            </p>
           )}
           {order.status === 'delivered' && (
             <Link to="/customer/dashboard" className="mt-5 inline-block text-sm font-semibold text-indigo-600">Rate this seller →</Link>

@@ -20,6 +20,9 @@ function adaptOrder(raw) {
   const courierRow = raw.courier;
   const courier = courierRow ? {
     driver_name: courierRow.driver_name,
+    driver_phone: courierRow.driver_phone,
+    // Contact details are released by the backend only once the parcel is picked up.
+    contact_available: Boolean(courierRow.contact_available),
     provider: 'Zamglam Courier',
     price: Number(courierRow.price || 0),
     distance: courierRow.distance,
@@ -31,6 +34,36 @@ function adaptOrder(raw) {
 
   return {
     id: raw.id,
+    // A multi-store order ships as one parcel per store; sellers and couriers act on a
+    // single parcel, so their rows carry shipment_id and that parcel's status.
+    shipmentId: raw.shipment_id || null,
+    orderStatus: raw.order_status || raw.status,
+    storeName: raw.store_name,
+    shipments: (raw.shipments || []).map((shipment) => ({
+      id: shipment.id,
+      storeName: shipment.store_name,
+      status: shipment.status,
+      driverName: shipment.driver_name,
+      driverPhone: shipment.driver_phone,
+      contactAvailable: Boolean(shipment.contact_available),
+      price: Number(shipment.price || 0),
+      distance: shipment.distance,
+      direction: shipment.direction,
+      items: (shipment.items || []).map((item) => ({
+        id: item.product_id,
+        name: item.name,
+        price: Number(item.price || 0),
+        quantity: Number(item.quantity || 1),
+        image_url: item.image_url,
+        store_name: item.store_name,
+      })),
+      tracking: (shipment.tracking || []).map((event) => ({
+        status: event.status,
+        label: STATUS_META[event.status]?.label || event.status,
+        note: event.note || STATUS_META[event.status]?.note || '',
+        at: event.created_at ? new Date(event.created_at).toLocaleString('en-ZM', { dateStyle: 'medium', timeStyle: 'short' }) : '',
+      })),
+    })),
     status,
     createdAt: raw.created_at,
     total: Number(raw.total_price || 0),
@@ -81,5 +114,11 @@ export async function getOrder(id) {
 
 export async function updateOrderStatus(id, status) {
   const { data } = await apiClient.patch(`/orders/${id}/status`, { status });
+  return data;
+}
+
+// Move a single store's parcel within an order, leaving the other stores' parcels alone.
+export async function updateShipmentStatus(shipmentId, status) {
+  const { data } = await apiClient.patch(`/orders/shipments/${shipmentId}/status`, { status });
   return data;
 }

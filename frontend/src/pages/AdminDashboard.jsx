@@ -50,16 +50,16 @@ function AccountModal({ role, account, onClose, onSave }) {
         <p className="mt-1 text-sm text-slate-500">Changes are saved in this browser only.</p>
         <div className="mt-5 grid gap-3 sm:grid-cols-2">
           <label className="text-sm font-medium text-slate-600">Full name
-            <input required value={form.name} onChange={(event) => updateField('name', event.target.value)} className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-300" />
+            <input required value={form.name} onChange={(event) => updateField('name', event.target.value)} className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 outline-none focus:ring-2 focus:ring-slate-400" />
           </label>
           <label className="text-sm font-medium text-slate-600">Email
-            <input required type="email" value={form.email} onChange={(event) => updateField('email', event.target.value)} className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-300" />
+            <input required type="email" value={form.email} onChange={(event) => updateField('email', event.target.value)} className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 outline-none focus:ring-2 focus:ring-slate-400" />
           </label>
           <label className="text-sm font-medium text-slate-600">Phone
-            <input required value={form.phone} onChange={(event) => updateField('phone', event.target.value)} className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-300" />
+            <input required value={form.phone} onChange={(event) => updateField('phone', event.target.value)} className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 outline-none focus:ring-2 focus:ring-slate-400" />
           </label>
           <label className="text-sm font-medium text-slate-600">Status
-            <select value={form.status} onChange={(event) => updateField('status', event.target.value)} className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-300">
+            <select value={form.status} onChange={(event) => updateField('status', event.target.value)} className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 outline-none focus:ring-2 focus:ring-slate-400">
               <option value="active">Active</option>
               <option value="pending">Pending</option>
               <option value="suspended">Suspended</option>
@@ -68,21 +68,21 @@ function AccountModal({ role, account, onClose, onSave }) {
           {role === 'seller' ? (
             <>
               <label className="text-sm font-medium text-slate-600">Shop name
-                <input required value={form.shopName} onChange={(event) => updateField('shopName', event.target.value)} className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-300" />
+                <input required value={form.shopName} onChange={(event) => updateField('shopName', event.target.value)} className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 outline-none focus:ring-2 focus:ring-slate-400" />
               </label>
               <label className="text-sm font-medium text-slate-600">Location
-                <input required value={form.location} onChange={(event) => updateField('location', event.target.value)} className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-300" />
+                <input required value={form.location} onChange={(event) => updateField('location', event.target.value)} className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 outline-none focus:ring-2 focus:ring-slate-400" />
               </label>
             </>
           ) : (
             <label className="text-sm font-medium text-slate-600 sm:col-span-2">Address
-              <input required value={form.address} onChange={(event) => updateField('address', event.target.value)} className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-300" />
+              <input required value={form.address} onChange={(event) => updateField('address', event.target.value)} className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 outline-none focus:ring-2 focus:ring-slate-400" />
             </label>
           )}
         </div>
         <div className="mt-6 flex justify-end gap-3">
           <button type="button" onClick={onClose} className="rounded-lg border border-slate-300 px-4 py-2 font-semibold text-slate-700 hover:bg-slate-50">Cancel</button>
-          <button type="submit" className="rounded-lg bg-indigo-600 px-4 py-2 font-semibold text-white hover:bg-indigo-700">Save account</button>
+          <button type="submit" className="rounded-lg bg-slate-800 px-4 py-2 font-semibold text-white hover:bg-slate-900">Save account</button>
         </div>
       </form>
     </div>
@@ -148,12 +148,12 @@ export default function AdminDashboard() {
         <Topbar onSearch={setQuery} />
         <main className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6 lg:p-8">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-widest text-indigo-600">Admin console</p>
+            <p className="text-sm font-semibold uppercase tracking-widest text-slate-800">Admin console</p>
             <h1 className="mt-2 text-3xl font-bold text-slate-900">Manage marketplace accounts</h1>
             <p className="mt-1 text-slate-500">Review, edit, suspend, or remove seller and customer accounts from one place.</p>
           </div>
 
-          {notice && <p className="rounded-lg border border-indigo-100 bg-indigo-50 px-4 py-3 text-sm font-medium text-indigo-700">{notice}</p>}
+          {notice && <p className="rounded-lg border border-slate-200 bg-slate-100 px-4 py-3 text-sm font-medium text-slate-900">{notice}</p>}
 
           {(active === 'Overview') && (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -172,14 +172,14 @@ export default function AdminDashboard() {
                     key={status}
                     type="button"
                     onClick={() => setStatusFilter(status)}
-                    className={`rounded-full px-3 py-1 text-sm font-semibold capitalize ${statusFilter === status ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                    className={`rounded-full px-3 py-1 text-sm font-semibold capitalize ${statusFilter === status ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
                   >
                     {status}
                   </button>
                 ))}
               </div>
               {active !== 'Overview' && (
-                <button type="button" onClick={() => setModal({ role: roleForSection })} className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700">
+                <button type="button" onClick={() => setModal({ role: roleForSection })} className="rounded-lg bg-slate-800 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-900">
                   Add {roleForSection}
                 </button>
               )}

@@ -10,7 +10,21 @@ export default function CourierInfo({ delivery }) {
       <h3 className="font-bold text-lg text-slate-900">Courier information</h3>
       <div className="mt-3 space-y-2 text-sm text-slate-700">
         <p><span className="font-semibold">Provider:</span> {delivery.provider || 'Zamglam Courier'}</p>
-        <p><span className="font-semibold">Driver:</span> {delivery.driver_name}</p>
+        {delivery.contact_available === false ? (
+          <p className="rounded bg-white px-3 py-2 text-xs text-slate-500">
+            A courier is assigned. Their name and phone number appear here once they collect the parcel from the shop.
+          </p>
+        ) : (
+          <>
+            <p><span className="font-semibold">Driver:</span> {delivery.driver_name}</p>
+            {delivery.driver_phone && (
+              <p>
+                <span className="font-semibold">Phone:</span>{' '}
+                <a href={`tel:${delivery.driver_phone}`} className="font-semibold text-indigo-700 hover:underline">{delivery.driver_phone}</a>
+              </p>
+            )}
+          </>
+        )}
         <p><span className="font-semibold">Price:</span> {formatZmwPrice(delivery.price)}</p>
         <p><span className="font-semibold">Distance:</span> {delivery.distance}</p>
         <p><span className="font-semibold">Route:</span> {delivery.direction}</p>

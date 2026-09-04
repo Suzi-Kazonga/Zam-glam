@@ -5,13 +5,13 @@ import { useCart } from '../context/CartContext';
 import { ADMIN_CREDENTIALS } from '../utils/adminAuth';
 import { CUSTOMER_CREDENTIALS } from '../utils/customerAuth';
 import { SELLER_CREDENTIALS } from '../utils/sellerAuth';
-import { getPostLoginPath } from '../utils/authRedirect';
+import { dashboardForRole, getPostLoginPath } from '../utils/authRedirect';
+import { ROLE_THEMES } from '../utils/roleTheme';
 
-const roleStyles = {
-  customer: { header: 'bg-indigo-600', button: 'bg-indigo-600 hover:bg-indigo-700' },
-  seller: { header: 'bg-purple-700', button: 'bg-purple-700 hover:bg-purple-800' },
-  admin: { header: 'bg-slate-900', button: 'bg-slate-900 hover:bg-slate-800' },
-};
+// Colours come from the shared role theme so login, header, topbar and sidebar always match.
+const roleStyles = Object.fromEntries(
+  Object.entries(ROLE_THEMES).map(([role, theme]) => [role, { header: theme.bar, button: theme.button }]),
+);
 
 function LoginPage() {
   const location = useLocation();
@@ -40,9 +40,13 @@ function LoginPage() {
   }, [location.state]);
 
   if (user) {
-    navigate(user.role === 'seller' ? '/seller/dashboard' : '/customer/dashboard');
+    navigate(dashboardForRole(user.role));
     return null;
   }
+
+  const continueAfterLogin = (loggedInUser) => {
+    navigate(getPostLoginPath(loggedInUser, from, getTotalItems()), { replace: true });
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -72,14 +76,14 @@ function LoginPage() {
         </div>
 
         <div className="p-8">
-          <div className="grid grid-cols-3 gap-2 mb-6">
-            {['customer', 'seller', 'admin'].map((option) => (
+          <div className="grid grid-cols-4 gap-2 mb-6">
+            {['customer', 'seller', 'courier', 'admin'].map((option) => (
               <button
                 key={option}
                 type="button"
-                className={`py-2 px-3 rounded-lg font-semibold border capitalize transition ${
+                className={`py-2 px-2 rounded-lg text-sm font-semibold border capitalize transition ${
                   role === option
-                    ? `${option === 'seller' ? 'bg-purple-700 border-purple-700' : option === 'admin' ? 'bg-slate-900 border-slate-900' : 'bg-indigo-600 border-indigo-600'} text-white`
+                    ? `${option === 'seller' ? 'bg-purple-700 border-purple-700' : option === 'courier' ? 'bg-emerald-700 border-emerald-700' : option === 'admin' ? 'bg-slate-900 border-slate-900' : 'bg-indigo-600 border-indigo-600'} text-white`
                     : 'bg-white text-gray-700 border-gray-300'
                 }`}
                 onClick={() => handleRoleChange(option)}
@@ -112,6 +116,12 @@ function LoginPage() {
             {role === 'seller' && (
               <div className="rounded-lg bg-purple-50 border border-purple-100 px-3 py-2 text-xs text-slate-600">
                 Demo seller: <strong>{SELLER_CREDENTIALS.email}</strong> / <strong>{SELLER_CREDENTIALS.password}</strong>
+              </div>
+            )}
+
+            {role === 'courier' && (
+              <div className="rounded-lg bg-emerald-50 border border-emerald-100 px-3 py-2 text-xs text-slate-600">
+                Seeded courier: <strong>mwansa@zamglamcourier.local</strong> / <strong>COURIER123456</strong>
               </div>
             )}
 

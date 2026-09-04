@@ -14,11 +14,8 @@ export function loginAsLocalAdmin(email, password) {
   const normalizedEmail = email.trim().toLowerCase();
   if (normalizedEmail !== ADMIN_CREDENTIALS.email) return null;
 
-  if (password !== ADMIN_CREDENTIALS.password) {
-    const error = new Error('Invalid admin password');
-    error.error = 'Invalid admin email or password.';
-    throw error;
-  }
+  // Fall through to the real backend login so a real account on this email still works.
+  if (password !== ADMIN_CREDENTIALS.password) return null;
 
   const token = 'admin-local-session';
   localStorage.setItem('token', token);

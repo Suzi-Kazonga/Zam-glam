@@ -7,7 +7,7 @@ import Topbar from '../components/Topbar';
 import { useAuth } from '../context/AuthContext';
 import { filesToDataUrls } from '../utils/image';
 import { deleteLocalProduct, getLocalSellerProducts, upsertLocalProduct } from '../utils/productStore';
-import { getMyOrders, updateOrderStatus } from '../api/orderApi';
+import { getMyOrders, updateShipmentStatus } from '../api/orderApi';
 import { isLocalDemoSession } from '../utils/localSession';
 import { getSellerRatings, getSellerScore, replyToRating } from '../utils/ratingStore';
 import { getStorefrontPath } from '../utils/storeLogos';
@@ -15,10 +15,11 @@ import { createProduct, deleteProduct, getSellerProducts } from '../api/productA
 
 const sections = ['Overview', 'Products', 'Orders', 'Reviews', 'Analytics'];
 const emptyForm = { id: '', name: '', description: '', price: '', stock: '', category: 'clothes', image_url: '', imageFiles: [], previews: [] };
+// A seller hands the parcel over and stops there — only the assigned courier can
+// declare it delivered, so there is deliberately no 'shipped' action here.
 const nextAction = {
   placed: { status: 'processing', label: 'Start packing' },
   processing: { status: 'shipped', label: 'Hand to courier' },
-  shipped: { status: 'delivered', label: 'Mark delivered' },
 };
 
 function ProductForm({ form, setForm, message, onClose, onImages, onSubmit }) {
@@ -29,21 +30,21 @@ function ProductForm({ form, setForm, message, onClose, onImages, onSubmit }) {
         <p className="mt-1 text-sm text-slate-500">Customers will see this on your storefront.</p>
         <div className="mt-5 space-y-3">
           <label className="block text-sm font-medium text-slate-600">Product name
-            <input required value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} className="mt-1 w-full rounded-lg border border-slate-200 px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-300" />
+            <input required value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} className="mt-1 w-full rounded-lg border border-slate-200 px-4 py-2 outline-none focus:ring-2 focus:ring-purple-300" />
           </label>
           <label className="block text-sm font-medium text-slate-600">Description
-            <input value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} className="mt-1 w-full rounded-lg border border-slate-200 px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-300" />
+            <input value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} className="mt-1 w-full rounded-lg border border-slate-200 px-4 py-2 outline-none focus:ring-2 focus:ring-purple-300" />
           </label>
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="block text-sm font-medium text-slate-600">Price (ZMW)
-              <input required type="number" value={form.price} onChange={(event) => setForm({ ...form, price: event.target.value })} className="mt-1 w-full rounded-lg border border-slate-200 px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-300" />
+              <input required type="number" value={form.price} onChange={(event) => setForm({ ...form, price: event.target.value })} className="mt-1 w-full rounded-lg border border-slate-200 px-4 py-2 outline-none focus:ring-2 focus:ring-purple-300" />
             </label>
             <label className="block text-sm font-medium text-slate-600">Stock
-              <input required type="number" value={form.stock} onChange={(event) => setForm({ ...form, stock: event.target.value })} className="mt-1 w-full rounded-lg border border-slate-200 px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-300" />
+              <input required type="number" value={form.stock} onChange={(event) => setForm({ ...form, stock: event.target.value })} className="mt-1 w-full rounded-lg border border-slate-200 px-4 py-2 outline-none focus:ring-2 focus:ring-purple-300" />
             </label>
           </div>
           <label className="block text-sm font-medium text-slate-600">Category
-            <select value={form.category} onChange={(event) => setForm({ ...form, category: event.target.value })} className="mt-1 w-full rounded-lg border border-slate-200 px-4 py-2 outline-none focus:ring-2 focus:ring-indigo-300">
+            <select value={form.category} onChange={(event) => setForm({ ...form, category: event.target.value })} className="mt-1 w-full rounded-lg border border-slate-200 px-4 py-2 outline-none focus:ring-2 focus:ring-purple-300">
               <option value="clothes">Clothes</option>
               <option value="shoes">Shoes</option>
             </select>
@@ -57,11 +58,11 @@ function ProductForm({ form, setForm, message, onClose, onImages, onSubmit }) {
               {form.previews.map((src) => <img key={src} src={src} alt="" className="h-20 w-16 rounded object-cover" />)}
             </div>
           )}
-          {message && <p className="text-sm text-indigo-700">{message}</p>}
+          {message && <p className="text-sm text-purple-800">{message}</p>}
         </div>
         <div className="mt-6 flex justify-end gap-3">
           <button type="button" onClick={onClose} className="rounded-lg border border-slate-300 px-4 py-2 font-semibold text-slate-700">Cancel</button>
-          <button className="rounded-lg bg-indigo-600 px-4 py-2 font-semibold text-white hover:bg-indigo-700">Save product</button>
+          <button className="rounded-lg bg-purple-700 px-4 py-2 font-semibold text-white hover:bg-purple-800">Save product</button>
         </div>
       </form>
     </div>
@@ -117,7 +118,9 @@ export default function SellerDashboard() {
     () => products.filter((product) => `${product.name} ${product.description || ''}`.toLowerCase().includes(query.toLowerCase())),
     [products, query],
   );
-  const actionOrders = orders.filter((order) => order.status !== 'delivered');
+  // "Needs action" means the seller still has something to do; once handed to the courier
+  // the parcel is out of their hands.
+  const actionOrders = orders.filter((order) => Boolean(nextAction[order.status]));
   const visibleOrders = (orderFilter === 'action' ? actionOrders : orders).filter((order) => `${order.id} ${order.items?.[0]?.name || ''} ${order.customerName || ''}`.toLowerCase().includes(query.toLowerCase()));
   const lowStock = products.filter((product) => Number(product.stock) > 0 && Number(product.stock) < 5);
   const revenue = orders.reduce((total, order) => total + Number(order.total || order.price || 0), 0);
@@ -175,14 +178,15 @@ export default function SellerDashboard() {
     try { await deleteProduct(confirmDelete.id); } catch { /* local delete still applies */ }
   };
 
+  // Acts on this store's own parcel only — other stores in the same order are untouched.
   const advanceOrder = async (order) => {
     const action = nextAction[order.status];
-    if (!action) return;
+    if (!action || !order.shipmentId) return;
     try {
-      await updateOrderStatus(order.id, action.status);
+      await updateShipmentStatus(order.shipmentId, action.status);
       loadOrders();
     } catch {
-      setMessage('Could not update that order. Please try again.');
+      setMessage('Could not update that parcel. Please try again.');
     }
   };
 
@@ -202,7 +206,7 @@ export default function SellerDashboard() {
         <main className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6 lg:p-8">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
-              <p className="text-sm font-semibold uppercase tracking-widest text-indigo-600">{sellerName} studio</p>
+              <p className="text-sm font-semibold uppercase tracking-widest text-purple-700">{sellerName} studio</p>
               <h1 className="mt-2 text-3xl font-bold text-slate-900">
                 {active === 'Overview' ? `Today at ${sellerName}` : active}
               </h1>
@@ -214,7 +218,7 @@ export default function SellerDashboard() {
                 {active === 'Analytics' && 'A simple view of orders and revenue.'}
               </p>
             </div>
-            <Link to={storefront} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:border-indigo-600 hover:text-indigo-600">View storefront</Link>
+            <Link to={storefront} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:border-purple-700 hover:text-purple-700">View storefront</Link>
           </div>
 
           {active === 'Overview' && (
@@ -234,7 +238,7 @@ export default function SellerDashboard() {
                           <p className="font-semibold">{order.items?.[0]?.name}</p>
                           <p className="text-sm capitalize text-slate-500">{order.status} · {order.customerName || 'Customer'}</p>
                         </div>
-                        <button type="button" onClick={() => setActive('Orders')} className="text-sm font-semibold text-indigo-600">Open</button>
+                        <button type="button" onClick={() => setActive('Orders')} className="text-sm font-semibold text-purple-700">Open</button>
                       </div>
                     )) : <p className="text-slate-500">No open orders. New sales will appear here.</p>}
                   </div>
@@ -255,7 +259,7 @@ export default function SellerDashboard() {
           {active === 'Products' && (
             <DashboardCard title="Your listings" className="overflow-hidden">
               <div className="mt-4 flex justify-end">
-                <button type="button" onClick={() => { setForm(emptyForm); setShowForm(true); setMessage(''); }} className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700">Add product</button>
+                <button type="button" onClick={() => { setForm(emptyForm); setShowForm(true); setMessage(''); }} className="rounded-lg bg-purple-700 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-800">Add product</button>
               </div>
               {savedProduct && (
                 <div className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 p-4">
@@ -265,7 +269,7 @@ export default function SellerDashboard() {
                     <div>
                       <p className="font-semibold">{savedProduct.name}</p>
                       <p className="text-sm text-slate-600">K{Number(savedProduct.price).toFixed(2)} · {savedProduct.stock} in stock</p>
-                      <Link to={storefront} className="text-sm font-semibold text-indigo-600">View on storefront</Link>
+                      <Link to={storefront} className="text-sm font-semibold text-purple-700">View on storefront</Link>
                     </div>
                   </div>
                 </div>
@@ -291,7 +295,7 @@ export default function SellerDashboard() {
                         <td>{product.stock}</td>
                         <td>{Number(product.stock) === 0 ? <span className="text-rose-600">Sold out</span> : Number(product.stock) < 5 ? <span className="text-amber-600">Low stock</span> : <span className="text-emerald-600">In stock</span>}</td>
                         <td className="text-right">
-                          <button type="button" onClick={() => { setForm({ id: product.id, name: product.name, description: product.description || '', price: product.price, stock: product.stock, category: product.category || 'clothes', image_url: product.image_url || '', imageFiles: [], previews: product.images || (product.image_url ? [product.image_url] : []) }); setShowForm(true); }} className="mr-2 font-semibold text-indigo-600">Edit</button>
+                          <button type="button" onClick={() => { setForm({ id: product.id, name: product.name, description: product.description || '', price: product.price, stock: product.stock, category: product.category || 'clothes', image_url: product.image_url || '', imageFiles: [], previews: product.images || (product.image_url ? [product.image_url] : []) }); setShowForm(true); }} className="mr-2 font-semibold text-purple-700">Edit</button>
                           <button type="button" onClick={() => setConfirmDelete(product)} className="font-semibold text-rose-600">Delete</button>
                         </td>
                       </tr>
@@ -305,8 +309,8 @@ export default function SellerDashboard() {
           {active === 'Orders' && (
             <DashboardCard title="Fulfillment">
               <div className="mt-4 flex gap-2">
-                <button type="button" onClick={() => setOrderFilter('action')} className={`rounded-full px-3 py-1 text-sm font-semibold ${orderFilter === 'action' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600'}`}>Needs action</button>
-                <button type="button" onClick={() => setOrderFilter('all')} className={`rounded-full px-3 py-1 text-sm font-semibold ${orderFilter === 'all' ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600'}`}>All orders</button>
+                <button type="button" onClick={() => setOrderFilter('action')} className={`rounded-full px-3 py-1 text-sm font-semibold ${orderFilter === 'action' ? 'bg-purple-700 text-white' : 'bg-slate-100 text-slate-600'}`}>Needs action</button>
+                <button type="button" onClick={() => setOrderFilter('all')} className={`rounded-full px-3 py-1 text-sm font-semibold ${orderFilter === 'all' ? 'bg-purple-700 text-white' : 'bg-slate-100 text-slate-600'}`}>All orders</button>
               </div>
               <div className="mt-5 space-y-4">
                 {visibleOrders.length ? visibleOrders.map((order) => {
@@ -317,7 +321,8 @@ export default function SellerDashboard() {
                       <div className="flex gap-3">
                         <img src={item.image_url || '/images/products/mud-denim.jpg'} alt="" className="h-20 w-16 rounded object-cover" />
                         <div>
-                          <p className="font-semibold">#{order.id} · {item.name || order.name}</p>
+                          <p className="font-semibold">Order #{order.id} · your parcel</p>
+                          <p className="text-sm text-slate-700">{(order.items || []).map((line) => `${line.name} x${line.quantity}`).join(', ') || item.name}</p>
                           <p className="mt-1 text-sm text-slate-600">{order.customerName || 'Customer'} · {order.phone || 'No phone'}</p>
                           <p className="text-sm text-slate-500">{order.address || 'No address'}</p>
                           <p className="mt-1 text-xs capitalize text-slate-400">{order.status} · K{Number(order.total || item.price || 0).toFixed(2)}</p>
@@ -326,7 +331,14 @@ export default function SellerDashboard() {
                       <div className="flex flex-wrap items-center gap-2">
                         <Link to={`/orders/${order.id}`} className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700">Track</Link>
                         {action ? (
-                          <button type="button" onClick={() => advanceOrder(order)} className="rounded-lg bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-700">{action.label}</button>
+                          <button type="button" onClick={() => advanceOrder(order)} className="rounded-lg bg-purple-700 px-3 py-2 text-sm font-semibold text-white hover:bg-purple-800">{action.label}</button>
+                        ) : order.status === 'shipped' ? (
+                          <span className="text-right text-sm font-semibold text-amber-700">
+                            With courier{order.courier?.driver_name ? ` · ${order.courier.driver_name}` : ''}
+                            {order.courier?.driver_phone && (
+                              <a href={`tel:${order.courier.driver_phone}`} className="block text-xs font-semibold text-slate-500 hover:underline">{order.courier.driver_phone}</a>
+                            )}
+                          </span>
                         ) : <span className="text-sm font-semibold text-emerald-700">Delivered</span>}
                       </div>
                     </article>
@@ -352,8 +364,8 @@ export default function SellerDashboard() {
                       <p className="mt-3 rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-600"><strong>Your reply:</strong> {review.reply}</p>
                     ) : (
                       <div className="mt-3 flex gap-2">
-                        <input value={replyDrafts[review.id] || ''} onChange={(event) => setReplyDrafts((current) => ({ ...current, [review.id]: event.target.value }))} placeholder="Thank the customer" className="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-300" />
-                        <button type="button" onClick={() => sendReply(review.id)} className="rounded-lg bg-indigo-600 px-3 py-2 text-sm font-semibold text-white">Reply</button>
+                        <input value={replyDrafts[review.id] || ''} onChange={(event) => setReplyDrafts((current) => ({ ...current, [review.id]: event.target.value }))} placeholder="Thank the customer" className="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-purple-300" />
+                        <button type="button" onClick={() => sendReply(review.id)} className="rounded-lg bg-purple-700 px-3 py-2 text-sm font-semibold text-white">Reply</button>
                       </div>
                     )}
                   </article>

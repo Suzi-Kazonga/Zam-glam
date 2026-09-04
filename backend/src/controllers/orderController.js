@@ -21,9 +21,13 @@ export const createOrder = async (req, res) => {
 // List the current user's orders (their own orders for a customer, their store's orders for a seller)
 export const getMyOrders = async (req, res) => {
   try {
-    const orders = req.user.role === 'seller'
-      ? await Order.findBySellerUserId(req.user.id)
-      : await Order.findByCustomerUserId(req.user.id);
+    let orders;
+    if (req.user.role === 'seller') orders = await Order.findBySellerUserId(req.user.id);
+    else if (req.user.role === 'courier') orders = await Order.findByCourierUserId(req.user.id);
+    else orders = await Order.findByCustomerUserId(req.user.id);
+
+    // The courier always sees their own assignment; everyone else only after pickup.
+    if (req.user.role !== 'courier') orders = orders.map(Order.withCourierContactVisibility);
     res.json(orders);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -40,7 +44,8 @@ export const getOrder = async (req, res) => {
     const isAdmin = req.user.role === 'admin';
     const isOwningCustomer = req.user.role === 'customer' && await Order.customerOwnsOrder(id, req.user.id);
     const isInvolvedSeller = req.user.role === 'seller' && await Order.sellerOwnsOrder(id, req.user.id);
-    if (!isAdmin && !isOwningCustomer && !isInvolvedSeller) {
+    const isAssignedCourier = req.user.role === 'courier' && await Order.courierOwnsOrder(id, req.user.id);
+    if (!isAdmin && !isOwningCustomer && !isInvolvedSeller && !isAssignedCourier) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
@@ -50,14 +55,49 @@ export const getOrder = async (req, res) => {
       order.items = order.items.filter((item) => item.seller_id === sellerId);
     }
 
-    res.json(order);
+    // The courier always sees their own assignment; everyone else only after pickup.
+    res.json(req.user.role === 'courier' ? order : Order.withCourierContactVisibility(order));
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
 
-// Update an order's status: a seller may only advance orders containing their own products;
-// a customer may only mark their own order delivered (e.g. "Mark as received"); admin can do either.
+// Update ONE parcel (shipment) within an order. Each store's parcel moves independently,
+// so one shop packing or handing over never changes another shop's parcel. Delivery stays
+// the courier's call alone.
+export const updateShipmentStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+    const allowedStatuses = ['placed', 'processing', 'shipped', 'delivered', 'cancelled'];
+    if (!allowedStatuses.includes(status)) return res.status(400).json({ error: 'Invalid status' });
+
+    const isAdmin = req.user.role === 'admin';
+
+    if (status === 'delivered') {
+      const isAssignedCourier = req.user.role === 'courier' && await Order.courierOwnsShipment(id, req.user.id);
+      if (!isAdmin && !isAssignedCourier) {
+        return res.status(403).json({ error: 'Only the assigned courier can mark a parcel delivered' });
+      }
+    } else {
+      const isOwningSeller = req.user.role === 'seller' && await Order.sellerOwnsShipment(id, req.user.id);
+      if (!isAdmin && !isOwningSeller) {
+        return res.status(403).json({ error: 'Forbidden' });
+      }
+    }
+
+    const result = await Order.updateShipmentStatus(id, status);
+    if (!result) return res.status(404).json({ error: 'Parcel not found' });
+    res.json({ message: 'Parcel status updated', ...result });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Update an order's status. Delivery is the courier's call alone: only the courier assigned
+// to the parcel (or an admin) may mark it delivered. A seller moves it through their own
+// stages up to handing it over ('shipped') but can never declare it delivered, and a
+// customer cannot change status at all.
 export const updateOrderStatus = async (req, res) => {
   try {
     const { id } = req.params;
@@ -66,11 +106,17 @@ export const updateOrderStatus = async (req, res) => {
     if (!allowedStatuses.includes(status)) return res.status(400).json({ error: 'Invalid status' });
 
     const isAdmin = req.user.role === 'admin';
-    const isInvolvedSeller = req.user.role === 'seller' && await Order.sellerOwnsOrder(id, req.user.id);
-    const isOwningCustomerMarkingDelivered = req.user.role === 'customer' && status === 'delivered' && await Order.customerOwnsOrder(id, req.user.id);
 
-    if (!isAdmin && !isInvolvedSeller && !isOwningCustomerMarkingDelivered) {
-      return res.status(403).json({ error: 'Forbidden' });
+    if (status === 'delivered') {
+      const isAssignedCourier = req.user.role === 'courier' && await Order.courierOwnsOrder(id, req.user.id);
+      if (!isAdmin && !isAssignedCourier) {
+        return res.status(403).json({ error: 'Only the assigned courier can mark a parcel delivered' });
+      }
+    } else {
+      const isInvolvedSeller = req.user.role === 'seller' && await Order.sellerOwnsOrder(id, req.user.id);
+      if (!isAdmin && !isInvolvedSeller) {
+        return res.status(403).json({ error: 'Forbidden' });
+      }
     }
 
     const updated = await Order.updateStatus(id, status);

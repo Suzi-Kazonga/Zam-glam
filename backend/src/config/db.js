@@ -74,6 +74,20 @@ export async function initializeDatabase() {
   `);
 
   await pool.query(`
+    CREATE TABLE IF NOT EXISTS couriers (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      user_id INT NULL UNIQUE,
+      name VARCHAR(255) NOT NULL,
+      email VARCHAR(255) NULL UNIQUE,
+      password VARCHAR(255) NULL,
+      phone VARCHAR(50),
+      vehicle VARCHAR(100),
+      is_active TINYINT(1) NOT NULL DEFAULT 1,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS categories (
       id INT AUTO_INCREMENT PRIMARY KEY,
       name VARCHAR(100) NOT NULL UNIQUE,
@@ -157,6 +171,26 @@ export async function initializeDatabase() {
     );
   `);
 
+  // A multi-vendor order is fulfilled as one parcel PER STORE: each store packs, hands over
+  // and is delivered independently, with its own courier. orders.status is a rollup of these.
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS shipments (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      order_id INT NOT NULL,
+      seller_id INT NOT NULL,
+      status VARCHAR(50) NOT NULL DEFAULT 'placed',
+      courier_id INT NULL,
+      driver_name VARCHAR(255),
+      driver_phone VARCHAR(50),
+      price DECIMAL(10,2) NOT NULL DEFAULT 0,
+      distance VARCHAR(100),
+      direction VARCHAR(255),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE KEY uk_shipment_order_seller (order_id, seller_id),
+      FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
+    );
+  `);
+
   await pool.query(`
     CREATE TABLE IF NOT EXISTS order_status_history (
       id INT AUTO_INCREMENT PRIMARY KEY,
@@ -208,21 +242,80 @@ export async function initializeDatabase() {
     );
   `);
 
-  // Migration for pre-existing local databases created before the columns/tables above existed.
-  const addColumnIfMissing = async (table, column, definition) => {
+  // Migrations for pre-existing local databases created before the columns/tables above
+  // existed. CREATE TABLE IF NOT EXISTS is a no-op on an existing table, so older
+  // installs need these applied explicitly.
+  const columnInfo = async (table, column) => {
     const [rows] = await pool.query(
-      `SELECT COUNT(*) AS count FROM information_schema.columns
+      `SELECT IS_NULLABLE, COLUMN_TYPE FROM information_schema.columns
        WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?`,
       [table, column],
     );
-    if (Number(rows[0]?.count || 0) === 0) {
+    return rows[0] || null;
+  };
+
+  const addColumnIfMissing = async (table, column, definition) => {
+    if (!(await columnInfo(table, column))) {
       await pool.query(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
     }
   };
+
+  await addColumnIfMissing('orders', 'total_price', 'DECIMAL(12,2) NOT NULL DEFAULT 0');
   await addColumnIfMissing('orders', 'address', 'VARCHAR(255)');
   await addColumnIfMissing('orders', 'location', 'VARCHAR(150)');
   await addColumnIfMissing('orders', 'phone', 'VARCHAR(30)');
   await addColumnIfMissing('orders', 'payment_method', 'VARCHAR(30)');
+  await addColumnIfMissing('courier', 'status', "VARCHAR(30) DEFAULT 'assigned'");
+  await addColumnIfMissing('courier', 'created_at', 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP');
+  await addColumnIfMissing('courier', 'driver_phone', 'VARCHAR(50)');
+  await addColumnIfMissing('courier', 'courier_id', 'INT NULL');
+  await addColumnIfMissing('customers', 'location', 'VARCHAR(150)');
+  // Tracking events belong to a specific parcel; NULL means an order-wide event.
+  await addColumnIfMissing('order_status_history', 'shipment_id', 'INT NULL');
+
+  // Backfill parcels for orders created before per-store shipments existed, so old
+  // multi-store orders become actionable instead of sharing one stuck status.
+  const [legacyOrders] = await pool.query(
+    `SELECT o.id, o.status, o.address, o.location FROM orders o
+     WHERE NOT EXISTS (SELECT 1 FROM shipments s WHERE s.order_id = o.id)`,
+  );
+  for (const order of legacyOrders) {
+    const [sellers] = await pool.query(
+      `SELECT DISTINCT p.seller_id FROM order_items oi JOIN products p ON p.id = oi.product_id
+       WHERE oi.order_id = ?`,
+      [order.id],
+    );
+    const [existingCourier] = await pool.query('SELECT * FROM courier WHERE order_id = ? LIMIT 1', [order.id]);
+    for (const { seller_id } of sellers) {
+      const courier = existingCourier[0] || {};
+      await pool.query(
+        `INSERT IGNORE INTO shipments
+           (order_id, seller_id, status, courier_id, driver_name, driver_phone, price, distance, direction)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          order.id,
+          seller_id,
+          order.status || 'placed',
+          courier.courier_id || null,
+          courier.driver_name || null,
+          courier.driver_phone || null,
+          courier.price || 0,
+          courier.distance || null,
+          courier.direction || null,
+        ],
+      );
+    }
+    if (sellers.length) console.log(`↺ Backfilled ${sellers.length} parcel(s) for order #${order.id}`);
+  }
+
+  // Older installs stored one product per order directly on the orders row. Line items now
+  // live in order_items, so these legacy columns must stop being required for an insert.
+  for (const column of ['product_id', 'quantity']) {
+    const info = await columnInfo('orders', column);
+    if (info && info.IS_NULLABLE === 'NO') {
+      await pool.query(`ALTER TABLE orders MODIFY COLUMN ${column} ${info.COLUMN_TYPE} NULL`);
+    }
+  }
 
   await pool.query(`
     INSERT INTO categories (name, description)
