@@ -38,7 +38,10 @@ Zamglam is a two-sided marketplace enabling:
 - Real-time delivery quotes
 - Driver assignment
 - Distance and pricing calculation
-- Yango API integration (with fallback mock data)
+- Pluggable courier providers (see `backend/src/services/courierProvider.js`)
+- In-house Zamglam Courier is the implemented provider; a third-party adapter
+  (e.g. Yango) can be dropped in, but is **not implemented** — those APIs are
+  commercial B2B integrations needing credentials this project does not have
 
 ✅ **Dashboards**
 - Customer dashboard: order tracking, cart, wishlist

@@ -212,7 +212,8 @@ CREATE TABLE courier (
 **Notes:**
 - One courier record per order
 - Distance stored as VARCHAR (e.g., "3.5 km")
-- Price calculated from Yango API or mock data
+- Price calculated by the configured courier provider, from the distance between
+  the shop and the delivery address (see backend/src/services/courierProvider.js)
 - Nullable fields allow for pending assignments
 
 ---

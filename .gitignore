@@ -60,3 +60,7 @@ uploads/*
 # Uploaded seller documents and product images are user data, not source
 backend/uploads/*
 !backend/uploads/.gitkeep
+
+# Local dev server logs
+backend/server.*.log
+frontend/vite.*.log

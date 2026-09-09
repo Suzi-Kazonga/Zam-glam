@@ -58,7 +58,10 @@ DB_USER=root
 DB_PASS=your_mysql_password
 DB_NAME=zamglam_db
 JWT_SECRET=zamglam_super_secret_key
-YANGO_API_KEY=demo_yango_key
+# Optional third-party courier credentials. Leave unset: no such integration is
+# implemented, and the platform uses its own couriers.
+# YANGO_API_URL=
+# YANGO_API_KEY=
 NODE_ENV=development
 ```
 

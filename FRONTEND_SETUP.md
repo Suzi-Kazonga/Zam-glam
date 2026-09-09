@@ -224,7 +224,7 @@ Access in code: `import.meta.env.VITE_API_URL`
 ### CourierInfo
 - Displays delivery information
 - Driver name, price, distance, direction
-- Integration with Yango API
+- Courier details appear only once a courier has picked the parcel up
 
 ## Context API Usage
 

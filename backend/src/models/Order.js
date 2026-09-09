@@ -1,7 +1,7 @@
 import { pool } from '../config/db.js';
 import { hasColumn, resolveCustomerId, resolveSellerId, resolveCourierId } from '../utils/accounts.js';
+import { quoteDelivery } from '../services/courierProvider.js';
 
-const DRIVERS =['Mwansa Phiri', 'Joseph Banda', 'Thandiwe Zulu', 'Natasha Mulenga'];
 // 'shipped' means the shop has released the parcel — it is then open to every courier.
 // 'picked_up' means one courier has claimed and collected it; only that courier can
 // deliver it, and only their details are shown to the customer and the shop.
@@ -32,18 +32,18 @@ async function pickCourierAccount(connection) {
   return rows[0] || null;
 }
 
-// Keyed on the seller, never the order, so the fee quoted at checkout is exactly the fee
-// charged when the order is placed — an order id does not exist yet at quote time.
-// (No geocoding from a free-text address yet; this is a stand-in for a real distance.)
-function estimateDelivery(seed, destination) {
-  const distanceKm = 2 + (Math.abs(Number(seed) || 0) % 9);
-  const price = Number((20 + distanceKm * 5).toFixed(2));
-  const driver = DRIVERS[Math.abs(Number(seed) || 0) % DRIVERS.length];
+// Delivery pricing comes from the configured courier provider (services/courierProvider.js),
+// measured between the shop's location and the delivery address rather than invented from
+// an id. The quote is a pure function of those two places, so the fee shown at checkout is
+// the fee charged when the order is placed.
+async function estimateDelivery({ origin, destination }) {
+  const quote = await quoteDelivery({ origin, destination });
   return {
-    driver_name: driver,
-    price,
-    distance: `${distanceKm.toFixed(1)} km`,
-    direction: destination ? `Zamglam store → ${destination}` : 'Zamglam store',
+    price: quote.price,
+    distance: `${quote.distance_km} km`,
+    direction: `${origin || 'Shop'} → ${destination || 'Customer'}`,
+    provider: quote.provider,
+    eta: quote.eta,
   };
 }
 
@@ -83,7 +83,14 @@ class Order {
     const parcels = [];
     for (const sellerId of [...new Set(lineItems.map((line) => line.seller_id))]) {
       const parcelItems = lineItems.filter((line) => line.seller_id === sellerId);
-      const courier = estimateDelivery(sellerId, location);
+      // Each parcel is priced from its own shop's location — a courier collecting from a
+      // shop across town is a longer trip than one round the corner.
+      const [storeRows] = await connection.query(
+        'SELECT location, name FROM stores WHERE seller_id = ? LIMIT 1',
+        [sellerId],
+      );
+      const origin = storeRows[0]?.location || storeRows[0]?.name || 'Lusaka';
+      const courier = await estimateDelivery({ origin, destination: location });
       parcels.push({
         seller_id: sellerId,
         store_name: parcelItems[0].store_name,
@@ -92,7 +99,8 @@ class Order {
         delivery_fee: courier.price,
         distance: courier.distance,
         direction: courier.direction,
-        driver_name: courier.driver_name,
+        provider: courier.provider,
+        eta: courier.eta,
       });
     }
 
