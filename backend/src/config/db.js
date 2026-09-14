@@ -38,12 +38,24 @@ export async function initializeDatabase() {
 
     if (!adminConnection) throw lastError;
 
+    // The admin connection exists precisely so the schema can be created on a machine
+    // that has never run Zamglam before. Without this a fresh clone fails on the first
+    // query with "Unknown database", and the connection itself would leak.
+    await adminConnection.query(`CREATE DATABASE IF NOT EXISTS \`${config.database}\``);
+    await adminConnection.end();
+
+  // The users table is kept for databases created by earlier versions, where it held the
+  // login for every role and customers/sellers linked to it by user_id. New databases put
+  // the login on the account itself (see below): every query written since — the admin
+  // console, the complaints queue, the verification list — reads s.email straight off the
+  // shop, and on the old layout those columns do not exist. src/utils/accounts.js keeps
+  // both layouts working.
   await pool.query(`
     CREATE TABLE IF NOT EXISTS users (
       id INT AUTO_INCREMENT PRIMARY KEY,
       email VARCHAR(255) NOT NULL UNIQUE,
       password VARCHAR(255) NOT NULL,
-      role ENUM('admin','customer','seller') NOT NULL DEFAULT 'customer',
+      role ENUM('admin','customer','seller','courier') NOT NULL DEFAULT 'customer',
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
   `);
@@ -51,25 +63,26 @@ export async function initializeDatabase() {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS customers (
       id INT AUTO_INCREMENT PRIMARY KEY,
-      user_id INT NOT NULL UNIQUE,
       name VARCHAR(255) NOT NULL,
+      email VARCHAR(255) NOT NULL UNIQUE,
+      password VARCHAR(255) NOT NULL,
       address VARCHAR(255),
       phone VARCHAR(50),
       city VARCHAR(100),
       location VARCHAR(100),
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
   `);
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS sellers (
       id INT AUTO_INCREMENT PRIMARY KEY,
-      user_id INT NOT NULL UNIQUE,
+      name VARCHAR(255) NOT NULL,
+      email VARCHAR(255) NOT NULL UNIQUE,
+      password VARCHAR(255) NOT NULL,
       shop_name VARCHAR(255) NOT NULL,
       phone VARCHAR(50),
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
   `);
 
@@ -321,6 +334,10 @@ export async function initializeDatabase() {
   // waiting for a courier, and when it should be escalated.
   await addColumnIfMissing('shipments', 'released_at', 'TIMESTAMP NULL DEFAULT NULL');
   await addColumnIfMissing('shipments', 'escalated_at', 'TIMESTAMP NULL DEFAULT NULL');
+  // Couriers came later than the users table, whose role column did not list them: on a
+  // database created before that, a courier sign-up would be stored with no role at all.
+  await pool.query("ALTER TABLE users MODIFY role ENUM('admin','customer','seller','courier') NOT NULL DEFAULT 'customer'");
+
   // Couriers go on and off duty; only on-duty couriers see the pool or receive escalations.
   await addColumnIfMissing('couriers', 'on_shift', 'TINYINT(1) NOT NULL DEFAULT 0');
   await addColumnIfMissing('couriers', 'shift_changed_at', 'TIMESTAMP NULL DEFAULT NULL');
@@ -328,7 +345,8 @@ export async function initializeDatabase() {
   // approve it before it can be given work.
   await addColumnIfMissing('couriers', 'approval_status', "VARCHAR(20) NOT NULL DEFAULT 'pending'");
   await addColumnIfMissing('couriers', 'approved_at', 'TIMESTAMP NULL DEFAULT NULL');
-  // Couriers that predate this column were already working; treat them as approved.
+  // Couriers that predate this column were already working; treat them as approved. A new
+  // sign-up is stored inactive, so this can never quietly let an unreviewed rider through.
   await pool.query("UPDATE couriers SET approval_status = 'approved', approved_at = CURRENT_TIMESTAMP WHERE approval_status = 'pending' AND is_active = 1 AND created_at < (CURRENT_TIMESTAMP - INTERVAL 1 MINUTE)");
   // Parcels released before released_at existed: fall back to the order's own timestamp so
   // their age is roughly right rather than null.

@@ -37,8 +37,20 @@ class User {
           );
         } else if (accountRole === 'courier') {
           await connection.query(
-            'INSERT INTO couriers (user_id, name, phone) VALUES (?, ?, ?)',
-            [result.insertId, name, phone || ''],
+            // As on the other account shape: a new rider waits for an admin to approve
+            // them, and is inactive until then.
+            // The email is copied across so the admin console can show who a rider is;
+            // the sign-in itself still goes through the users table.
+            "INSERT INTO couriers (user_id, name, email, phone, approval_status, is_active) VALUES (?, ?, ?, ?, 'pending', 0)",
+            [result.insertId, name, email, phone || ''],
+          );
+        } else if (accountRole === 'admin') {
+          // Without this an admin fell through to the customers table: the account could
+          // sign in and moderate, but the console counted no admins and listed them as a
+          // shopper.
+          await connection.query(
+            'INSERT INTO admins (user_id, name, email) VALUES (?, ?, ?)',
+            [result.insertId, name, email],
           );
         } else {
           await connection.query(

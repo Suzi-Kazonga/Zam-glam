@@ -6,6 +6,9 @@ export default {
     '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
   },
   setupFilesAfterEnv: ['<rootDir>/src/setupTests.js'],
+  // The app is ESM ("type": "module"), so Babel only strips JSX and leaves the
+  // import/export syntax for Jest's own ES module support to run.
+  extensionsToTreatAsEsm: ['.jsx'],
   transform: {
     '^.+\\.(js|jsx)$': 'babel-jest',
   },
