@@ -100,6 +100,25 @@ Zamglam-main/
 
 ## Quick Start
 
+### Fastest start (Windows)
+
+From the project root, in a terminal:
+
+```powershell
+.\start.bat
+```
+
+It checks that MySQL is running, opens the backend and frontend in their own windows,
+and prints the address to use from a phone on the same Wi-Fi. Close those two windows
+to stop the servers.
+
+The script calls `npm.cmd` rather than `npm`: on a machine whose PowerShell execution
+policy blocks unsigned scripts, plain `npm run dev` fails with
+"npm.ps1 cannot be loaded because running scripts is disabled on this system". If you
+prefer plain `npm`, run `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` once.
+
+MySQL itself is not started by the script - start it from the XAMPP Control Panel.
+
 ### Prerequisites
 - Node.js 16+ 
 - npm
