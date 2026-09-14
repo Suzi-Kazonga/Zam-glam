@@ -14,6 +14,12 @@ export default defineConfig({
         target: 'http://localhost:5000',
         changeOrigin: true,
       },
+      // Seller-uploaded product photos are served by the backend, so they need the
+      // same proxy - otherwise they 404 for anyone not on this machine.
+      '/uploads': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
+      },
     },
   },
 });
