@@ -7,6 +7,7 @@ import TrackingTimeline from '../components/TrackingTimeline';
 
 import Sidebar from '../components/Sidebar';
 import Topbar from '../components/Topbar';
+import SuspendedNotice from '../components/SuspendedNotice';
 import HeroBanner from '../components/HeroBanner';
 import CategoryNav from '../components/CategoryNav';
 import StoreCard from '../components/StoreCard';
@@ -64,7 +65,7 @@ export default function CustomerDashboard() {
   const filteredProducts = useMemo(() => products.filter((product) => `${product.name} ${product.description || ''}`.toLowerCase().includes(storeSearch.toLowerCase())).slice(0, 8), [products, storeSearch]);
   const filteredStores = useMemo(() => stores.filter((store) => `${store.name}`.toLowerCase().includes(storeSearch.toLowerCase())), [stores, storeSearch]);
 
-  return <div className="flex min-h-screen bg-gray-50"><Sidebar items={sections} active={active} onSelect={setActive} role="customer" /><div className="min-w-0 flex-1"><Topbar onSearch={setQuery} /><main className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6 lg:p-8">
+  return <div className="flex min-h-screen bg-gray-50"><Sidebar items={sections} active={active} onSelect={setActive} role="customer" /><div className="min-w-0 flex-1"><Topbar onSearch={setQuery} /><SuspendedNotice /><main className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6 lg:p-8">
     <div><p className="text-sm font-semibold uppercase tracking-widest text-indigo-600">Customer space</p><h1 className="mt-2 text-3xl font-bold text-slate-900">Good to see you, {user?.name?.split(' ')[0] || 'there'}</h1><p className="mt-1 text-slate-500">Keep an eye on your orders and your next favorite find.</p></div>
 
     {active === 'Overview' && (

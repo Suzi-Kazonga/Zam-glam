@@ -4,6 +4,7 @@ import DashboardCard from '../components/DashboardCard';
 import Sidebar from '../components/Sidebar';
 import StarRating from '../components/StarRating';
 import Topbar from '../components/Topbar';
+import SuspendedNotice from '../components/SuspendedNotice';
 import { useAuth } from '../context/AuthContext';
 import ProductForm from '../components/ProductForm';
 import VerificationPanel from '../components/VerificationPanel';
@@ -146,7 +147,7 @@ export default function SellerDashboard() {
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar items={sections} active={active} onSelect={setActive} role="seller" shopName={sellerName} />
       <div className="min-w-0 flex-1">
-        <Topbar onSearch={setQuery} />
+        <Topbar onSearch={setQuery} /><SuspendedNotice />
         <main className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6 lg:p-8">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>

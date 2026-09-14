@@ -14,6 +14,7 @@ import CourierDashboard from './pages/CourierDashboard';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminRoute from './components/AdminRoute';
 import Header from './components/Header';
+import SuspendedNotice from './components/SuspendedNotice';
 import Footer from './components/Footer';
 import CartPage from './pages/CartPage';
 import AdminDashboard from './pages/AdminDashboard';
@@ -28,7 +29,7 @@ import AccountProfile from './pages/AccountProfile';
 import OrderTrack from './pages/OrderTrack';
 
 function MainLayout() {
-  return <div className="min-h-screen flex flex-col bg-slate-50"><Header /><main className="flex-1"><Outlet /></main><Footer /></div>;
+  return <div className="min-h-screen flex flex-col bg-slate-50"><Header /><SuspendedNotice /><main className="flex-1"><Outlet /></main><Footer /></div>;
 }
 
 class AppErrorBoundary extends React.Component {

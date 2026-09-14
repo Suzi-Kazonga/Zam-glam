@@ -5,13 +5,14 @@ import Sidebar from '../components/Sidebar';
 import Topbar from '../components/Topbar';
 import SellerVerificationQueue from '../components/SellerVerificationQueue';
 import UnclaimedParcels from '../components/UnclaimedParcels';
+import ReportsQueue from '../components/ReportsQueue';
 import { getAdminStats } from '../api/adminApi';
 import { isLocalDemoSession } from '../utils/localSession';
 import { createAccount, deleteAccount, getAccountStats, getAccounts, updateAccount } from '../utils/accountStore';
 
 const EMPTY_STATS = { subscribers: { customers: 0, sellers: 0, couriers: 0, admins: 0, total: 0 }, pending: { shops: 0, couriers: 0, total: 0 }, activity: { orders: 0, products: 0, stores: 0, reviews: 0 } };
 
-const sections = ['Overview', 'Sellers', 'Customers', 'Verification', 'Deliveries'];
+const sections = ['Overview', 'Sellers', 'Customers', 'Verification', 'Reports', 'Deliveries'];
 const emptyForm = {
   name: '',
   email: '',
@@ -205,6 +206,13 @@ export default function AdminDashboard() {
             </DashboardCard>
           )}
 
+          {active === 'Reports' && (
+            <DashboardCard title="Complaints and suspensions">
+              <p className="mt-1 text-sm text-slate-500">Parties reported by customers, shops or couriers. Three reports against the same party flag them here.</p>
+              <div className="mt-4"><ReportsQueue /></div>
+            </DashboardCard>
+          )}
+
           {active === 'Deliveries' && (
             <DashboardCard title="Parcels waiting for a courier">
               <p className="mt-1 text-sm text-slate-500">Released by a shop but not yet collected. Anything unclaimed for an hour is assigned to an on-duty courier automatically.</p>
@@ -212,7 +220,7 @@ export default function AdminDashboard() {
             </DashboardCard>
           )}
 
-          {active !== 'Verification' && active !== 'Deliveries' && (
+          {active !== 'Verification' && active !== 'Deliveries' && active !== 'Reports' && (
           <DashboardCard title={active === 'Overview' ? 'Recent accounts' : `${active} accounts`} className="overflow-hidden">
             <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
               <div className="flex flex-wrap gap-2">

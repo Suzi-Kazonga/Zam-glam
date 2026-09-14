@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { getOrder, updateOrderStatus } from '../api/orderApi';
 import { isLocalDemoSession, LOCAL_DEMO_ORDER_MESSAGE } from '../utils/localSession';
 import SellerRatingForm from '../components/SellerRatingForm';
+import ReportPartyForm from '../components/ReportPartyForm';
 import { getMyRatings } from '../api/reviewApi';
 
 export default function OrderTrack() {
@@ -142,6 +143,8 @@ export default function OrderTrack() {
             <p><span className="font-semibold">Total paid:</span> K{Number(order.total || 0).toFixed(2)}</p>
             <p className="capitalize"><span className="font-semibold">Status:</span> {order.status}</p>
           </div>
+          <div className="mt-6 border-t border-slate-100 pt-4"><ReportPartyForm orderId={order.id} /></div>
+
           {order.status !== 'delivered' && (
             <p className="mt-5 rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-500">
               {order.courier?.driver_name

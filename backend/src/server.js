@@ -14,6 +14,7 @@ import deliveryRoutes from './routes/deliveryRoutes.js';
 import dealRoutes from './routes/dealRoutes.js';
 import reviewRoutes from './routes/reviewRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
+import reportRoutes from './routes/reportRoutes.js';
 import Order from './models/Order.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -45,6 +46,7 @@ app.use('/api/delivery', deliveryRoutes);
 app.use('/api/deals', dealRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/reports', reportRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ message: 'Route not found.' });

@@ -222,6 +222,24 @@ export async function initializeDatabase() {
     );
   `);
 
+  // Complaints one party raises against another on a specific order. Three separate
+  // reports against the same party raise a flag for an admin to look at.
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS reports (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      order_id INT NULL,
+      reporter_role VARCHAR(20) NOT NULL,
+      reporter_id INT NOT NULL,
+      reported_role VARCHAR(20) NOT NULL,
+      reported_id INT NOT NULL,
+      reason VARCHAR(80) NOT NULL,
+      details TEXT,
+      status VARCHAR(20) NOT NULL DEFAULT 'open',
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE KEY uk_report_once (order_id, reporter_role, reporter_id, reported_role, reported_id)
+    );
+  `);
+
   await pool.query(`
     CREATE TABLE IF NOT EXISTS order_status_history (
       id INT AUTO_INCREMENT PRIMARY KEY,
@@ -351,6 +369,14 @@ export async function initializeDatabase() {
   // so shoppers can tell a checked shop from an unchecked one.
   // The admin console shows when each account joined; sellers had no such column.
   await addColumnIfMissing('sellers', 'created_at', 'TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP');
+
+  // Suspension is separate from verification and approval: a checked, approved account
+  // can still be suspended for conduct.
+  for (const table of ['sellers', 'customers', 'couriers']) {
+    await addColumnIfMissing(table, 'account_status', "VARCHAR(20) NOT NULL DEFAULT 'active'");
+    await addColumnIfMissing(table, 'suspended_at', 'TIMESTAMP NULL DEFAULT NULL');
+    await addColumnIfMissing(table, 'suspension_reason', 'VARCHAR(255)');
+  }
   await addColumnIfMissing('sellers', 'verification_status', "VARCHAR(20) NOT NULL DEFAULT 'pending'");
   await addColumnIfMissing('sellers', 'verified_at', 'TIMESTAMP NULL DEFAULT NULL');
   await addColumnIfMissing('documents', 'seller_id', 'INT NULL');
