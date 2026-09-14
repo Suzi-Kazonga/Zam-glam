@@ -102,15 +102,30 @@ Zamglam-main/
 
 ### Fastest start (Windows)
 
-From the project root, in a terminal:
+Start MySQL from the XAMPP Control Panel, then from the project root:
 
 ```powershell
-.\start.bat
+npm.cmd install      # first time only - also installs backend and frontend
+npm.cmd run dev      # starts backend and frontend together
 ```
 
-It checks that MySQL is running, opens the backend and frontend in their own windows,
-and prints the address to use from a phone on the same Wi-Fi. Close those two windows
-to stop the servers.
+Both servers run in the one terminal with their output prefixed `[backend]` and
+`[frontend]`; Ctrl+C stops both. Backend on http://localhost:5000, frontend on
+http://localhost:3000.
+
+Individually, if you prefer separate terminals:
+
+```powershell
+npm.cmd run dev:backend
+npm.cmd run dev:frontend
+```
+
+Or `.\start.bat`, which opens each in its own window, checks MySQL first, and prints
+the address to use from a phone on the same Wi-Fi.
+
+**If Vite says "Port 3000 is in use, trying another one", stop and investigate.** It
+means another server is already running - possibly from an old copy of the project -
+and the page you open will not be the one you just started.
 
 The script calls `npm.cmd` rather than `npm`: on a machine whose PowerShell execution
 policy blocks unsigned scripts, plain `npm run dev` fails with
