@@ -1,4 +1,4 @@
-import { pool } from './config/db.js';
+import { pool, initializeDatabase } from './config/db.js';
 import User from './models/User.js';
 import Store from './models/Store.js';
 import Product from './models/Product.js';
@@ -6,6 +6,10 @@ import Product from './models/Product.js';
 async function seedDatabase() {
   try {
     console.log('🌱 Starting database seed...');
+
+    // The seed may well be the first thing run after cloning, so make sure the schema
+    // exists rather than failing on 'Unknown database'.
+    await initializeDatabase();
 
     // Create sample categories
     const categoriesQuery = `
@@ -40,6 +44,9 @@ async function seedDatabase() {
             email: seller.email,
             password: seller.password,
             role: 'seller',
+            // Without this the shop is filed as "Mud's store" while its storefront is
+            // called "Mud", and the admin console shows the two different names.
+            shop_name: seller.name,
             phone: '+260-' + Math.random().toString().slice(2, 11),
           });
           sellerIds.push(userId);
