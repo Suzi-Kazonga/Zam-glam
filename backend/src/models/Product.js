@@ -82,7 +82,8 @@ class Product {
 
   // Get filtered products (audience + category)
   static async getFiltered(filters = {}) {
-    let query = `${Product.selectWithStore} WHERE 1=1`;
+    // A deleted shop's products leave the catalogue while it is in the grace period.
+    let query = `${Product.selectWithStore} WHERE sel.deleted_at IS NULL`;
     const values = [];
 
     if (filters.store_id) {

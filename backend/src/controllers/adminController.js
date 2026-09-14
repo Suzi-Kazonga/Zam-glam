@@ -46,3 +46,28 @@ export const reviewCourier = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+// Deleting is reversible for a grace period; the row stays, greyed out, until it expires.
+export const deleteAccount = async (req, res) => {
+  try {
+    res.json({ message: 'Account deleted. It can be restored during the grace period.', ...(await Admin.softDelete(req.params.role, req.params.id)) });
+  } catch (error) {
+    res.status(error.status || 500).json({ error: error.message });
+  }
+};
+
+export const restoreAccount = async (req, res) => {
+  try {
+    res.json({ message: 'Account restored', ...(await Admin.restore(req.params.role, req.params.id)) });
+  } catch (error) {
+    res.status(error.status || 500).json({ error: error.message });
+  }
+};
+
+export const editAccount = async (req, res) => {
+  try {
+    res.json({ message: 'Account updated', ...(await Admin.updateAccount(req.params.role, req.params.id, req.body)) });
+  } catch (error) {
+    res.status(error.status || 500).json({ error: error.message });
+  }
+};

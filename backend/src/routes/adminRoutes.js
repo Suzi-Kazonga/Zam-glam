@@ -12,4 +12,9 @@ router.get('/pending', adminController.getPendingRegistrations);
 router.get('/users/:role', adminController.getUsers);
 router.patch('/couriers/:id/approval', adminController.reviewCourier);
 
+// Account management. Deletion is a soft delete with a grace period and a restore.
+router.patch('/:role/:id', adminController.editAccount);
+router.delete('/:role/:id', adminController.deleteAccount);
+router.patch('/:role/:id/restore', adminController.restoreAccount);
+
 export default router;

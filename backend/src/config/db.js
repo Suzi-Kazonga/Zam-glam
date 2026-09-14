@@ -376,6 +376,9 @@ export async function initializeDatabase() {
     await addColumnIfMissing(table, 'account_status', "VARCHAR(20) NOT NULL DEFAULT 'active'");
     await addColumnIfMissing(table, 'suspended_at', 'TIMESTAMP NULL DEFAULT NULL');
     await addColumnIfMissing(table, 'suspension_reason', 'VARCHAR(255)');
+    // Deleting an account is reversible for 30 days: the row stays, greyed out in the
+    // admin console, and is only removed for good once the grace period passes.
+    await addColumnIfMissing(table, 'deleted_at', 'TIMESTAMP NULL DEFAULT NULL');
   }
   await addColumnIfMissing('sellers', 'verification_status', "VARCHAR(20) NOT NULL DEFAULT 'pending'");
   await addColumnIfMissing('sellers', 'verified_at', 'TIMESTAMP NULL DEFAULT NULL');

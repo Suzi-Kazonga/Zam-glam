@@ -16,6 +16,7 @@ import reviewRoutes from './routes/reviewRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import reportRoutes from './routes/reportRoutes.js';
 import Order from './models/Order.js';
+import Admin from './models/Admin.js';
 import { apiLimiter } from './middleware/rateLimit.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -67,6 +68,8 @@ const ESCALATION_SWEEP_MS = Number(process.env.PICKUP_ESCALATION_SWEEP_MS) || 5 
 function startPickupEscalation() {
   const sweep = async () => {
     try {
+      const purged = await Admin.purgeExpired();
+      purged.forEach((item) => console.log(`🗑  Grace period expired: ${item.role} ${item.id} permanently removed`));
       const escalated = await Order.escalateStaleParcels(ESCALATION_MINUTES);
       escalated.forEach((item) => {
         console.log(`↑ Parcel ${item.shipment_id} unclaimed for ${ESCALATION_MINUTES}m — assigned to ${item.courier_name}`);

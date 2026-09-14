@@ -40,3 +40,32 @@ export const reviewCourierApproval = async (courierId, status) => {
     throw error.response?.data || error.message;
   }
 };
+
+// Account management. `role` here is singular — 'seller' | 'customer' | 'courier'.
+export const editAdminAccount = async (role, id, fields) => {
+  try {
+    const response = await apiClient.patch(`/admin/${role}/${id}`, fields);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error.message;
+  }
+};
+
+// A soft delete: the account is greyed out for a grace period before it is removed.
+export const deleteAdminAccount = async (role, id) => {
+  try {
+    const response = await apiClient.delete(`/admin/${role}/${id}`);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error.message;
+  }
+};
+
+export const restoreAdminAccount = async (role, id) => {
+  try {
+    const response = await apiClient.patch(`/admin/${role}/${id}/restore`);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error.message;
+  }
+};

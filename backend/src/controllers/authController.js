@@ -1,5 +1,19 @@
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
+import { pool } from '../config/db.js';
+import { resolveSellerId, resolveCustomerId, resolveCourierId } from '../utils/accounts.js';
+
+// A deleted account keeps its row for a grace period so an admin can undo a mistake.
+// Nobody should be able to sign back into it meanwhile.
+async function deletedAtFor(user) {
+  const table = { seller: 'sellers', customer: 'customers', courier: 'couriers' }[user.role];
+  if (!table) return null;
+  const resolve = { seller: resolveSellerId, customer: resolveCustomerId, courier: resolveCourierId }[user.role];
+  const profileId = await resolve(user.id);
+  if (!profileId) return null;
+  const [rows] = await pool.query(`SELECT deleted_at FROM ${table} WHERE id = ?`, [profileId]);
+  return rows[0]?.deleted_at || null;
+}
 
 // Register a new user
 export const register = async (req, res) => {
@@ -74,6 +88,11 @@ export const login = async (req, res) => {
     const isPasswordValid = await User.verifyPassword(password, user.password_hash);
     if (!isPasswordValid) {
       return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
+    // A removed account cannot sign in, even while it is still restorable.
+    if (await deletedAtFor(user)) {
+      return res.status(403).json({ error: 'This account has been removed. Contact Zamglam support.' });
     }
 
     // Generate JWT
