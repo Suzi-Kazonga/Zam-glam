@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import CourierInfo from '../components/CourierInfo';
 import TrackingTimeline from '../components/TrackingTimeline';
 import { useAuth } from '../context/AuthContext';
-import { getOrder, updateOrderStatus } from '../api/orderApi';
+import { confirmDelivery, getOrder, updateOrderStatus } from '../api/orderApi';
 import { isLocalDemoSession, LOCAL_DEMO_ORDER_MESSAGE } from '../utils/localSession';
 import SellerRatingForm from '../components/SellerRatingForm';
 import ReportPartyForm from '../components/ReportPartyForm';
@@ -92,8 +92,23 @@ export default function OrderTrack() {
                 <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold capitalize text-slate-600">{shipment.status}</span>
               </div>
               <TrackingTimeline order={{ status: shipment.status, tracking: shipment.tracking }} />
-              {/* A delivered parcel can be rated — the shop is scored per order. */}
+              {/* The courier saying it arrived is their word for it; this is the
+                  customer's. Rating only opens once the customer has confirmed. */}
               {shipment.status === 'delivered' && user?.role === 'customer' && (
+                <div className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 p-4">
+                  <p className="text-sm font-semibold text-emerald-900">Did this package reach you?</p>
+                  <p className="mt-1 text-xs text-emerald-800">{shipment.driverName || 'The courier'} marked it delivered. Confirm so the order can be completed.</p>
+                  <button
+                    type="button"
+                    onClick={() => confirmDelivery(shipment.id).then(refresh).catch((e) => setLoadError(e?.error || 'Could not confirm that.'))}
+                    className="mt-3 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
+                  >
+                    Confirm I received this
+                  </button>
+                </div>
+              )}
+
+              {shipment.status === 'confirmed' && user?.role === 'customer' && (
                 <div className="mt-4">
                   <SellerRatingForm
                     order={order}

@@ -160,9 +160,29 @@ export async function setShift(onShift) {
   return data;
 }
 
-// Claim a parcel by collecting it; this is when the courier's details become visible.
-export async function pickUpParcel(shipmentId) {
-  const { data } = await apiClient.patch(`/orders/shipments/${shipmentId}/pickup`);
+// Handing a parcel over takes both sides: the courier asks, the shop confirms.
+
+// A courier asks for a parcel. Their details stay hidden until the shop confirms.
+export async function requestPickup(shipmentId) {
+  const { data } = await apiClient.patch(`/orders/shipments/${shipmentId}/pickup-request`);
+  return data;
+}
+
+// The shop confirms the courier in front of them took it — this reveals their details.
+export async function confirmPickup(shipmentId) {
+  const { data } = await apiClient.patch(`/orders/shipments/${shipmentId}/pickup-confirm`);
+  return data;
+}
+
+// The shop says the courier never collected it; it goes back to the pool.
+export async function denyPickup(shipmentId, reason) {
+  const { data } = await apiClient.patch(`/orders/shipments/${shipmentId}/pickup-deny`, { reason });
+  return data;
+}
+
+// The customer's own confirmation that the parcel arrived.
+export async function confirmDelivery(shipmentId) {
+  const { data } = await apiClient.patch(`/orders/shipments/${shipmentId}/confirm-delivery`);
   return data;
 }
 

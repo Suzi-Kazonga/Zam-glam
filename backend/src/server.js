@@ -16,6 +16,7 @@ import reviewRoutes from './routes/reviewRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import reportRoutes from './routes/reportRoutes.js';
 import Order from './models/Order.js';
+import { apiLimiter } from './middleware/rateLimit.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -25,6 +26,9 @@ const app = express();
 const PORT = Number(process.env.PORT) || 5000;
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+// Behind a proxy the client address arrives in X-Forwarded-For; without this the rate
+// limiter would count every visitor as the proxy and lock everyone out together.
+app.set('trust proxy', 1);
 app.use(helmet());
 app.use(cors());
 app.use(express.json());
@@ -36,6 +40,7 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', database: process.env.DB_NAME || 'zamglam_db' });
 });
 
+app.use('/api', apiLimiter);
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/store', storeRoutes);

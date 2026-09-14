@@ -5,7 +5,7 @@ import Sidebar from '../components/Sidebar';
 import Topbar from '../components/Topbar';
 import SuspendedNotice from '../components/SuspendedNotice';
 import { useAuth } from '../context/AuthContext';
-import { getAvailableParcels, getMyOrders, getShift, pickUpParcel, updateShipmentStatus } from '../api/orderApi';
+import { getAvailableParcels, getMyOrders, getShift, requestPickup, updateShipmentStatus } from '../api/orderApi';
 import CourierShiftToggle from '../components/CourierShiftToggle';
 import { formatWaiting, isOverdue } from '../utils/waiting';
 import { formatZmwPrice } from '../utils/currency';
@@ -13,7 +13,9 @@ import { formatZmwPrice } from '../utils/currency';
 const sections = ['Available', 'Deliveries', 'Completed', 'Stores'];
 
 // Once a courier has collected a parcel it is theirs to deliver.
-const isOutForDelivery = (order) => order.status === 'picked_up';
+// A requested parcel is not yours until the shop confirms; it still belongs in your list
+// so you can see you are waiting on them.
+const isOutForDelivery = (order) => order.status === 'picked_up' || order.status === 'pickup_requested';
 
 export default function CourierDashboard() {
   const { user } = useAuth();
@@ -66,8 +68,8 @@ export default function CourierDashboard() {
     setBusyId(order.shipmentId);
     setMessage('');
     try {
-      await pickUpParcel(order.shipmentId);
-      setMessage(`You picked up the parcel from ${order.storeName || 'the shop'}. The customer can now see your details.`);
+      await requestPickup(order.shipmentId);
+      setMessage(`Collection requested from ${order.storeName || 'the shop'}. They need to confirm the handover before it is yours to deliver.`);
       load();
       setActive('Deliveries');
     } catch (error) {
@@ -178,7 +180,7 @@ export default function CourierDashboard() {
                       onClick={() => pickUp(order)}
                       className="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-60"
                     >
-                      {busyId === order.shipmentId ? 'Picking up…' : 'Pick up'}
+                      {busyId === order.shipmentId ? 'Requesting…' : 'Request pickup'}
                     </button>
                   )}
                 />
@@ -202,7 +204,12 @@ export default function CourierDashboard() {
                 <ParcelCard
                   key={order.shipmentId}
                   order={order}
-                  action={(
+                  action={order.status === 'pickup_requested' ? (
+                    // Not yours to deliver until the shop confirms you actually took it.
+                    <span className="max-w-[10rem] text-right text-xs font-semibold text-amber-700">
+                      Waiting for {order.storeName || 'the shop'} to confirm handover
+                    </span>
+                  ) : (
                     <button
                       type="button"
                       disabled={busyId === order.shipmentId}

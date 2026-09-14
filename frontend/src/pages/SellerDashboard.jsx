@@ -10,7 +10,7 @@ import ProductForm from '../components/ProductForm';
 import VerificationPanel from '../components/VerificationPanel';
 import { formatWaiting, isOverdue } from '../utils/waiting';
 import { useProductEditor } from '../hooks/useProductEditor';
-import { getMyOrders, updateShipmentStatus } from '../api/orderApi';
+import { confirmPickup, denyPickup, getMyOrders, updateShipmentStatus } from '../api/orderApi';
 import { isLocalDemoSession } from '../utils/localSession';
 import { getMyReviews, replyToReview } from '../api/reviewApi';
 import { deleteProduct, getSellerProducts } from '../api/productApi';
@@ -129,6 +129,30 @@ export default function SellerDashboard() {
       loadOrders();
     } catch {
       setMessage('Could not update that parcel. Please try again.');
+    }
+  };
+
+  // The shop's word on whether the courier actually took the parcel. Confirming releases
+  // the courier's details to the customer; denying puts it back in the pool for someone
+  // else and tells the customer why it is taking longer.
+  const confirmHandover = async (order) => {
+    try {
+      await confirmPickup(order.shipmentId);
+      setMessage('Handover confirmed. The customer can now see the courier.');
+      loadOrders();
+    } catch (error) {
+      setMessage(error?.error || 'Could not confirm that handover.');
+    }
+  };
+
+  const denyHandover = async (order) => {
+    const reason = window.prompt('What happened? (optional — the customer sees this)') ?? '';
+    try {
+      await denyPickup(order.shipmentId, reason);
+      setMessage('Marked as not collected. The parcel is back in the pool for another courier.');
+      loadOrders();
+    } catch (error) {
+      setMessage(error?.error || 'Could not update that parcel.');
     }
   };
 
@@ -289,6 +313,18 @@ export default function SellerDashboard() {
                             {order.releasedAt && <span className="block text-xs font-normal">released {formatWaiting(order.releasedAt)} ago</span>}
                             {isOverdue(order.releasedAt) && <span className="block text-xs font-normal">overdue — being assigned</span>}
                           </span>
+                        ) : order.status === 'pickup_requested' ? (
+                          // A courier says they are collecting it. Only the shop can say
+                          // whether that actually happened.
+                          <div className="text-right">
+                            <p className="text-sm font-semibold text-amber-700">
+                              {order.courier?.driver_name || 'A courier'} is collecting
+                            </p>
+                            <div className="mt-2 flex gap-2">
+                              <button type="button" onClick={() => confirmHandover(order)} className="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-700">Picked up</button>
+                              <button type="button" onClick={() => denyHandover(order)} className="rounded-lg border border-rose-300 px-3 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-50">Not picked up</button>
+                            </div>
+                          </div>
                         ) : order.status === 'picked_up' ? (
                           <span className="text-right text-sm font-semibold text-amber-700">
                             With courier{order.courier?.driver_name ? ` · ${order.courier.driver_name}` : ''}

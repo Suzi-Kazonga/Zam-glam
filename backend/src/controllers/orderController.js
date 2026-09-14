@@ -143,13 +143,46 @@ export const setShift = async (req, res) => {
   }
 };
 
-// A courier claims a parcel by collecting it. This is the moment their details become
-// visible to the customer and the shop.
-export const pickUpParcel = async (req, res) => {
+// Handing a parcel over takes both sides: the courier asks for it, and the shop confirms
+// they actually handed it to that person. Until then the courier's details stay hidden and
+// the parcel is not considered collected.
+export const requestPickupParcel = async (req, res) => {
   try {
-    if (req.user.role !== 'courier') return res.status(403).json({ error: 'Only couriers can pick up parcels' });
-    const result = await Order.claimShipment(req.params.id, req.user.id);
-    res.json({ message: 'Parcel picked up', ...result });
+    if (req.user.role !== 'courier') return res.status(403).json({ error: 'Only couriers can collect parcels' });
+    const result = await Order.requestPickup(req.params.id, req.user.id);
+    res.json({ message: 'Pickup requested. The shop needs to confirm the handover.', ...result });
+  } catch (error) {
+    res.status(error.status || 500).json({ error: error.message });
+  }
+};
+
+export const confirmPickupParcel = async (req, res) => {
+  try {
+    if (req.user.role !== 'seller') return res.status(403).json({ error: 'Only the shop can confirm a handover' });
+    const result = await Order.confirmPickup(req.params.id, req.user.id);
+    res.json({ message: 'Handover confirmed', ...result });
+  } catch (error) {
+    res.status(error.status || 500).json({ error: error.message });
+  }
+};
+
+// The shop says the courier never turned up: back into the pool for someone else.
+export const denyPickupParcel = async (req, res) => {
+  try {
+    if (req.user.role !== 'seller') return res.status(403).json({ error: 'Only the shop can report a failed handover' });
+    const result = await Order.denyPickup(req.params.id, req.user.id, req.body?.reason);
+    res.json({ message: 'Parcel returned to the pool for another courier', ...result });
+  } catch (error) {
+    res.status(error.status || 500).json({ error: error.message });
+  }
+};
+
+// The customer's own confirmation that the parcel reached them.
+export const confirmDeliveryParcel = async (req, res) => {
+  try {
+    if (req.user.role !== 'customer') return res.status(403).json({ error: 'Only the customer can confirm delivery' });
+    const result = await Order.confirmDelivery(req.params.id, req.user.id);
+    res.json({ message: 'Thanks for confirming', ...result });
   } catch (error) {
     res.status(error.status || 500).json({ error: error.message });
   }

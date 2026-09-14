@@ -5,7 +5,7 @@ import { quoteDelivery } from '../services/courierProvider.js';
 // 'shipped' means the shop has released the parcel — it is then open to every courier.
 // 'picked_up' means one courier has claimed and collected it; only that courier can
 // deliver it, and only their details are shown to the customer and the shop.
-const TRACK_ORDER = ['placed', 'processing', 'shipped', 'picked_up', 'delivered'];
+const TRACK_ORDER = ['placed', 'processing', 'shipped', 'pickup_requested', 'picked_up', 'delivered', 'confirmed'];
 const PAYMENT_METHOD_MAP = {
   'Airtel Money': 'airtel_money',
   airtel_money: 'airtel_money',
@@ -247,7 +247,7 @@ class Order {
     // released by the shop is still sitting in the open pool.
     const gate = (courierish, status) => {
       if (!courierish) return courierish;
-      const pickedUp = (status === 'picked_up' || status === 'delivered') && Boolean(courierish.courier_id);
+      const pickedUp = ['picked_up', 'delivered', 'confirmed'].includes(status) && Boolean(courierish.courier_id);
       return {
         ...courierish,
         contact_available: pickedUp,
@@ -346,7 +346,7 @@ class Order {
       [shipment.order_id, shipmentId, status, note || null],
     );
 
-    if (status === 'shipped' || status === 'delivered') {
+    if (['shipped', 'picked_up', 'delivered', 'confirmed'].includes(status)) {
       const courierStatus = status === 'delivered' ? 'delivered' : 'in_transit';
       await pool.query('UPDATE courier SET status = ? WHERE order_id = ?', [courierStatus, shipment.order_id]);
     }
@@ -615,24 +615,24 @@ class Order {
     return escalated;
   }
 
-  // Claim a parcel. The WHERE clause carries courier_id IS NULL so that if two couriers
-  // tap "Pick up" at the same moment, exactly one of them wins.
-  static async claimShipment(shipmentId, courier_user_id) {
+  // Handing a parcel over takes both sides. The courier asks for it; the shop confirms
+  // they physically gave it to that person. Only then is it picked up, and only then are
+  // the courier's details released — so a courier cannot obtain a customer's contact
+  // details, or claim a delivery, by tapping a button from anywhere.
+  static async requestPickup(shipmentId, courier_user_id) {
     const courierId = await Order.resolveCourierId(courier_user_id);
     if (!courierId) throw Object.assign(new Error('Courier profile not found'), { status: 404 });
 
     const [courierRows] = await pool.query('SELECT id, name, phone, on_shift FROM couriers WHERE id = ?', [courierId]);
     const courier = courierRows[0];
-
     if (!courier.on_shift) {
-      throw Object.assign(new Error('Go on duty before picking up parcels'), { status: 409 });
+      throw Object.assign(new Error('Go on duty before requesting parcels'), { status: 409 });
     }
 
-    // Unclaimed parcels are first come, first served; a parcel escalated to this courier is
-    // already theirs, so they may collect that one too.
+    // First to ask wins, so two couriers cannot both be waiting on the same parcel.
     const [result] = await pool.query(
       `UPDATE shipments
-       SET courier_id = ?, driver_name = ?, driver_phone = ?, status = 'picked_up'
+       SET courier_id = ?, driver_name = ?, driver_phone = ?, status = 'pickup_requested'
        WHERE id = ? AND status = 'shipped' AND (courier_id IS NULL OR courier_id = ?)`,
       [courierId, courier.name, courier.phone || null, shipmentId, courierId],
     );
@@ -640,23 +640,97 @@ class Order {
     if (result.affectedRows === 0) {
       const existing = await Order.findShipmentById(shipmentId);
       if (!existing) throw Object.assign(new Error('Parcel not found'), { status: 404 });
+      if (existing.status === 'pickup_requested') throw Object.assign(new Error('Another courier is already collecting this parcel'), { status: 409 });
       if (existing.courier_id) throw Object.assign(new Error('Another courier has already taken this parcel'), { status: 409 });
       throw Object.assign(new Error('This parcel has not been released by the shop yet'), { status: 409 });
     }
 
     const shipment = await Order.findShipmentById(shipmentId);
-    await pool.query(
-      'INSERT INTO order_status_history (order_id, shipment_id, status, note) VALUES (?, ?, ?, ?)',
-      [shipment.order_id, shipmentId, 'picked_up', `Collected by ${courier.name}.`],
-    );
+    await Order._recordEvent(shipment.order_id, shipmentId, 'pickup_requested', `${courier.name} is collecting this parcel; waiting for the shop to confirm.`);
+    await Order.recomputeOrderStatus(shipment.order_id);
+    return { shipment_id: Number(shipmentId), courier_id: courierId, status: 'pickup_requested' };
+  }
+
+  // The shop confirms the courier in front of them actually took the parcel.
+  static async confirmPickup(shipmentId, seller_user_id) {
+    const sellerId = await resolveSellerId(seller_user_id);
+    const shipment = await Order.findShipmentById(shipmentId);
+    if (!shipment) throw Object.assign(new Error('Parcel not found'), { status: 404 });
+    if (Number(shipment.seller_id) !== Number(sellerId)) {
+      throw Object.assign(new Error('That parcel is not from your shop'), { status: 403 });
+    }
+    if (shipment.status !== 'pickup_requested') {
+      throw Object.assign(new Error('No courier is waiting to collect this parcel'), { status: 409 });
+    }
+
+    await pool.query("UPDATE shipments SET status = 'picked_up' WHERE id = ?", [shipmentId]);
+    await Order._recordEvent(shipment.order_id, shipmentId, 'picked_up', `Shop confirmed handover to ${shipment.driver_name || 'the courier'}.`);
     await pool.query(
       "UPDATE courier SET courier_id = ?, driver_name = ?, driver_phone = ?, status = 'in_transit' WHERE order_id = ?",
-      [courierId, courier.name, courier.phone || null, shipment.order_id],
+      [shipment.courier_id, shipment.driver_name, shipment.driver_phone, shipment.order_id],
     );
     await Order.recomputeOrderStatus(shipment.order_id);
-
-    return { shipment_id: Number(shipmentId), courier_id: courierId, status: 'picked_up' };
+    return { shipment_id: Number(shipmentId), status: 'picked_up' };
   }
+
+  // The shop says the courier never turned up. The parcel goes back to the pool for
+  // somebody else, and the customer is told why it is taking longer.
+  static async denyPickup(shipmentId, seller_user_id, reason) {
+    const sellerId = await resolveSellerId(seller_user_id);
+    const shipment = await Order.findShipmentById(shipmentId);
+    if (!shipment) throw Object.assign(new Error('Parcel not found'), { status: 404 });
+    if (Number(shipment.seller_id) !== Number(sellerId)) {
+      throw Object.assign(new Error('That parcel is not from your shop'), { status: 403 });
+    }
+    if (shipment.status !== 'pickup_requested') {
+      throw Object.assign(new Error('No collection is pending on this parcel'), { status: 409 });
+    }
+
+    const refused = shipment.driver_name || 'The courier';
+    await pool.query(
+      `UPDATE shipments
+       SET status = 'shipped', courier_id = NULL, driver_name = NULL, driver_phone = NULL,
+           released_at = CURRENT_TIMESTAMP, escalated_at = NULL
+       WHERE id = ?`,
+      [shipmentId],
+    );
+    await Order._recordEvent(
+      shipment.order_id,
+      shipmentId,
+      'shipped',
+      `${refused} did not collect the parcel${reason ? ` (${reason})` : ''}. It is back with the shop and open to other couriers.`,
+    );
+    await pool.query("UPDATE courier SET courier_id = NULL, driver_name = NULL, driver_phone = NULL, status = 'awaiting_pickup' WHERE order_id = ?", [shipment.order_id]);
+    await Order.recomputeOrderStatus(shipment.order_id);
+    return { shipment_id: Number(shipmentId), status: 'shipped', returned_to_pool: true };
+  }
+
+  // The customer confirms the parcel actually reached them. The courier marking it
+  // delivered is their word for it; this is the customer's.
+  static async confirmDelivery(shipmentId, customer_user_id) {
+    const customerId = await resolveCustomerId(customer_user_id);
+    const shipment = await Order.findShipmentById(shipmentId);
+    if (!shipment) throw Object.assign(new Error('Parcel not found'), { status: 404 });
+
+    const [own] = await pool.query('SELECT 1 FROM orders WHERE id = ? AND customer_id = ? LIMIT 1', [shipment.order_id, customerId]);
+    if (!own.length) throw Object.assign(new Error('That parcel is not from your order'), { status: 403 });
+    if (shipment.status !== 'delivered') {
+      throw Object.assign(new Error('The courier has not marked this parcel delivered yet'), { status: 409 });
+    }
+
+    await pool.query("UPDATE shipments SET status = 'confirmed' WHERE id = ?", [shipmentId]);
+    await Order._recordEvent(shipment.order_id, shipmentId, 'confirmed', 'Customer confirmed they received this parcel.');
+    await Order.recomputeOrderStatus(shipment.order_id);
+    return { shipment_id: Number(shipmentId), status: 'confirmed' };
+  }
+
+  static async _recordEvent(orderId, shipmentId, status, note) {
+    await pool.query(
+      'INSERT INTO order_status_history (order_id, shipment_id, status, note) VALUES (?, ?, ?, ?)',
+      [orderId, shipmentId, status, note || null],
+    );
+  }
+
 
   static async courierOwnsShipment(shipmentId, courier_user_id) {
     const courierId = await Order.resolveCourierId(courier_user_id);
