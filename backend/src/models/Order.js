@@ -439,6 +439,14 @@ class Order {
   static async setCourierShift(user_id, onShift) {
     const courierId = await resolveCourierId(user_id);
     if (!courierId) throw Object.assign(new Error('Courier profile not found'), { status: 404 });
+    // A sign-up an admin has not approved yet cannot put itself on duty.
+    if (onShift) {
+      const [approval] = await pool.query('SELECT approval_status FROM couriers WHERE id = ?', [courierId]);
+      if (approval[0] && approval[0].approval_status !== 'approved') {
+        throw Object.assign(new Error('Your courier account is waiting for admin approval'), { status: 403 });
+      }
+    }
+
 
     // A courier holding somebody's parcel cannot clock off — the parcel would be stranded
     // with nobody able to deliver it, since only the courier who collected it can.

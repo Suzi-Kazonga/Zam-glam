@@ -306,6 +306,12 @@ export async function initializeDatabase() {
   // Couriers go on and off duty; only on-duty couriers see the pool or receive escalations.
   await addColumnIfMissing('couriers', 'on_shift', 'TINYINT(1) NOT NULL DEFAULT 0');
   await addColumnIfMissing('couriers', 'shift_changed_at', 'TIMESTAMP NULL DEFAULT NULL');
+  // Couriers carry other people's parcels, so a new sign-up waits for an admin to
+  // approve it before it can be given work.
+  await addColumnIfMissing('couriers', 'approval_status', "VARCHAR(20) NOT NULL DEFAULT 'pending'");
+  await addColumnIfMissing('couriers', 'approved_at', 'TIMESTAMP NULL DEFAULT NULL');
+  // Couriers that predate this column were already working; treat them as approved.
+  await pool.query("UPDATE couriers SET approval_status = 'approved', approved_at = CURRENT_TIMESTAMP WHERE approval_status = 'pending' AND is_active = 1 AND created_at < (CURRENT_TIMESTAMP - INTERVAL 1 MINUTE)");
   // Parcels released before released_at existed: fall back to the order's own timestamp so
   // their age is roughly right rather than null.
   await pool.query(`
@@ -343,6 +349,8 @@ export async function initializeDatabase() {
 
   // Vendor verification: sellers submit ID/licence documents and an admin approves them,
   // so shoppers can tell a checked shop from an unchecked one.
+  // The admin console shows when each account joined; sellers had no such column.
+  await addColumnIfMissing('sellers', 'created_at', 'TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP');
   await addColumnIfMissing('sellers', 'verification_status', "VARCHAR(20) NOT NULL DEFAULT 'pending'");
   await addColumnIfMissing('sellers', 'verified_at', 'TIMESTAMP NULL DEFAULT NULL');
   await addColumnIfMissing('documents', 'seller_id', 'INT NULL');

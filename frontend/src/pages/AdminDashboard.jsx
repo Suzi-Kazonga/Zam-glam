@@ -1,10 +1,15 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import DashboardCard from '../components/DashboardCard';
 import Sidebar from '../components/Sidebar';
 import Topbar from '../components/Topbar';
 import SellerVerificationQueue from '../components/SellerVerificationQueue';
 import UnclaimedParcels from '../components/UnclaimedParcels';
+import { getAdminStats } from '../api/adminApi';
+import { isLocalDemoSession } from '../utils/localSession';
 import { createAccount, deleteAccount, getAccountStats, getAccounts, updateAccount } from '../utils/accountStore';
+
+const EMPTY_STATS = { subscribers: { customers: 0, sellers: 0, couriers: 0, admins: 0, total: 0 }, pending: { shops: 0, couriers: 0, total: 0 }, activity: { orders: 0, products: 0, stores: 0, reviews: 0 } };
 
 const sections = ['Overview', 'Sellers', 'Customers', 'Verification', 'Deliveries'];
 const emptyForm = {
@@ -92,6 +97,18 @@ function AccountModal({ role, account, onClose, onSave }) {
 }
 
 export default function AdminDashboard() {
+  // Real figures from the database; the old ones came from a hardcoded list in
+  // localStorage, so they were invented.
+  const [live, setLive] = useState(EMPTY_STATS);
+
+  useEffect(() => {
+    if (isLocalDemoSession()) return undefined;
+    const load = () => getAdminStats().then(setLive).catch(() => {});
+    load();
+    const poll = window.setInterval(load, 15000);
+    return () => window.clearInterval(poll);
+  }, []);
+
   const [active, setActive] = useState('Overview');
   const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -158,12 +175,27 @@ export default function AdminDashboard() {
           {notice && <p className="rounded-lg border border-slate-200 bg-slate-100 px-4 py-3 text-sm font-medium text-slate-900">{notice}</p>}
 
           {(active === 'Overview') && (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <button type="button" onClick={() => setActive('Sellers')} className="text-left"><DashboardCard title="Sellers" value={stats.sellers} detail="Registered shops" /></button>
-              <button type="button" onClick={() => setActive('Customers')} className="text-left"><DashboardCard title="Customers" value={stats.customers} detail="Shopper accounts" /></button>
-              <DashboardCard title="Active" value={stats.active} detail="Can use the platform" />
-              <DashboardCard title="Needs review" value={stats.pending + stats.suspended} detail={`${stats.pending} pending · ${stats.suspended} suspended`} />
-            </div>
+            <>
+              {/* Subscriber figures, straight from the database. Each opens the accounts behind it. */}
+              <div>
+                <h2 className="text-xl font-bold text-slate-900">Subscribers</h2>
+                <p className="text-sm text-slate-500">{live.subscribers.total} registered accounts. Click a figure to see who they are.</p>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <Link to="/admin/users/sellers" className="block"><DashboardCard title="Shops" value={live.subscribers.sellers} detail="Registered vendors →" /></Link>
+                <Link to="/admin/users/customers" className="block"><DashboardCard title="Customers" value={live.subscribers.customers} detail="Shopper accounts →" /></Link>
+                <Link to="/admin/users/couriers" className="block"><DashboardCard title="Couriers" value={live.subscribers.couriers} detail="Delivery riders →" /></Link>
+                <button type="button" onClick={() => setActive('Verification')} className="text-left"><DashboardCard title="Awaiting approval" value={live.pending.total} detail={live.pending.shops + ' shop(s) · ' + live.pending.couriers + ' courier(s)'} /></button>
+              </div>
+
+              <div><h2 className="text-xl font-bold text-slate-900">Activity</h2></div>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <DashboardCard title="Orders" value={live.activity.orders} detail="Placed all time" />
+                <DashboardCard title="Products" value={live.activity.products} detail="Listed across shops" />
+                <DashboardCard title="Stores" value={live.activity.stores} detail="Storefronts open" />
+                <DashboardCard title="Reviews" value={live.activity.reviews} detail="Customer ratings" />
+              </div>
+            </>
           )}
 
           {active === 'Verification' && (

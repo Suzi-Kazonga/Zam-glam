@@ -5,6 +5,7 @@ import SearchBar from './SearchBar';
 import CartIcon from './CartIcon';
 import DeliveryIcon from './DeliveryIcon';
 import SellerOrderIcon from './SellerOrderIcon';
+import AdminApprovalsIcon from './AdminApprovalsIcon';
 import { getStorefrontPath } from '../utils/storeLogos';
 import { themeForRole } from '../utils/roleTheme';
 
@@ -34,12 +35,13 @@ const Header = () => {
         {user?.role === 'customer' && <Link to="/customer/dashboard" className={linkClass}>Dashboard</Link>}
         {user?.role === 'seller' && <><Link to="/seller/dashboard" className={linkClass}>Seller Dashboard</Link><Link to={getStorefrontPath(user.shop_name || user.name)} className={linkClass}>View store</Link></>}
         {user?.role === 'courier' && <Link to="/courier/dashboard" className={linkClass}>My Deliveries</Link>}
-        {user?.role === 'admin' && <Link to="/admin/dashboard" className={linkClass}>Admin</Link>}
+        {user?.role === 'admin' && <><Link to="/admin/dashboard" className={linkClass}>Admin</Link><Link to="/admin/users/sellers" className={linkClass}>Shops</Link><Link to="/admin/users/customers" className={linkClass}>Customers</Link><Link to="/admin/users/couriers" className={linkClass}>Couriers</Link></>}
       </nav>
       <div className="ml-auto flex items-center gap-3">
         {user?.role !== 'admin' && user?.role !== 'seller' && user?.role !== 'courier' && <CartIcon />}
         {user?.role === 'courier' && <DeliveryIcon />}
         {user?.role === 'seller' && <SellerOrderIcon />}
+        {user?.role === 'admin' && <AdminApprovalsIcon />}
 
         {user ? (
           <div className="flex items-center gap-3">

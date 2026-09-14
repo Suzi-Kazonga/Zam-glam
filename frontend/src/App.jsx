@@ -17,6 +17,7 @@ import Header from './components/Header';
 import Footer from './components/Footer';
 import CartPage from './pages/CartPage';
 import AdminDashboard from './pages/AdminDashboard';
+import AdminUsers from './pages/AdminUsers';
 import Products from './pages/Products';
 import StoreCatalog from './pages/StoreCatalog';
 import Collections from './pages/Collections';
@@ -102,6 +103,7 @@ function App() {
             <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
             <Route element={<AdminRoute />}>
               <Route path="/admin/dashboard" element={<AdminDashboard />} />
+              <Route path="/admin/users/:role" element={<AdminUsers />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

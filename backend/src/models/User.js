@@ -62,7 +62,8 @@ class User {
 
       if (accountRole === 'courier') {
         const [result] = await connection.query(
-          'INSERT INTO couriers (name, email, password, phone) VALUES (?, ?, ?, ?)',
+          // New couriers wait for admin approval before they can be given parcels.
+          "INSERT INTO couriers (name, email, password, phone, approval_status, is_active) VALUES (?, ?, ?, ?, 'pending', 0)",
           [name, email, hashedPassword, phone || ''],
         );
         await connection.commit();
