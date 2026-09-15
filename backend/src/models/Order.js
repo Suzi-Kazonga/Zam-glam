@@ -5,7 +5,7 @@ import { quoteDelivery } from '../services/courierProvider.js';
 // 'shipped' means the shop has released the parcel — it is then open to every courier.
 // 'picked_up' means one courier has claimed and collected it; only that courier can
 // deliver it, and only their details are shown to the customer and the shop.
-const TRACK_ORDER = ['placed', 'processing', 'shipped', 'pickup_requested', 'picked_up', 'delivered', 'confirmed'];
+const TRACK_ORDER = ['placed', 'processing', 'shipped', 'pickup_requested', 'picked_up', 'delivered'];
 const PAYMENT_METHOD_MAP = {
   'Airtel Money': 'airtel_money',
   airtel_money: 'airtel_money',
@@ -61,12 +61,25 @@ class Order {
       const quantity = Number(item.quantity) || 1;
       if (quantity < 1) throw Object.assign(new Error('Quantity must be at least 1'), { status: 400 });
       const [rows] = await connection.query(
-        `SELECT p.id, p.name, p.price, p.stock, p.seller_id, s.name AS store_name
-         FROM products p LEFT JOIN stores s ON s.id = p.store_id WHERE p.id = ?`,
+        `SELECT p.id, p.name, p.price, p.stock, p.seller_id, s.name AS store_name,
+                sel.account_status, sel.deleted_at
+         FROM products p
+         LEFT JOIN stores s ON s.id = p.store_id
+         LEFT JOIN sellers sel ON sel.id = p.seller_id
+         WHERE p.id = ?`,
         [item.product_id],
       );
       const product = rows[0];
       if (!product) throw Object.assign(new Error(`Product ${item.product_id} not found`), { status: 404 });
+      // A shop that has been suspended or removed cannot be ordered from. Its products
+      // leave the catalogue, but a basket filled before that still holds them, and the
+      // product id is guessable — so the refusal belongs here, not only in the listing.
+      if (product.deleted_at) {
+        throw Object.assign(new Error(`${product.store_name || 'That shop'} is no longer on Zamglam, so ${product.name} cannot be ordered.`), { status: 409 });
+      }
+      if (product.account_status === 'suspended') {
+        throw Object.assign(new Error(`${product.store_name || 'That shop'} is suspended, so ${product.name} cannot be ordered right now.`), { status: 409 });
+      }
       if (Number(product.stock) < quantity) {
         throw Object.assign(new Error(`Not enough stock for ${product.name}`), { status: 409 });
       }
@@ -240,19 +253,26 @@ class Order {
   // Courier contact details are released only once the parcel has actually been picked up
   // (the shop marked it 'shipped'). Before that the customer/seller see that a courier is
   // assigned, but not how to contact them.
-  static withCourierContactVisibility(order) {
+  // `viewer` is the role reading the order. A shop is asked to confirm that a named person
+  // took its parcel, so it has to be told who is asking from the moment the request is
+  // made — otherwise "confirm the handover" means confirming an anonymous claim. Everyone
+  // else learns who the courier is only once the shop says the parcel changed hands.
+  static withCourierContactVisibility(order, viewer = 'customer') {
     if (!order) return order;
-    // A courier's details are released only once they have actually picked the parcel up.
-    // Before that nobody is assigned, so there is nothing to show; a parcel merely
-    // released by the shop is still sitting in the open pool.
+
     const gate = (courierish, status) => {
       if (!courierish) return courierish;
-      const pickedUp = ['picked_up', 'delivered', 'confirmed'].includes(status) && Boolean(courierish.courier_id);
+      const assigned = Boolean(courierish.courier_id);
+      const pickedUp = ['picked_up', 'delivered'].includes(status) && assigned;
+      // The shop it is being collected from, while the handover is pending.
+      const awaitingThisShop = viewer === 'seller' && status === 'pickup_requested' && assigned;
+      const reveal = pickedUp || awaitingThisShop;
+
       return {
         ...courierish,
         contact_available: pickedUp,
-        driver_name: pickedUp ? courierish.driver_name : null,
-        driver_phone: pickedUp ? courierish.driver_phone : null,
+        driver_name: reveal ? courierish.driver_name : null,
+        driver_phone: reveal ? courierish.driver_phone : null,
       };
     };
 
@@ -335,6 +355,27 @@ class Order {
     const shipment = await Order.findShipmentById(shipmentId);
     if (!shipment) return null;
 
+    // Once a courier has the parcel it is out of the shop's hands: cancelling it then
+    // would restore stock for goods that are on their way to the customer.
+    if (status === 'cancelled' && ['picked_up', 'delivered'].includes(shipment.status)) {
+      throw Object.assign(new Error('This parcel has already been collected and cannot be cancelled'), { status: 409 });
+    }
+
+    // Cancelling a parcel puts its items back on the shelf. Stock comes off when the order
+    // is placed, so without this a cancelled parcel quietly destroys the shop's stock: the
+    // goods are still there, but the catalogue says they are sold.
+    if (status === 'cancelled' && shipment.status !== 'cancelled') {
+      await pool.query(
+        `UPDATE products p
+         JOIN order_items oi ON oi.product_id = p.id
+         SET p.stock = p.stock + oi.quantity
+         WHERE oi.order_id = ? AND p.seller_id = ?`,
+        [shipment.order_id, shipment.seller_id],
+      );
+      // A cancelled parcel is nobody's to collect, so it leaves the pool and any courier.
+      await pool.query('UPDATE shipments SET courier_id = NULL, driver_name = NULL, driver_phone = NULL WHERE id = ?', [shipmentId]);
+    }
+
     // Releasing the parcel starts the clock that the pool ages and escalation watches.
     if (status === 'shipped') {
       await pool.query('UPDATE shipments SET status = ?, released_at = CURRENT_TIMESTAMP WHERE id = ?', [status, shipmentId]);
@@ -346,7 +387,7 @@ class Order {
       [shipment.order_id, shipmentId, status, note || null],
     );
 
-    if (['shipped', 'picked_up', 'delivered', 'confirmed'].includes(status)) {
+    if (['shipped', 'picked_up', 'delivered'].includes(status)) {
       const courierStatus = status === 'delivered' ? 'delivered' : 'in_transit';
       await pool.query('UPDATE courier SET status = ? WHERE order_id = ?', [courierStatus, shipment.order_id]);
     }
@@ -427,10 +468,12 @@ class Order {
     return rows[0] || null;
   }
 
-  // Parcels a courier is currently carrying: collected but not yet delivered.
+  // Parcels this courier is answerable for. A requested pickup counts: it has left the
+  // pool, a shop is expecting that rider at the counter, and no other courier can take it.
+  // Clocking off at that point would strand the parcel until the shop reported a no-show.
   static async countCarriedParcels(courierId) {
     const [rows] = await pool.query(
-      "SELECT COUNT(*) AS count FROM shipments WHERE courier_id = ? AND status = 'picked_up'",
+      "SELECT COUNT(*) AS count FROM shipments WHERE courier_id = ? AND status IN ('pickup_requested', 'picked_up')",
       [courierId],
     );
     return Number(rows[0]?.count || 0);
@@ -454,7 +497,7 @@ class Order {
       const carrying = await Order.countCarriedParcels(courierId);
       if (carrying > 0) {
         throw Object.assign(
-          new Error(`You are carrying ${carrying} parcel${carrying === 1 ? '' : 's'}. Deliver ${carrying === 1 ? 'it' : 'them'} before going off duty.`),
+          new Error(`You still have ${carrying} parcel${carrying === 1 ? '' : 's'} to see through. Deliver ${carrying === 1 ? 'it' : 'them'}, or ask the shop to release ${carrying === 1 ? 'it' : 'them'} if you did not collect ${carrying === 1 ? 'it' : 'them'}, before going off duty.`),
           { status: 409 },
         );
       }
@@ -703,25 +746,6 @@ class Order {
     await pool.query("UPDATE courier SET courier_id = NULL, driver_name = NULL, driver_phone = NULL, status = 'awaiting_pickup' WHERE order_id = ?", [shipment.order_id]);
     await Order.recomputeOrderStatus(shipment.order_id);
     return { shipment_id: Number(shipmentId), status: 'shipped', returned_to_pool: true };
-  }
-
-  // The customer confirms the parcel actually reached them. The courier marking it
-  // delivered is their word for it; this is the customer's.
-  static async confirmDelivery(shipmentId, customer_user_id) {
-    const customerId = await resolveCustomerId(customer_user_id);
-    const shipment = await Order.findShipmentById(shipmentId);
-    if (!shipment) throw Object.assign(new Error('Parcel not found'), { status: 404 });
-
-    const [own] = await pool.query('SELECT 1 FROM orders WHERE id = ? AND customer_id = ? LIMIT 1', [shipment.order_id, customerId]);
-    if (!own.length) throw Object.assign(new Error('That parcel is not from your order'), { status: 403 });
-    if (shipment.status !== 'delivered') {
-      throw Object.assign(new Error('The courier has not marked this parcel delivered yet'), { status: 409 });
-    }
-
-    await pool.query("UPDATE shipments SET status = 'confirmed' WHERE id = ?", [shipmentId]);
-    await Order._recordEvent(shipment.order_id, shipmentId, 'confirmed', 'Customer confirmed they received this parcel.');
-    await Order.recomputeOrderStatus(shipment.order_id);
-    return { shipment_id: Number(shipmentId), status: 'confirmed' };
   }
 
   static async _recordEvent(orderId, shipmentId, status, note) {

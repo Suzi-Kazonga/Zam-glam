@@ -101,13 +101,23 @@ export default function StoreCatalog() {
           <p className="text-sm font-semibold uppercase tracking-widest text-indigo-600">Store catalog</p>
           <div className="mt-2 flex flex-wrap items-center gap-3">
             <h1 className="text-4xl font-bold text-slate-900">{store.name} Store</h1>
-            {store.verification_status === 'verified' ? (
+            {/* A suspended shop shows as unavailable instead of its verification state —
+                it cannot take an order, which is what a shopper needs to know first. */}
+            {store.account_status === 'suspended' ? (
+              <span title="This shop is suspended and cannot take orders" className="rounded-full bg-rose-100 px-3 py-1 text-sm font-semibold text-rose-800">Unavailable</span>
+            ) : store.verification_status === 'verified' ? (
               <span title="This shop's documents have been checked by Zamglam" className="rounded-full bg-emerald-100 px-3 py-1 text-sm font-semibold text-emerald-800">✓ Verified shop</span>
             ) : store.verification_status && (
               <span className="rounded-full bg-amber-100 px-3 py-1 text-sm font-semibold text-amber-800">Not yet verified</span>
             )}
           </div>
           <p className="mt-2 text-slate-500">Clothes and shoes selected from {store.name}.</p>
+          {store.account_status === 'suspended' && (
+            <p className="mt-3 max-w-xl rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+              This shop is suspended while Zamglam looks into complaints about it, so orders cannot be
+              placed from it for now. You can still browse what it sells.
+            </p>
+          )}
           {Number(store.rating_count) > 0 && (
             <p className="mt-2 text-sm text-amber-600">
               ★ {store.rating_average} average from {store.rating_count} customer rating{Number(store.rating_count) === 1 ? '' : 's'}

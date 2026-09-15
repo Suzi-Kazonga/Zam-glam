@@ -180,12 +180,6 @@ export async function denyPickup(shipmentId, reason) {
   return data;
 }
 
-// The customer's own confirmation that the parcel arrived.
-export async function confirmDelivery(shipmentId) {
-  const { data } = await apiClient.patch(`/orders/shipments/${shipmentId}/confirm-delivery`);
-  return data;
-}
-
 // Move a single store's parcel within an order, leaving the other stores' parcels alone.
 export async function updateShipmentStatus(shipmentId, status) {
   const { data } = await apiClient.patch(`/orders/shipments/${shipmentId}/status`, { status });

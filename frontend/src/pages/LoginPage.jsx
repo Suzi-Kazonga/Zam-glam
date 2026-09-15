@@ -2,9 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
-import { ADMIN_CREDENTIALS } from '../utils/adminAuth';
-import { CUSTOMER_CREDENTIALS } from '../utils/customerAuth';
-import { SELLER_CREDENTIALS } from '../utils/sellerAuth';
 import { dashboardForRole, getPostLoginPath } from '../utils/authRedirect';
 import { ROLE_THEMES } from '../utils/roleTheme';
 
@@ -19,7 +16,10 @@ function LoginPage() {
   const [password, setPassword] = useState('');
   const [role, setRole] = useState('customer');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(location.state?.signupError || '');
+  // ?reason=… is set when the API client ends a dead session and sends the user here.
+  const [error, setError] = useState(
+    location.state?.signupError || new URLSearchParams(location.search).get('reason') || '',
+  );
   const { login, user } = useAuth();
   const { getTotalItems } = useCart();
   const navigate = useNavigate();
@@ -75,8 +75,8 @@ function LoginPage() {
           </p>
         </div>
 
-        <div className="p-8">
-          <div className="grid grid-cols-4 gap-2 mb-6">
+        <div className="p-5 sm:p-8">
+          <div className="grid grid-cols-2 gap-2 mb-6 sm:grid-cols-4">
             {['customer', 'seller', 'courier', 'admin'].map((option) => (
               <button
                 key={option}
@@ -97,25 +97,29 @@ function LoginPage() {
             {error && (
               <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-3 text-sm text-red-600">
                 <p className="font-semibold">{error}</p>
-                <p className="mt-1 text-red-500">Please log in with your existing account, or create a different one.</p>
+                {/* Only the "that email is taken" case wants this advice; a session that has
+                    simply ended does not. */}
+                {location.state?.signupError && (
+                  <p className="mt-1 text-red-500">Please log in with your existing account, or create a different one.</p>
+                )}
               </div>
             )}
 
             {role === 'admin' && (
               <div className="rounded-lg bg-slate-50 border border-slate-200 px-3 py-2 text-xs text-slate-600">
-                Demo admin: <strong>{ADMIN_CREDENTIALS.email}</strong> / <strong>{ADMIN_CREDENTIALS.password}</strong>
+                Seeded admin: <strong>admin@zamglam.local</strong> / <strong>ADMIN123456</strong>
               </div>
             )}
 
             {role === 'customer' && (
               <div className="rounded-lg bg-indigo-50 border border-indigo-100 px-3 py-2 text-xs text-slate-600">
-                Demo customer: <strong>{CUSTOMER_CREDENTIALS.email}</strong> / <strong>{CUSTOMER_CREDENTIALS.password}</strong>
+                Seeded customer: <strong>customer@zamglam.local</strong> / <strong>CUSTOMER123456</strong>
               </div>
             )}
 
             {role === 'seller' && (
               <div className="rounded-lg bg-purple-50 border border-purple-100 px-3 py-2 text-xs text-slate-600">
-                Demo seller: <strong>{SELLER_CREDENTIALS.email}</strong> / <strong>{SELLER_CREDENTIALS.password}</strong>
+                Seeded shop: <strong>mud@zamglam.local</strong> / <strong>MUD123456</strong>
               </div>
             )}
 

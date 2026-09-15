@@ -1,6 +1,6 @@
 import {
   api, auth, pool, prepareDatabase, closeDatabase,
-  makeSeller, makeCustomer, makeCourier, makeAdmin, listProduct, placeOrder, shipmentsOf,
+  makeSeller, makeCustomer, makeCourier, makeAdmin, listProduct, placeOrder, shipmentsOf, releaseParcel,
 } from '../helpers/harness.js';
 
 // One pool serves the whole file, so it is closed once, after every group has finished.
@@ -265,6 +265,46 @@ describe('Moving a parcel through its stages', () => {
     const response = await api().patch(`/api/orders/shipments/${parcelId}/status`).set(auth(admin)).send({ status: 'delivered' });
     expect(response.status).toBe(409);
     expect(courier.token).toEqual(expect.any(String));
+  });
+
+  test('cancelling a parcel puts its stock back on the shelf', async () => {
+    const product = await listProduct(shop, { stock: 10 });
+    const order = await placeOrder(customer, [{ id: product.id, quantity: 3 }]);
+    const [parcel] = await shipmentsOf(order.body.id);
+
+    const sold = await api().get(`/api/products/${product.id}`);
+    expect(sold.body.stock).toBe(7);
+
+    await api().patch(`/api/orders/shipments/${parcel.id}/status`).set(auth(shop)).send({ status: 'cancelled' }).expect(200);
+
+    const restocked = await api().get(`/api/products/${product.id}`);
+    expect(restocked.body.stock).toBe(10);
+  });
+
+  test('cancelling twice does not inflate the stock', async () => {
+    const product = await listProduct(shop, { stock: 5 });
+    const order = await placeOrder(customer, [{ id: product.id, quantity: 2 }]);
+    const [parcel] = await shipmentsOf(order.body.id);
+
+    await api().patch(`/api/orders/shipments/${parcel.id}/status`).set(auth(shop)).send({ status: 'cancelled' });
+    await api().patch(`/api/orders/shipments/${parcel.id}/status`).set(auth(shop)).send({ status: 'cancelled' });
+
+    const after = await api().get(`/api/products/${product.id}`);
+    expect(after.body.stock).toBe(5);
+  });
+
+  test('a parcel already with a courier cannot be cancelled', async () => {
+    const courier = await makeCourier();
+    const product = await listProduct(shop);
+    const order = await placeOrder(customer, [{ id: product.id }]);
+    const [parcel] = await shipmentsOf(order.body.id);
+
+    await releaseParcel(shop, parcel.id);
+    await api().patch(`/api/orders/shipments/${parcel.id}/pickup-request`).set(auth(courier));
+    await api().patch(`/api/orders/shipments/${parcel.id}/pickup-confirm`).set(auth(shop));
+
+    const response = await api().patch(`/api/orders/shipments/${parcel.id}/status`).set(auth(shop)).send({ status: 'cancelled' });
+    expect(response.status).toBe(409);
   });
 
   test('releasing a parcel records when it went into the pool', async () => {

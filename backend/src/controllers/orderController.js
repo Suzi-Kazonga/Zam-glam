@@ -50,7 +50,7 @@ export const getMyOrders = async (req, res) => {
     else orders = await Order.findByCustomerUserId(req.user.id);
 
     // The courier always sees their own assignment; everyone else only after pickup.
-    if (req.user.role !== 'courier') orders = orders.map(Order.withCourierContactVisibility);
+    if (req.user.role !== 'courier') orders = orders.map((order) => Order.withCourierContactVisibility(order, req.user.role));
     res.json(orders);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -89,7 +89,7 @@ export const getOrder = async (req, res) => {
     }
 
     // The courier always sees their own assignment; everyone else only after pickup.
-    res.json(req.user.role === 'courier' ? order : Order.withCourierContactVisibility(order));
+    res.json(req.user.role === 'courier' ? order : Order.withCourierContactVisibility(order, req.user.role));
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -177,17 +177,6 @@ export const denyPickupParcel = async (req, res) => {
   }
 };
 
-// The customer's own confirmation that the parcel reached them.
-export const confirmDeliveryParcel = async (req, res) => {
-  try {
-    if (req.user.role !== 'customer') return res.status(403).json({ error: 'Only the customer can confirm delivery' });
-    const result = await Order.confirmDelivery(req.params.id, req.user.id);
-    res.json({ message: 'Thanks for confirming', ...result });
-  } catch (error) {
-    res.status(error.status || 500).json({ error: error.message });
-  }
-};
-
 // Update ONE parcel (shipment) within an order. Each store's parcel moves independently,
 // so one shop packing or handing over never changes another shop's parcel. Delivery stays
 // the courier's call alone.
@@ -223,7 +212,7 @@ export const updateShipmentStatus = async (req, res) => {
     if (!result) return res.status(404).json({ error: 'Parcel not found' });
     res.json({ message: 'Parcel status updated', ...result });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(error.status || 500).json({ error: error.message });
   }
 };
 
@@ -256,6 +245,6 @@ export const updateOrderStatus = async (req, res) => {
     if (!updated) return res.status(404).json({ error: 'Order not found' });
     res.json({ message: 'Order status updated' });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(error.status || 500).json({ error: error.message });
   }
 };

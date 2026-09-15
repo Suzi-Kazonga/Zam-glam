@@ -334,6 +334,14 @@ export async function initializeDatabase() {
   // waiting for a courier, and when it should be escalated.
   await addColumnIfMissing('shipments', 'released_at', 'TIMESTAMP NULL DEFAULT NULL');
   await addColumnIfMissing('shipments', 'escalated_at', 'TIMESTAMP NULL DEFAULT NULL');
+  // Delivery used to need a second confirmation from the customer, which left parcels in a
+  // 'confirmed' status. That step is gone — the courier marking a parcel delivered is the
+  // end of it — so rows still holding the old status are folded into 'delivered'. Without
+  // this they would sit in a status the tracking no longer knows, and the order rollup
+  // would read them as not yet placed.
+  await pool.query("UPDATE shipments SET status = 'delivered' WHERE status = 'confirmed'");
+  await pool.query("UPDATE orders SET status = 'delivered' WHERE status = 'confirmed'");
+
   // Couriers came later than the users table, whose role column did not list them: on a
   // database created before that, a courier sign-up would be stored with no role at all.
   await pool.query("ALTER TABLE users MODIFY role ENUM('admin','customer','seller','courier') NOT NULL DEFAULT 'customer'");

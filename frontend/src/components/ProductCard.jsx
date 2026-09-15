@@ -39,7 +39,11 @@ const ProductCard = ({ product }) => {
       <div className="p-4">
         <p className="mb-1 flex items-center gap-1 text-xs uppercase tracking-wider text-slate-400">
           {sellerName || product.audience || 'New arrival'}
-          {product.store_verification === 'verified' && (
+          {/* A suspended shop takes the place of the badge entirely: whether its papers
+              were once checked is beside the point while it cannot trade. */}
+          {product.store_status === 'suspended' ? (
+            <span title="This shop is suspended and cannot take orders" className="rounded-full bg-rose-100 px-1.5 py-0.5 text-[10px] font-bold normal-case text-rose-800">Unavailable</span>
+          ) : product.store_verification === 'verified' && (
             <span title="Verified shop" className="rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] font-bold normal-case text-emerald-800">✓ Verified</span>
           )}
         </p>

@@ -28,7 +28,23 @@ export default function CourierDashboard() {
   const [onShift, setOnShift] = useState(false);
 
   const load = () => {
-    getMyOrders().then(setOrders).catch(() => setMessage('Could not load your parcels.'));
+    getMyOrders()
+      .then((rows) => {
+        // A parcel the rider was holding only leaves their list one way: the shop said it
+        // was never collected and put it back in the pool. Say so, rather than letting it
+        // disappear without explanation.
+        setOrders((previous) => {
+          const held = previous.filter((order) => isOutForDelivery(order));
+          const stillMine = new Set(rows.map((order) => order.shipmentId));
+          const returned = held.filter((order) => !stillMine.has(order.shipmentId));
+          if (returned.length) {
+            const names = returned.map((order) => `#${order.id}`).join(', ');
+            setMessage(`${returned.length === 1 ? 'Parcel' : 'Parcels'} ${names} went back to the shop — they reported it was not collected. It is open to other couriers again.`);
+          }
+          return rows;
+        });
+      })
+      .catch(() => setMessage('Could not load your parcels.'));
     getAvailableParcels().then(setAvailable).catch(() => {});
     getShift().then((s) => setOnShift(Boolean(s.on_shift))).catch(() => {});
   };
@@ -138,7 +154,7 @@ export default function CourierDashboard() {
       <Sidebar items={sections} active={active} onSelect={setActive} role="courier" />
       <div className="min-w-0 flex-1">
         <Topbar onSearch={setQuery} /><SuspendedNotice />
-        <main className="mx-auto max-w-6xl space-y-6 p-4 sm:p-6 lg:p-8">
+        <main className="mx-auto max-w-6xl space-y-6 p-4 pb-28 sm:p-6 sm:pb-28 lg:p-8 lg:pb-8">
           <div>
             <p className="text-sm font-semibold uppercase tracking-widest text-emerald-700">Courier</p>
             <h1 className="mt-2 text-3xl font-bold text-slate-900">Hello, {user?.name?.split(' ')[0] || 'driver'}</h1>

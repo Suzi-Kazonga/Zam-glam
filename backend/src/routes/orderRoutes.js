@@ -21,8 +21,6 @@ router.patch('/courier/shift', authMiddleware, roleMiddleware('courier'), blockI
 router.patch('/shipments/:id/pickup-request', authMiddleware, blockIfSuspended, orderController.requestPickupParcel);
 router.patch('/shipments/:id/pickup-confirm', authMiddleware, blockIfSuspended, orderController.confirmPickupParcel);
 router.patch('/shipments/:id/pickup-deny', authMiddleware, blockIfSuspended, orderController.denyPickupParcel);
-// The customer's own confirmation that it arrived.
-router.patch('/shipments/:id/confirm-delivery', authMiddleware, orderController.confirmDeliveryParcel);
 router.patch('/shipments/:id/status', authMiddleware, blockIfSuspended, orderController.updateShipmentStatus);
 
 export default router;

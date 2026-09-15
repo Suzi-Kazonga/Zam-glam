@@ -96,7 +96,11 @@ export default function SellerDashboard() {
   );
   // "Needs action" means the seller still has something to do; once handed to the courier
   // the parcel is out of their hands.
-  const actionOrders = orders.filter((order) => Boolean(nextAction[order.status]));
+  // A courier waiting at the counter is the most urgent thing a shop has, so a parcel at
+  // pickup_requested belongs in "Needs action" even though it has no nextAction step —
+  // the shop answers it with Picked up / Not picked up rather than by advancing a status.
+  const needsAction = (order) => Boolean(nextAction[order.status]) || order.status === 'pickup_requested';
+  const actionOrders = orders.filter(needsAction);
   const visibleOrders = (orderFilter === 'action' ? actionOrders : orders).filter((order) => `${order.id} ${order.items?.[0]?.name || ''} ${order.customerName || ''}`.toLowerCase().includes(query.toLowerCase()));
   const lowStock = products.filter((product) => Number(product.stock) > 0 && Number(product.stock) < 5);
   // Only this store's own line items count towards its revenue — never the rest of a
@@ -106,6 +110,7 @@ export default function SellerDashboard() {
     placed: orders.filter((order) => order.status === 'placed').length,
     processing: orders.filter((order) => order.status === 'processing').length,
     shipped: orders.filter((order) => order.status === 'shipped').length,
+    pickupRequested: orders.filter((order) => order.status === 'pickup_requested').length,
     delivered: orders.filter((order) => order.status === 'delivered').length,
   };
 
@@ -172,7 +177,7 @@ export default function SellerDashboard() {
       <Sidebar items={sections} active={active} onSelect={setActive} role="seller" shopName={sellerName} />
       <div className="min-w-0 flex-1">
         <Topbar onSearch={setQuery} /><SuspendedNotice />
-        <main className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6 lg:p-8">
+        <main className="mx-auto max-w-7xl space-y-6 p-4 pb-28 sm:p-6 sm:pb-28 lg:p-8 lg:pb-8">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
               <p className="text-sm font-semibold uppercase tracking-widest text-purple-700">{sellerName} studio</p>
@@ -283,10 +288,22 @@ export default function SellerDashboard() {
 
           {active === 'Orders' && (
             <DashboardCard title="Fulfillment">
-              <div className="mt-4 flex gap-2">
-                <button type="button" onClick={() => setOrderFilter('action')} className={`rounded-full px-3 py-1 text-sm font-semibold ${orderFilter === 'action' ? 'bg-purple-700 text-white' : 'bg-slate-100 text-slate-600'}`}>Needs action</button>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <button type="button" onClick={() => setOrderFilter('action')} className={`rounded-full px-3 py-1 text-sm font-semibold ${orderFilter === 'action' ? 'bg-purple-700 text-white' : 'bg-slate-100 text-slate-600'}`}>
+                  Needs action{actionOrders.length ? ` (${actionOrders.length})` : ''}
+                </button>
                 <button type="button" onClick={() => setOrderFilter('all')} className={`rounded-full px-3 py-1 text-sm font-semibold ${orderFilter === 'all' ? 'bg-purple-700 text-white' : 'bg-slate-100 text-slate-600'}`}>All orders</button>
               </div>
+
+              {/* A courier standing at the counter should not have to wait while the shop
+                  hunts through a list for them. */}
+              {statusCounts.pickupRequested > 0 && (
+                <p className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-900">
+                  {statusCounts.pickupRequested} courier{statusCounts.pickupRequested === 1 ? ' is' : 's are'} waiting for you to confirm
+                  a handover. Press <strong>Picked up</strong> once you have handed the parcel over, or
+                  <strong> Not picked up</strong> if they never came.
+                </p>
+              )}
               <div className="mt-5 space-y-4">
                 {visibleOrders.length ? visibleOrders.map((order) => {
                   const action = nextAction[order.status];

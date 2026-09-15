@@ -183,6 +183,36 @@ describe('Suspending an account', () => {
     expect(response.body.suspended).toBe(true);
   });
 
+  test('nobody can order from a suspended shop', async () => {
+    await suspend('seller', shop.profile_id, 'Repeated complaints');
+    const response = await placeOrder(customer, [{ id: product.id }]);
+    expect(response.status).toBe(409);
+    expect(response.body.error).toMatch(/suspended/i);
+  });
+
+  test('a basket filled before the suspension is refused too, not silently charged', async () => {
+    // The shopper already had it in their cart; the product id still exists.
+    await suspend('seller', shop.profile_id, 'Repeated complaints');
+    const quote = await api().post('/api/orders/quote').set(auth(customer)).send({
+      items: [{ product_id: product.id, quantity: 1 }], location: 'Lusaka',
+    });
+    expect(quote.status).toBe(409);
+  });
+
+  test('reinstating the shop lets people buy from it again', async () => {
+    await suspend('seller', shop.profile_id, 'Repeated complaints');
+    await api().patch(`/api/reports/admin/seller/${shop.profile_id}/status`).set(auth(admin)).send({ status: 'active' }).expect(200);
+    const response = await placeOrder(customer, [{ id: product.id }]);
+    expect(response.status).toBe(201);
+  });
+
+  test('a removed shop cannot be ordered from by guessing the product id', async () => {
+    await api().delete(`/api/admin/seller/${shop.profile_id}`).set(auth(admin)).expect(200);
+    const response = await placeOrder(customer, [{ id: product.id }]);
+    expect(response.status).toBe(409);
+    expect(response.body.error).toMatch(/no longer on Zamglam/i);
+  });
+
   test('a suspended shopper cannot place orders', async () => {
     await suspend('customer', customer.profile_id, 'Chargebacks');
     const response = await placeOrder(customer, [{ id: product.id }]);

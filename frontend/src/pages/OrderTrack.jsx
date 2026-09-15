@@ -3,11 +3,12 @@ import { Link, useParams } from 'react-router-dom';
 import CourierInfo from '../components/CourierInfo';
 import TrackingTimeline from '../components/TrackingTimeline';
 import { useAuth } from '../context/AuthContext';
-import { confirmDelivery, getOrder, updateOrderStatus } from '../api/orderApi';
+import { getOrder, updateOrderStatus } from '../api/orderApi';
 import { isLocalDemoSession, LOCAL_DEMO_ORDER_MESSAGE } from '../utils/localSession';
 import SellerRatingForm from '../components/SellerRatingForm';
 import ReportPartyForm from '../components/ReportPartyForm';
 import { getMyRatings } from '../api/reviewApi';
+import { STATUS_META } from '../utils/orderStore';
 
 export default function OrderTrack() {
   const { id } = useParams();
@@ -63,8 +64,12 @@ export default function OrderTrack() {
       <h1 className="mt-2 text-3xl font-bold text-slate-900">Order #{order.id}</h1>
       <p className="mt-2 text-slate-500">{order.items?.[0]?.name} · Deliver to {order.address || 'your address'}</p>
 
-      {order.shipments?.length > 1 ? (
+      {/* Every order is shown parcel by parcel, whether it is one shop or five: delivery
+          and the rating that follows belong to a parcel, and a single-shop order used to
+          miss out on both. */}
+      {order.shipments?.length ? (
         <div className="mt-8 space-y-6">
+          {order.shipments.length > 1 && (
           <div className="rounded-lg border border-slate-200 bg-white p-5">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <p className="font-bold text-slate-900">
@@ -82,34 +87,25 @@ export default function OrderTrack() {
               Each shop packs and hands over its own package, so they arrive separately — at different times, and possibly with different couriers.
             </p>
           </div>
+          )}
           {order.shipments.map((shipment, index) => (
             <div key={shipment.id} className="rounded-lg bg-white p-6 shadow-md">
               <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
                 <div>
-                  <h2 className="font-bold text-slate-900">Package {index + 1}/{order.shipments.length} · {shipment.storeName}</h2>
+                  <h2 className="font-bold text-slate-900">{order.shipments.length > 1 ? `Package ${index + 1}/${order.shipments.length} · ` : ''}{shipment.storeName}</h2>
                   <p className="text-sm text-slate-500">{shipment.items.map((item) => `${item.name} x${item.quantity}`).join(', ')}</p>
                 </div>
-                <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold capitalize text-slate-600">{shipment.status}</span>
+                <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">{STATUS_META[shipment.status]?.label || shipment.status}</span>
               </div>
               <TrackingTimeline order={{ status: shipment.status, tracking: shipment.tracking }} />
-              {/* The courier saying it arrived is their word for it; this is the
-                  customer's. Rating only opens once the customer has confirmed. */}
+              {/* The courier marking it delivered is the end of the journey: the parcel
+                  reads Delivered, and the shopper is asked to rate the shop. */}
               {shipment.status === 'delivered' && user?.role === 'customer' && (
-                <div className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 p-4">
-                  <p className="text-sm font-semibold text-emerald-900">Did this package reach you?</p>
-                  <p className="mt-1 text-xs text-emerald-800">{shipment.driverName || 'The courier'} marked it delivered. Confirm so the order can be completed.</p>
-                  <button
-                    type="button"
-                    onClick={() => confirmDelivery(shipment.id).then(refresh).catch((e) => setLoadError(e?.error || 'Could not confirm that.'))}
-                    className="mt-3 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
-                  >
-                    Confirm I received this
-                  </button>
-                </div>
-              )}
-
-              {shipment.status === 'confirmed' && user?.role === 'customer' && (
-                <div className="mt-4">
+                <div className="mt-4 rounded-lg border border-emerald-300 bg-emerald-50 p-4">
+                  <p className="text-sm font-bold text-emerald-900">
+                    ✓ Delivered{shipment.driverName ? ` by ${shipment.driverName}` : ''}
+                  </p>
+                  <p className="mb-3 mt-1 text-xs text-emerald-800">How was {shipment.storeName}?</p>
                   <SellerRatingForm
                     order={order}
                     sellerId={shipment.sellerId}
@@ -142,7 +138,7 @@ export default function OrderTrack() {
       )}
 
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
-        {order.shipments?.length > 1 ? null : <CourierInfo delivery={order.courier} />}
+        {order.shipments?.length ? null : <CourierInfo delivery={order.courier} />}
         <div className="rounded-lg border border-slate-200 bg-white p-4">
           <h3 className="font-bold text-lg text-slate-900">Shipment details</h3>
           <div className="mt-3 space-y-2 text-sm text-slate-700">
@@ -156,7 +152,7 @@ export default function OrderTrack() {
               </p>
             )}
             <p><span className="font-semibold">Total paid:</span> K{Number(order.total || 0).toFixed(2)}</p>
-            <p className="capitalize"><span className="font-semibold">Status:</span> {order.status}</p>
+            <p><span className="font-semibold">Status:</span> {STATUS_META[order.status]?.label || order.status}</p>
           </div>
           <div className="mt-6 border-t border-slate-100 pt-4"><ReportPartyForm orderId={order.id} /></div>
 
@@ -166,9 +162,6 @@ export default function OrderTrack() {
                 ? `${order.courier.driver_name} collected your parcel and will confirm the delivery.`
                 : 'Once a courier collects your parcel, their name and number appear here.'}
             </p>
-          )}
-          {order.status === 'delivered' && (
-            <Link to="/customer/dashboard" className="mt-5 inline-block text-sm font-semibold text-indigo-600">Rate this seller →</Link>
           )}
         </div>
       </div>

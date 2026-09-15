@@ -231,7 +231,7 @@ export default function AdminUsers() {
       <Sidebar items={sections} active={group.title === 'Shops' ? 'Sellers' : group.title} onSelect={() => {}} role="admin" />
       <div className="min-w-0 flex-1">
         <Topbar onSearch={setQuery} />
-        <main className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6 lg:p-8">
+        <main className="mx-auto max-w-7xl space-y-6 p-4 pb-28 sm:p-6 sm:pb-28 lg:p-8 lg:pb-8">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
               <p className="text-sm font-semibold uppercase tracking-widest text-slate-800">Admin</p>

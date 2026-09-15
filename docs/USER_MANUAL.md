@@ -8,7 +8,7 @@ There are four kinds of account:
 
 | Account | What it is for |
 | --- | --- |
-| **Customer** | Browsing shops, ordering, tracking and confirming deliveries |
+| **Customer** | Browsing shops, ordering, tracking deliveries and rating shops |
 | **Shop** (seller) | Listing items, packing orders, handing parcels to couriers |
 | **Courier** | Collecting parcels from shops and delivering them |
 | **Administrator** | Approving shops and couriers, handling complaints, managing accounts |
@@ -100,8 +100,7 @@ Open **Dashboard → Orders**, then the order you want. Each parcel moves throug
 | Ready for pickup | The shop has released the parcel; a courier will collect it |
 | Courier collecting | A courier has come for it; the shop must confirm the handover |
 | Out for delivery | The shop confirmed the courier took the parcel |
-| Delivered | The courier says they delivered it |
-| Receipt confirmed | You confirmed it arrived |
+| Delivered | The courier delivered it — the parcel is complete |
 
 An order containing several parcels shows the stage of each one, and the order as a whole
 sits at whichever parcel is furthest behind.
@@ -114,10 +113,11 @@ If a shop reports that a courier never turned up, you will see that on the parce
 plain words, along with the fact that it has gone back into the pool for another courier.
 Your order is not lost — it is waiting for someone else to collect it.
 
-### Confirming delivery
+### When it arrives
 
-When a parcel arrives, open the order and press **Confirm delivery**. Only you can do
-this — neither the shop nor the courier can confirm on your behalf.
+The courier marks the parcel delivered, and it shows as **Delivered** on the order. There
+is nothing for you to confirm — the order is complete at that point, and you are asked to
+rate the shop right there.
 
 ### Rating a shop, and reporting a problem
 
@@ -170,8 +170,7 @@ see only your own items, even when the customer bought from several shops in one
    straight back into the pool for another courier, and the customer is told what
    happened.
 
-You cannot mark a parcel delivered. Delivery is the courier's to record and the
-customer's to confirm.
+You cannot mark a parcel delivered — that is the courier's to record.
 
 ### Complaints about you
 
@@ -218,8 +217,8 @@ the shop still confirms.
 
 ### Delivering
 
-When you hand the parcel to the customer, mark it **Delivered**. The customer then
-confirms they received it. You can only do this for parcels you actually collected.
+When you hand the parcel to the customer, mark it **Delivered**. That completes the
+parcel. You can only do this for parcels you actually collected.
 
 You can report a customer or a shop from an order you worked on, and they can report you.
 Three complaints raise a flag with an administrator; a suspended courier is taken off duty

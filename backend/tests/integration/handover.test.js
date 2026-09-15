@@ -223,6 +223,44 @@ describe('Requesting, confirming and denying a handover', () => {
     expect(parcel.courier_id).toBe(other.courier_id);
   });
 
+  test('the shop is told which courier is asking, so it can check who it is handing to', async () => {
+    await request();
+    const response = await api().get('/api/orders').set(auth(shop));
+    const waiting = response.body.find((order) => order.shipment_id === parcelId);
+    expect(waiting.status).toBe('pickup_requested');
+    expect(waiting.courier.driver_name).toBe(courier.name);
+  });
+
+  test('the customer is still not given the courier\'s number at that point', async () => {
+    await request();
+    const response = await api().get(`/api/orders/${orderId}`).set(auth(customer));
+    expect(response.body.shipments[0].driver_phone).toBeNull();
+    expect(response.body.shipments[0].contact_available).toBe(false);
+  });
+
+  test('a returned parcel leaves the courier, so their count goes back to zero', async () => {
+    await request();
+    const holding = await api().get('/api/orders').set(auth(courier));
+    expect(holding.body.filter((order) => ['pickup_requested', 'picked_up'].includes(order.status))).toHaveLength(1);
+
+    await deny(shop, 'No show');
+
+    const afterwards = await api().get('/api/orders').set(auth(courier));
+    expect(afterwards.body.filter((order) => ['pickup_requested', 'picked_up'].includes(order.status))).toHaveLength(0);
+    expect(afterwards.body.some((order) => order.shipment_id === parcelId)).toBe(false);
+
+    const shift = await api().get('/api/orders/courier/shift').set(auth(courier));
+    expect(shift.body.carrying).toBe(0);
+  });
+
+  test('a courier whose parcel was returned can clock off again', async () => {
+    await request();
+    expect((await api().patch('/api/orders/courier/shift').set(auth(courier)).send({ on_shift: false })).status).toBe(409);
+
+    await deny(shop, 'No show');
+    expect((await api().patch('/api/orders/courier/shift').set(auth(courier)).send({ on_shift: false })).status).toBe(200);
+  });
+
   test('only the shop can report a failed handover', async () => {
     await request();
     const response = await api().patch(`/api/orders/shipments/${parcelId}/pickup-deny`).set(auth(courier)).send({ reason: 'let me off' });
@@ -269,27 +307,32 @@ describe('Delivery and the customer\'s confirmation', () => {
     expect(response.status).toBe(403);
   });
 
-  test('the customer confirms the parcel reached them', async () => {
+  test('delivered is the end of the journey — there is no further confirmation to ask for', async () => {
+    await api().patch(`/api/orders/shipments/${parcelId}/status`).set(auth(courier)).send({ status: 'delivered' }).expect(200);
+
+    const [parcel] = await shipmentsOf(orderId);
+    expect(parcel.status).toBe('delivered');
+
+    // The order as a whole follows its parcels straight to delivered.
+    const order = await api().get(`/api/orders/${orderId}`).set(auth(customer));
+    expect(order.body.status).toBe('delivered');
+  });
+
+  test('the customer sees it as delivered, with who brought it', async () => {
+    await api().patch(`/api/orders/shipments/${parcelId}/status`).set(auth(courier)).send({ status: 'delivered' });
+
+    const feed = await api().get('/api/orders').set(auth(customer));
+    const mine = feed.body.flatMap((order) => order.shipments || []).find((shipment) => shipment.id === parcelId);
+    expect(mine.status).toBe('delivered');
+    expect(mine.driver_name).toBe(courier.name);
+    expect(mine.contact_available).toBe(true);
+  });
+
+  test('the old customer confirmation endpoint is gone', async () => {
     await api().patch(`/api/orders/shipments/${parcelId}/status`).set(auth(courier)).send({ status: 'delivered' });
     const response = await api().patch(`/api/orders/shipments/${parcelId}/confirm-delivery`).set(auth(customer));
-    expect(response.status).toBe(200);
-    const [parcel] = await shipmentsOf(orderId);
-    expect(parcel.status).toBe('confirmed');
+    expect(response.status).toBe(404);
   });
-
-  test('another shopper cannot confirm somebody else\'s delivery', async () => {
-    await api().patch(`/api/orders/shipments/${parcelId}/status`).set(auth(courier)).send({ status: 'delivered' });
-    const stranger = await makeCustomer();
-    const response = await api().patch(`/api/orders/shipments/${parcelId}/confirm-delivery`).set(auth(stranger));
-    expect(response.status).toBe(403);
-  });
-
-  test('the courier cannot confirm delivery on the customer\'s behalf', async () => {
-    await api().patch(`/api/orders/shipments/${parcelId}/status`).set(auth(courier)).send({ status: 'delivered' });
-    const response = await api().patch(`/api/orders/shipments/${parcelId}/confirm-delivery`).set(auth(courier));
-    expect(response.status).toBe(403);
-  });
-
   test('a courier cannot clock off while still carrying a parcel', async () => {
     const response = await api().patch('/api/orders/courier/shift').set(auth(courier)).send({ on_shift: false });
     expect(response.status).toBe(409);

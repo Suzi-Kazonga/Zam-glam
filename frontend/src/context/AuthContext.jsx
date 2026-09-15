@@ -34,6 +34,15 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   }, []);
 
+  // The API client raises this when the server rejects a stored token — expired, or
+  // signed with a secret that has since changed. Drop the signed-in state with it, or the
+  // header keeps offering a dashboard that no longer loads.
+  useEffect(() => {
+    const onSessionEnded = () => setUser(null);
+    window.addEventListener('zamglam:session-ended', onSessionEnded);
+    return () => window.removeEventListener('zamglam:session-ended', onSessionEnded);
+  }, []);
+
   const login = async (email, password) => {
     try {
       setError(null);

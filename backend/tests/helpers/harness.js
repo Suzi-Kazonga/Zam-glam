@@ -32,16 +32,26 @@ const TABLES = [
 ];
 
 export async function resetDatabase() {
-  await pool.query('SET FOREIGN_KEY_CHECKS = 0');
-  for (const table of TABLES) {
-    try {
-      await pool.query(`TRUNCATE TABLE ${table}`);
-    } catch (error) {
-      // A table an older schema never created is not a failure.
-      if (error.code !== 'ER_NO_SUCH_TABLE') throw error;
+  // All of this must run on ONE connection: SET FOREIGN_KEY_CHECKS is per-session, so on a
+  // pool the TRUNCATEs can land on a different connection that still has the checks on.
+  // lock_wait_timeout also defaults to a year, so a TRUNCATE that blocks does not fail —
+  // it hangs the whole run. Bounding it turns that into a quick, readable error.
+  const connection = await pool.getConnection();
+  try {
+    await connection.query('SET SESSION lock_wait_timeout = 30');
+    await connection.query('SET FOREIGN_KEY_CHECKS = 0');
+    for (const table of TABLES) {
+      try {
+        await connection.query(`TRUNCATE TABLE ${table}`);
+      } catch (error) {
+        // A table an older schema never created is not a failure.
+        if (error.code !== 'ER_NO_SUCH_TABLE') throw error;
+      }
     }
+    await connection.query('SET FOREIGN_KEY_CHECKS = 1');
+  } finally {
+    connection.release();
   }
-  await pool.query('SET FOREIGN_KEY_CHECKS = 1');
 }
 
 export async function closeDatabase() {

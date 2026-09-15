@@ -13,6 +13,16 @@ const EMPTY_STATS = { subscribers: { customers: 0, sellers: 0, couriers: 0, admi
 
 const sections = ['Overview', 'Sellers', 'Customers', 'Couriers', 'Verification', 'Reports', 'Deliveries'];
 
+// "All" means all three kinds of account together, not just one of them.
+const ROLE_FILTERS = [
+  { value: 'all', label: 'All accounts', path: null },
+  { value: 'customer', label: 'Customers', path: 'customers' },
+  { value: 'seller', label: 'Shops', path: 'sellers' },
+  { value: 'courier', label: 'Couriers', path: 'couriers' },
+];
+
+const GROUP_PATH = { seller: 'sellers', customer: 'customers', courier: 'couriers' };
+
 // The people pages are where accounts are actually managed; the sidebar just sends you there.
 const SECTION_ROUTES = {
   Sellers: '/admin/users/sellers',
@@ -21,10 +31,14 @@ const SECTION_ROUTES = {
 };
 
 function StatusBadge({ account }) {
-  if (account.deleted_at) return <span className="rounded-full bg-slate-200 px-3 py-1 text-xs font-semibold text-slate-600">Deleted</span>;
-  if (account.account_status === 'suspended') return <span className="rounded-full bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-700">Suspended</span>;
-  if (account.verification_status === 'pending') return <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">Pending</span>;
-  return <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">Active</span>;
+  const pill = (text, tone) => <span className={`rounded-full px-3 py-1 text-xs font-semibold ${tone}`}>{text}</span>;
+
+  if (account.deleted_at) return pill('Deleted', 'bg-slate-200 text-slate-600');
+  if (account.account_status === 'suspended') return pill('Suspended', 'bg-rose-50 text-rose-700');
+  if (account.verification_status === 'pending') return pill('Unverified', 'bg-amber-50 text-amber-700');
+  if (account.approval_status === 'pending') return pill('Awaiting approval', 'bg-amber-50 text-amber-700');
+  if (account.approval_status === 'rejected') return pill('Rejected', 'bg-rose-50 text-rose-700');
+  return pill('Active', 'bg-emerald-50 text-emerald-700');
 }
 
 export default function AdminDashboard() {
@@ -36,6 +50,7 @@ export default function AdminDashboard() {
   const [recent, setRecent] = useState([]);
   const [active, setActive] = useState('Overview');
   const [query, setQuery] = useState('');
+  const [roleFilter, setRoleFilter] = useState('all');
 
   useEffect(() => {
     if (isLocalDemoSession()) return undefined;
@@ -47,24 +62,27 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     if (isLocalDemoSession()) return;
-    Promise.all([getAdminUsers('sellers'), getAdminUsers('customers')])
-      .then(([sellers, customers]) => {
+    Promise.all([getAdminUsers('sellers'), getAdminUsers('customers'), getAdminUsers('couriers')])
+      .then(([sellers, customers, couriers]) => {
         const merged = [
           ...sellers.map((s) => ({ ...s, role: 'seller', detail: [s.store_name, s.location].filter(Boolean).join(' · ') })),
           ...customers.map((c) => ({ ...c, role: 'customer', detail: c.address || c.location || '' })),
+          ...couriers.map((c) => ({ ...c, role: 'courier', detail: Number(c.on_shift) === 1 ? 'On duty' : 'Off duty' })),
         ];
-        merged.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
         setRecent(merged);
       })
       .catch(() => {});
   }, []);
 
+  // Newest sign-ups first, whichever kind of account they are, so the three groups read
+  // as one timeline rather than three lists stacked on top of each other.
   const visible = useMemo(() => {
     const needle = query.toLowerCase();
     return recent
+      .filter((account) => roleFilter === 'all' || account.role === roleFilter)
       .filter((a) => `${a.name || ''} ${a.email || ''} ${a.phone || ''} ${a.detail || ''}`.toLowerCase().includes(needle))
-      .slice(0, 8);
-  }, [recent, query]);
+      .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+  }, [recent, query, roleFilter]);
 
   const openSection = (section) => {
     if (SECTION_ROUTES[section]) navigate(SECTION_ROUTES[section]);
@@ -76,7 +94,7 @@ export default function AdminDashboard() {
       <Sidebar items={sections} active={active} onSelect={openSection} role="admin" />
       <div className="min-w-0 flex-1">
         <Topbar onSearch={setQuery} />
-        <main className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6 lg:p-8">
+        <main className="mx-auto max-w-7xl space-y-6 p-4 pb-28 sm:p-6 sm:pb-28 lg:p-8 lg:pb-8">
           <div>
             <p className="text-sm font-semibold uppercase tracking-widest text-slate-800">Admin console</p>
             <h1 className="mt-2 text-3xl font-bold text-slate-900">Manage marketplace accounts</h1>
@@ -105,12 +123,31 @@ export default function AdminDashboard() {
                 <DashboardCard title="Reviews" value={live.activity.reviews} detail="Customer ratings" />
               </div>
 
-              <DashboardCard title="Newest accounts" className="overflow-hidden">
+              <DashboardCard title="Accounts, newest first" className="overflow-hidden">
                 <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
-                  <p className="text-sm text-slate-500">The latest shops and customers to sign up. Open a group to edit, suspend or remove an account.</p>
-                  <div className="flex gap-2">
-                    <Link to="/admin/users/sellers" className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold hover:bg-slate-50">Manage shops</Link>
-                    <Link to="/admin/users/customers" className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold hover:bg-slate-50">Manage customers</Link>
+                  <p className="text-sm text-slate-500">
+                    Everyone who has signed up, in the order they joined. Open the group to edit, suspend or remove an account.
+                  </p>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <label className="text-xs font-semibold uppercase tracking-wide text-slate-400" htmlFor="account-filter">Show</label>
+                    <select
+                      id="account-filter"
+                      value={roleFilter}
+                      onChange={(event) => setRoleFilter(event.target.value)}
+                      className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-slate-400"
+                    >
+                      {ROLE_FILTERS.map((option) => (
+                        <option key={option.value} value={option.value}>{option.label}</option>
+                      ))}
+                    </select>
+                    {roleFilter !== 'all' && (
+                      <Link
+                        to={`/admin/users/${ROLE_FILTERS.find((option) => option.value === roleFilter).path}`}
+                        className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold hover:bg-slate-50"
+                      >
+                        Manage these
+                      </Link>
+                    )}
                   </div>
                 </div>
 
@@ -120,7 +157,7 @@ export default function AdminDashboard() {
                       <tr>
                         <th className="py-3">Name</th>
                         <th>Contact</th>
-                        <th>Shop / address</th>
+                        <th>Where</th>
                         <th>Status</th>
                         <th>Joined</th>
                         <th className="text-right">Manage</th>
@@ -141,7 +178,7 @@ export default function AdminDashboard() {
                           <td><StatusBadge account={account} /></td>
                           <td className="text-slate-500">{account.created_at ? new Date(account.created_at).toLocaleDateString() : '—'}</td>
                           <td className="text-right">
-                            <Link to={`/admin/users/${account.role === 'seller' ? 'sellers' : 'customers'}`} className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold hover:bg-slate-50">
+                            <Link to={`/admin/users/${GROUP_PATH[account.role]}`} className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold hover:bg-slate-50">
                               Open
                             </Link>
                           </td>

@@ -181,6 +181,26 @@ describe('The catalogue', () => {
     expect(listed.body[0].store_verification).toBe('verified');
   });
 
+  test('a suspended shop is marked unavailable on its products and its storefront', async () => {
+    const admin = await makeAdmin();
+    await api()
+      .patch(`/api/reports/admin/seller/${otherShop.profile_id}/status`)
+      .set(auth(admin))
+      .send({ status: 'suspended', reason: 'Repeated complaints' })
+      .expect(200);
+
+    const listed = await api().get(`/api/products?store_id=${otherShop.store_id}`);
+    expect(listed.body.length).toBeGreaterThan(0);
+    listed.body.forEach((product) => expect(product.store_status).toBe('suspended'));
+
+    const storefront = await api().get(`/api/stores/${otherShop.store_id}`);
+    expect(storefront.body.account_status).toBe('suspended');
+
+    // A shop in good standing is not marked, so the badge stays meaningful.
+    const mine = await api().get(`/api/products?store_id=${shop.store_id}`);
+    mine.body.forEach((product) => expect(product.store_status).not.toBe('suspended'));
+  });
+
   test('only an admin can verify a shop', async () => {
     const response = await api()
       .patch(`/api/stores/verification/sellers/${shop.profile_id}`)
