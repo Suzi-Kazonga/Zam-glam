@@ -12,7 +12,10 @@ services:
       - "${DB_HOST_PORT:-3307}:3306"
     volumes:
       - mysql_data:/var/lib/mysql
-      - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+      # The backend creates and migrates its own schema on startup, and that is the only
+      # definition kept up to date. database/schema.sql used to be mounted here as an init
+      # script, but it describes the older account layout and has no shipments or reports
+      # tables, so a container built from it came up missing parcels and complaints.
     networks:
       - zamglam_network
     healthcheck:
@@ -64,8 +67,9 @@ services:
     container_name: zamglam_frontend
     depends_on:
       - backend
-    environment:
-      VITE_API_URL: ${VITE_API_URL:-http://localhost:5000}
+    # No VITE_API_URL here: Vite inlines its variables at build time, so setting one at
+    # runtime does nothing. The bundle calls a relative /api, which nginx proxies to the
+    # backend container (nginx.conf) — which is also what makes it work from a phone.
     ports:
       - "${FRONTEND_PORT:-80}:80"
     networks:

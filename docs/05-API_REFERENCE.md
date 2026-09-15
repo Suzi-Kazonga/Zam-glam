@@ -312,7 +312,7 @@ stock comes off, one parcel per shop is created, and the whole thing rolls back 
 suspended or removed
 
 > Payment is recorded but never taken — no gateway is connected. See the limitations in
-> [docs/USER_MANUAL.md](docs/USER_MANUAL.md).
+> [08-PROJECT_STATUS.md](08-PROJECT_STATUS.md).
 
 ### `GET /orders`
 

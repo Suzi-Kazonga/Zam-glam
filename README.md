@@ -6,9 +6,18 @@ Zambia final-year project.
 
 Four kinds of account use it: **shoppers**, **shops**, **couriers** and **administrators**.
 
-- [docs/USER_MANUAL.md](docs/USER_MANUAL.md) — how to use it, one role at a time
-- [API_REFERENCE.md](API_REFERENCE.md) — every endpoint
-- [DATABASE.md](DATABASE.md) — schema
+**[docs/](docs/README.md)** holds the rest, in reading order:
+
+| | | |
+| --- | --- | --- |
+| 1 | [Setup](docs/01-SETUP.md) | Installing, running, and what to do when it will not start |
+| 2 | [User manual](docs/02-USER_MANUAL.md) | Using it, one role at a time |
+| 3 | [Architecture](docs/03-ARCHITECTURE.md) | How the code is put together |
+| 4 | [Database](docs/04-DATABASE.md) | Every table and column |
+| 5 | [API reference](docs/05-API_REFERENCE.md) | Every endpoint |
+| 6 | [Testing](docs/06-TESTING.md) | What the tests cover |
+| 7 | [Deployment](docs/07-DEPLOYMENT.md) | Docker, and going live |
+| 8 | [Project status](docs/08-PROJECT_STATUS.md) | What is built, what is not, and what is weak |
 
 ---
 
