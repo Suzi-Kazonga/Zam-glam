@@ -1,348 +1,237 @@
-# Zamglam E-Commerce Platform
+# Zamglam
 
-A full-stack e-commerce application built with React, Node.js, Express, and MySQL. Features separate customer and seller dashboards with complete order management, product catalog, and delivery integration.
+A multi-vendor e-commerce platform for Zambian clothing and footwear retailers, with
+delivery carried out by independent couriers on the platform. Built as a University of
+Zambia final-year project.
 
-## Overview
+Four kinds of account use it: **shoppers**, **shops**, **couriers** and **administrators**.
 
-Zamglam is a two-sided marketplace enabling:
-- **Customers**: Browse products, add to cart, place orders, track deliveries
-- **Sellers**: List products, manage inventory, process orders, view sales analytics
+- [docs/USER_MANUAL.md](docs/USER_MANUAL.md) — how to use it, one role at a time
+- [API_REFERENCE.md](API_REFERENCE.md) — every endpoint
+- [DATABASE.md](DATABASE.md) — schema
 
-## Key Features
+---
 
-✅ **User Authentication**
-- Separate customer and seller registration
-- JWT-based authentication (7-day expiry)
-- Password hashing with bcrypt
-- Role-based access control
+## What it does
 
-✅ **Product Management**
-- Browse product catalog with filtering
-- Detailed product pages with images
-- Seller inventory management
-- Stock tracking
+**A basket can span several shops.** An order is split into one **parcel** per shop, each
+collected from that shop's own location, priced on its own distance, and delivered
+separately. The order's status is a rollup of whichever parcel is least far along.
 
-✅ **Shopping Cart**
-- Add/remove products
-- Quantity management
-- Persistent cart storage
-- Real-time total calculation
+**Delivery is a two-party handover.** A shop releases a parcel into a pool that every
+on-duty courier can see. A courier *requests* it — claiming it, so no two riders travel for
+the same parcel — and the **shop confirms** they physically handed it over. Only then does
+the parcel count as collected and the courier's contact details reach the customer. If the
+courier never turns up, the shop presses *Not picked up*, the reason is recorded where the
+customer can read it, and the parcel goes back into the pool. A parcel nobody claims within
+an hour is assigned to the least-loaded courier on duty.
 
-✅ **Order Management**
-- Place orders with multiple items
-- Order status tracking (pending, processing, delivered)
-- Customer order history
-- Seller order queue
+Parcel statuses: `placed → processing → shipped → pickup_requested → picked_up → delivered`.
 
-✅ **Delivery Integration**
-- Real-time delivery quotes
-- Driver assignment
-- Distance and pricing calculation
-- Pluggable courier providers (see `backend/src/services/courierProvider.js`)
-- In-house Zamglam Courier is the implemented provider; a third-party adapter
-  (e.g. Yango) can be dropped in, but is **not implemented** — those APIs are
-  commercial B2B integrations needing credentials this project does not have
+**Shops are verified.** A shop uploads its registration documents, an administrator checks
+them, and a verified shop carries a badge shoppers can see.
 
-✅ **Dashboards**
-- Customer dashboard: order tracking, cart, wishlist
-- Seller dashboard: product management, sales analytics, order processing
+**Couriers are approved.** A new courier sign-up cannot take work until an administrator
+lets it in.
 
-## Tech Stack
+**Complaints have consequences.** Any party to an order can report another party on it —
+only somebody they actually dealt with, once per order. Three open complaints against the
+same party flag them for an administrator, who can suspend the account. A suspended shop
+shows as *Unavailable*, cannot be ordered from, and is told why.
 
-### Backend
-- **Runtime**: Node.js
-- **Framework**: Express 4.18.2
-- **Database**: MySQL 8.0+
-- **Authentication**: JWT (jsonwebtoken)
-- **Security**: bcrypt for password hashing
-- **API Calls**: axios
-- **Logging**: morgan
-- **Middleware**: CORS, Helmet
+**Admin actions change real accounts.** Editing, suspending and deleting write to the
+database. Deleting is a soft delete: the account is greyed out for 30 days — unable to sign
+in, its products out of the catalogue — and can be restored. After that a scheduled sweep
+removes it permanently, keeping anything order history still refers to.
 
-### Frontend
-- **Library**: React 18.3.1
-- **Build Tool**: Vite 5.4.21
-- **Routing**: React Router 6.30.4
-- **Styling**: Tailwind CSS 3.4.19
-- **HTTP Client**: Axios 1.19.0
-- **State Management**: React Context API
+### Not implemented, deliberately
 
-## Project Structure
+- **Payment is simulated.** The chosen method is recorded; nothing is charged. Airtel Money
+  and MTN MoMo integrations are commercial arrangements needing credentials this project
+  does not have.
+- **Distances come from a town lookup, not a geocoder.** `backend/src/services/places.js`
+  matches free-text addresses against Zambian towns and Lusaka neighbourhoods. An
+  unrecognised address falls back to central Lusaka and the quote is flagged as an
+  estimate.
+- **Third-party couriers.** `courierProvider.js` defines the adapter a company such as
+  Yango would fill in; the platform runs on its own riders.
 
-```
-Zamglam-main/
-├── backend/              # Express API server
-│   ├── config/          # Database configuration
-│   ├── controllers/      # Request handlers
-│   ├── middleware/       # Auth, error handling
-│   ├── models/          # Database models
-│   ├── routes/          # API endpoints
-│   ├── services/        # Business logic
-│   ├── server.js        # App entry point
-│   ├── package.json
-│   └── .env             # Environment variables
-├── frontend/            # React SPA
-│   ├── src/
-│   │   ├── components/  # Reusable UI components
-│   │   ├── pages/       # Page components
-│   │   ├── context/     # Auth and Cart context
-│   │   ├── services/    # API integration
-│   │   └── App.jsx      # Root component
-│   ├── public/
-│   ├── package.json
-│   ├── vite.config.js
-│   └── tailwind.config.js
-├── README.md            # This file
-├── BACKEND_SETUP.md     # Backend setup guide
-├── FRONTEND_SETUP.md    # Frontend setup guide
-└── API_REFERENCE.md     # API documentation
-```
+---
 
-## Quick Start
+## Running it
+
+### Prerequisites
+
+- Node.js 18+
+- MySQL or MariaDB (XAMPP is the easiest route on Windows)
 
 ### Fastest start (Windows)
 
 Start MySQL from the XAMPP Control Panel, then from the project root:
 
 ```powershell
-npm.cmd install      # first time only - also installs backend and frontend
-npm.cmd run dev      # starts backend and frontend together
+npm.cmd run install:all   # first time only — root, backend and frontend
+npm.cmd run seed          # creates the schema and demo data
+npm.cmd run dev           # backend and frontend together
 ```
 
-Both servers run in the one terminal with their output prefixed `[backend]` and
-`[frontend]`; Ctrl+C stops both. Backend on http://localhost:5000, frontend on
-http://localhost:3000.
+Backend on http://localhost:5000, frontend on http://localhost:3000, both in the one
+terminal with their output prefixed `[backend]` and `[frontend]`. Ctrl+C stops both.
 
-Individually, if you prefer separate terminals:
+Separately, if you prefer two terminals:
 
 ```powershell
 npm.cmd run dev:backend
 npm.cmd run dev:frontend
 ```
 
-Or `.\start.bat`, which opens each in its own window, checks MySQL first, and prints
-the address to use from a phone on the same Wi-Fi.
+Inside `backend/`, `node server.js`, `npm run dev` (auto-reload) and `npm start` all work.
 
-**If Vite says "Port 3000 is in use, trying another one", stop and investigate.** It
-means another server is already running - possibly from an old copy of the project -
-and the page you open will not be the one you just started.
+`.\start.bat` opens each in its own window, checks MySQL first, and prints the address to
+use from a phone.
 
-The script calls `npm.cmd` rather than `npm`: on a machine whose PowerShell execution
-policy blocks unsigned scripts, plain `npm run dev` fails with
-"npm.ps1 cannot be loaded because running scripts is disabled on this system". If you
-prefer plain `npm`, run `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` once.
+**Use `npm.cmd`, not `npm`.** On a machine whose PowerShell execution policy blocks
+unsigned scripts, plain `npm run dev` fails with *"npm.ps1 cannot be loaded because running
+scripts is disabled on this system"*. `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`
+once, if you prefer plain `npm`.
 
-MySQL itself is not started by the script - start it from the XAMPP Control Panel.
+**If Vite says "Port 3000 is in use, trying another one", stop and investigate.** Another
+server is already running — possibly an old copy of the project — and the page you open
+will not be the one you just started.
 
-### Prerequisites
-- Node.js 16+ 
-- npm
-- MySQL 8.0+ (XAMPP recommended for Windows)
+### From a phone
 
-### Backend Setup
+Open `http://<the computer's IP>:3000` on the same Wi-Fi; `start.bat` prints it. The
+frontend calls the API through a relative `/api`, proxied by Vite, so the same build works
+from any device on the network.
 
-```bash
-# 1. Navigate to backend directory
-cd backend
+### Configuration
 
-# 2. Install dependencies
-npm install
+`backend/.env`:
 
-# 3. Create .env file (copy from .env.example)
-cp .env.example .env
-
-# 4. Edit .env with your MySQL credentials
-# 5. Start backend server
-npm run dev      # Development with auto-reload
-# or
-npm start        # Production mode
 ```
-
-Backend API: `http://localhost:5000`
-
-### Frontend Setup
-
-```bash
-# 1. Navigate to frontend directory
-cd frontend
-
-# 2. Install dependencies
-npm install
-
-# 3. Start development server
-npm run dev
-```
-
-Frontend App: `http://localhost:3000`
-- ✅ Product images and sizes
-- ✅ Stock management
-
-### Shopping Cart
-- ✅ Add/remove items from cart
-- ✅ Cart persistence (localStorage)
-- ✅ Quantity management
-
-### Orders
-- ✅ Create orders from cart
-- ✅ Order tracking
-- ✅ Order status management
-
-### Delivery
-- ✅ Courier service integration
-- ✅ Distance-based pricing
-- ✅ Quote calculation
-
-## API Endpoints
-
-### Authentication
-- `POST /api/auth/register` - Register user
-- `POST /api/auth/login` - Login user
-- `GET /api/auth/me` - Get current user (protected)
-
-### Stores
-- `GET /api/stores` - Get all stores
-- `GET /api/stores/:id` - Get store details
-- `POST /api/stores` - Create store (seller only)
-- `PUT /api/stores/:id` - Update store (seller only)
-- `GET /api/stores/:id/products` - Get store products with filters
-- `POST /api/stores/documents/upload` - Upload KYC docs (protected)
-- `GET /api/stores/documents/list` - Get seller documents (protected)
-
-### Products
-- `GET /api/products` - Get products (with filters)
-- `GET /api/products/:id` - Get product details
-- `POST /api/products` - Create product (seller only)
-- `PUT /api/products/:id` - Update product (seller only)
-- `DELETE /api/products/:id` - Delete product (seller only)
-
-### Courier Service
-- `GET /health` - Health check
-- `POST /api/courier/quote` - Calculate delivery quote
-- `GET /api/courier/pricing` - Get pricing info
-
-## Sample Data
-
-### Sellers
-- **PEP Zambia** - pep@zamglam.local / PEP123456
-- **JET Stores** - jet@zamglam.local / JET123456
-- **MUD Zambia** - mud@zamglam.local / MUD123456
-
-### Customer
-- Email: customer@zamglam.local
-- Password: CUSTOMER123456
-
-### Categories
-- Shirts
-- Dresses
-- Pants
-- Shoes
-- Jackets
-- Accessories
-
-## Database Schema
-
-### Key Tables
-- `users` - All users (customers, sellers)
-- `customers` - Customer-specific data
-- `stores` - Seller stores
-- `products` - Product catalog
-- `categories` - Product categories
-- `cart` - Shopping cart items
-- `orders` - Customer orders
-- `order_items` - Products in orders
-- `documents` - KYC documents
-
-## Environment Variables
-
-### Backend (.env)
-```
+PORT=5000
 DB_HOST=localhost
 DB_USER=root
-DB_PASSWORD=root123
+DB_PASS=
 DB_NAME=zamglam_db
-JWT_SECRET=your_secret_key
-PORT=5000
-NODE_ENV=development
+JWT_SECRET=<a long random string>
 ```
 
-### Courier Service (.env)
+Optional, with their defaults:
+
+| Variable | Default | Effect |
+| --- | --- | --- |
+| `ACCOUNT_DELETE_GRACE_DAYS` | 30 | How long a deleted account can be restored |
+| `PICKUP_ESCALATION_MINUTES` | 60 | Before an unclaimed parcel is assigned |
+| `PICKUP_ESCALATION_SWEEP_MS` | 300000 | How often that sweep runs |
+| `LOGIN_MAX_ATTEMPTS` / `LOGIN_WINDOW_MS` | 10 / 15 min | Failed sign-ins per address |
+| `SIGNUP_MAX` / `SIGNUP_WINDOW_MS` | 10 / 1 hour | Accounts created per address |
+| `API_MAX_PER_MINUTE` | 600 | Overall ceiling per address |
+| `DELIVERY_BASE_PRICE` / `DELIVERY_PRICE_PER_KM` | 20 / 5 | Delivery pricing, ZMW |
+
+The schema is created and migrated on startup — and by `npm run seed` — so a fresh clone
+needs no SQL run by hand.
+
+---
+
+## Demo accounts
+
+Created by `npm run seed`:
+
+| Role | Email | Password |
+| --- | --- | --- |
+| Administrator | admin@zamglam.local | ADMIN123456 |
+| Shop | mud@zamglam.local | MUD123456 |
+| Shop | jets@zamglam.local | JETS123456 |
+| Shop | bata@zamglam.local | BATA123456 |
+| Shop | pep@zamglam.local | PEP123456 |
+| Shop | mrprice@zamglam.local | MRPRICE123456 |
+| Shop | fashionsgalore@zamglam.local | FASHION123456 |
+| Courier | mwansa@zamglamcourier.local | COURIER123456 |
+| Courier | thandiwe@zamglamcourier.local | COURIER123456 |
+| Courier | joseph@zamglamcourier.local | COURIER123456 |
+| Customer | customer@zamglam.local | CUSTOMER123456 |
+
+Seeded couriers start **unapproved**: sign in as the administrator and approve one before
+it can take parcels.
+
+---
+
+## Tests
+
+```powershell
+cd backend;  npm.cmd test     # 192 tests
+cd frontend; npm.cmd test     # 18 tests
 ```
-FLASK_ENV=development
-PORT=5001
-DEBUG=True
+
+The backend tests drive the real Express app through supertest against a real database
+(`zamglam_db_test`, created automatically — the development database is never touched).
+They cover registration and sign-in, the catalogue and its ownership rules, orders
+splitting into parcels, the whole handover including denial, complaints and suspension, the
+admin console with soft delete and purge, and the rate limiters. They run serially
+(`--runInBand`), since they share one database.
+
+The frontend tests cover the real components and the session handling.
+
+---
+
+## Layout
+
+```
+Zam-glam/
+├── backend/
+│   ├── server.js            # entry point; `node server.js` works from here
+│   ├── src/
+│   │   ├── app.js           # the Express app, with nothing that binds a port
+│   │   ├── server.js        # listens, and runs the escalation/purge sweep
+│   │   ├── config/db.js     # connection, schema creation and migrations
+│   │   ├── controllers/     # request handling
+│   │   ├── models/          # SQL and the rules around it
+│   │   ├── middleware/      # auth, roles, suspension, rate limits, errors
+│   │   ├── routes/
+│   │   ├── services/        # delivery pricing, place lookup
+│   │   ├── utils/accounts.js# account-id resolution (see below)
+│   │   └── seed.js
+│   └── tests/               # integration and unit tests
+├── frontend/
+│   └── src/
+│       ├── api/             # one module per area of the API
+│       ├── components/
+│       ├── context/         # auth and cart
+│       ├── pages/
+│       └── utils/
+├── docs/USER_MANUAL.md
+├── courier-service/         # optional Flask service the HTTP courier adapter can call
+├── database/                # reference SQL (the app creates its own schema)
+└── package.json             # runs both halves together
 ```
 
-## Code Standards
+**One thing to know before reading the models.** Two account layouts exist. New databases
+put the login on the account row itself (`sellers.email`, `customers.email`); older ones
+have a central `users` table that those rows link to by `user_id`. `req.user.id` therefore
+means different things on each, and every lookup that turns it into a profile id goes
+through `src/utils/accounts.js`. Doing it inline is what once left product creation failing
+with *"Unknown column 'user_id'"*.
 
-- ✅ SOLID principles + Separation of Concerns
-- ✅ No files over 200 lines
-- ✅ Reusable components
-- ✅ Proper error handling
-- ✅ Input validation
-- ✅ Security headers (Helmet)
-- ✅ CORS enabled
-- ✅ Commented code
+---
 
-## Next Steps
+## Built with
 
-### Pages to Implement
-- [ ] HomePage with featured stores
-- [ ] LoginPage with role selection
-- [ ] RegisterPage with form validation
-- [ ] StorePage with filtering
-- [ ] ProductPage with details
-- [ ] CartPage with checkout
-- [ ] SellerDashboard with CRUD
+**Backend** — Node.js, Express 4, MySQL/MariaDB via mysql2, JWT, bcrypt, multer, helmet,
+express-rate-limit, Jest and supertest.
 
-### Features to Add
-- [ ] Payment integration
-- [ ] Email notifications
-- [ ] Order tracking
-- [ ] Reviews and ratings
-- [ ] Wishlist
-- [ ] Search with Elasticsearch
-- [ ] Admin dashboard
+**Frontend** — React 18, Vite 5, React Router 6, Tailwind CSS 3, Axios, Jest and Testing
+Library.
 
-## Common Commands
-
-```bash
-# Backend
-npm install              # Install dependencies
-npm run dev              # Start dev server
-npm run seed             # Seed database
-npm start                # Start production server
-
-# Frontend
-npm install              # Install dependencies
-npm run dev              # Start dev server
-npm run build            # Build for production
-npm run preview          # Preview production build
-
-# Courier Service
-pip install -r requirements.txt  # Install dependencies
-python app.py                    # Run server
-```
+---
 
 ## Troubleshooting
 
-### Database Connection Error
-- Ensure MySQL is running
-- Check .env credentials
-- Run schema.sql to create database
-
-### Port Already in Use
-- Backend: Change PORT in .env
-- Frontend: Vite will auto-select new port
-- Courier: Change PORT in courier-service/.env
-
-### CORS Errors
-- Ensure backend and frontend are on correct ports
-- Check vite.config.js proxy settings
-
-## License
-
-MIT
-
-## Support
-
-For issues and questions, contact: support@zamglam.local
+| Symptom | Cause |
+| --- | --- |
+| *"Your session has ended"* | The stored token expired, or `JWT_SECRET` changed. Sign in again. |
+| *"Unknown database"* | MySQL is not running, or the credentials in `backend/.env` are wrong. The schema itself is created automatically. |
+| Vite picked a different port | Another server is already running on 3000. Stop it — otherwise you are looking at a different copy of the app. |
+| No data on a phone | The phone must be on the same Wi-Fi and use the computer's IP, not `localhost`. |
+| `npm.ps1 cannot be loaded` | PowerShell execution policy. Use `npm.cmd`, or set `RemoteSigned` once. |
