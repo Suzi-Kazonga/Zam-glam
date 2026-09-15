@@ -1,96 +1,104 @@
 <mxfile host="app.diagrams.net" agent="Zamglam diagram generator" type="device">
   <diagram name="Parcel states" id="Parcel-states">
-    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="826" math="0" shadow="0">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2130" pageHeight="750" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
-        <mxCell id="title" value="The life of a parcel" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=16;fontStyle=1;" vertex="1" parent="1">
-          <mxGeometry x="40" y="10" width="600" height="30" as="geometry" />
+        <mxCell id="diagramTitle" value="The life of a parcel" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=20;fontStyle=1;fontColor=#0f172a;" vertex="1" parent="1">
+          <mxGeometry x="60" y="30" width="1200" height="32" as="geometry" />
         </mxCell>
-        <mxCell id="sub" value="One shop’s items within an order. Generated from TRACK_ORDER in models/Order.js." style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;fontSize=11;fontColor=#475569;" vertex="1" parent="1">
-          <mxGeometry x="40" y="34" width="800" height="20" as="geometry" />
+        <mxCell id="diagramSubtitle" value="One shop’s items within an order. The statuses are read from TRACK_ORDER in models/Order.js, so this cannot drift from the code." style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=12;fontColor=#475569;" vertex="1" parent="1">
+          <mxGeometry x="60" y="64" width="1200" height="18" as="geometry" />
         </mxCell>
-        <mxCell id="start" value="" style="ellipse;html=1;fillColor=#1f2937;strokeColor=#1f2937;" vertex="1" parent="1">
-          <mxGeometry x="60" y="118" width="24" height="24" as="geometry" />
+        <mxCell id="start" value="" style="ellipse;html=1;fillColor=#0f172a;strokeColor=#0f172a;" vertex="1" parent="1">
+          <mxGeometry x="60" y="220" width="26" height="26" as="geometry" />
         </mxCell>
-        <mxCell id="s_placed" value="placed" style="rounded=1;arcSize=40;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1f2937;fontSize=11;" vertex="1" parent="1">
-          <mxGeometry x="130" y="100" width="145" height="60" as="geometry" />
+        <mxCell id="s_placed" value="placed" style="rounded=1;arcSize=30;whiteSpace=wrap;html=1;fillColor=#eef2ff;strokeColor=#4f46e5;fontColor=#4338ca;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="140" y="200" width="190" height="64" as="geometry" />
         </mxCell>
-        <mxCell id="s_processing" value="processing" style="rounded=1;arcSize=40;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1f2937;fontSize=11;" vertex="1" parent="1">
-          <mxGeometry x="305" y="100" width="145" height="60" as="geometry" />
+        <mxCell id="s_processing" value="processing" style="rounded=1;arcSize=30;whiteSpace=wrap;html=1;fillColor=#faf5ff;strokeColor=#7e22ce;fontColor=#6b21a8;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="460" y="200" width="190" height="64" as="geometry" />
         </mxCell>
-        <mxCell id="s_shipped" value="shipped" style="rounded=1;arcSize=40;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1f2937;fontSize=11;" vertex="1" parent="1">
-          <mxGeometry x="480" y="100" width="145" height="60" as="geometry" />
+        <mxCell id="s_shipped" value="shipped" style="rounded=1;arcSize=30;whiteSpace=wrap;html=1;fillColor=#faf5ff;strokeColor=#7e22ce;fontColor=#6b21a8;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="780" y="200" width="190" height="64" as="geometry" />
         </mxCell>
-        <mxCell id="s_pickup_requested" value="pickup_requested" style="rounded=1;arcSize=40;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1f2937;fontSize=11;fillColor=#eef2ff;strokeColor=#4338ca;" vertex="1" parent="1">
-          <mxGeometry x="655" y="100" width="145" height="60" as="geometry" />
+        <mxCell id="s_pickup_requested" value="pickup_requested" style="rounded=1;arcSize=30;whiteSpace=wrap;html=1;fillColor=#ecfdf5;strokeColor=#047857;fontColor=#065f46;fontSize=12;strokeWidth=3;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1100" y="200" width="190" height="64" as="geometry" />
         </mxCell>
-        <mxCell id="s_picked_up" value="picked_up" style="rounded=1;arcSize=40;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1f2937;fontSize=11;fillColor=#eef2ff;strokeColor=#4338ca;" vertex="1" parent="1">
-          <mxGeometry x="830" y="100" width="145" height="60" as="geometry" />
+        <mxCell id="s_picked_up" value="picked_up" style="rounded=1;arcSize=30;whiteSpace=wrap;html=1;fillColor=#faf5ff;strokeColor=#7e22ce;fontColor=#6b21a8;fontSize=12;strokeWidth=3;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1420" y="200" width="190" height="64" as="geometry" />
         </mxCell>
-        <mxCell id="s_delivered" value="delivered" style="rounded=1;arcSize=40;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1f2937;fontSize=11;" vertex="1" parent="1">
-          <mxGeometry x="1005" y="100" width="145" height="60" as="geometry" />
+        <mxCell id="s_delivered" value="delivered" style="rounded=1;arcSize=30;whiteSpace=wrap;html=1;fillColor=#ecfdf5;strokeColor=#047857;fontColor=#065f46;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="1740" y="200" width="190" height="64" as="geometry" />
         </mxCell>
-        <mxCell id="e_start" value="customer places the order" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#1f2937;fontSize=10;verticalAlign=bottom;" edge="1" parent="1" source="start" target="s_placed">
+        <mxCell id="end" value="" style="ellipse;shape=endState;html=1;fillColor=#0f172a;strokeColor=#0f172a;" vertex="1" parent="1">
+          <mxGeometry x="2000" y="220" width="26" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="e_start" value="the customer
+places the order" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;strokeColor=#334155;fontSize=11;fontColor=#334155;labelBackgroundColor=#ffffff;spacing=6;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="start" target="s_placed">
           <mxGeometry relative="1" as="geometry">
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_1" value="Start packing
-(the shop)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#1f2937;fontSize=10;verticalAlign=bottom;" edge="1" parent="1" source="s_placed" target="s_processing">
+        <mxCell id="e_0" value="Start packing
+(the shop)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;strokeColor=#334155;fontSize=11;fontColor=#334155;labelBackgroundColor=#ffffff;spacing=6;exitX=1;exitY=0.5;entryX=0;entryY=0.5;verticalAlign=bottom;" edge="1" parent="1" source="s_placed" target="s_processing">
           <mxGeometry relative="1" as="geometry">
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_2" value="Hand to courier — enters the pool
-(the shop)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#1f2937;fontSize=10;verticalAlign=bottom;" edge="1" parent="1" source="s_processing" target="s_shipped">
+        <mxCell id="e_1" value="Hand to courier
+(the shop)
+the parcel enters the pool" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;strokeColor=#334155;fontSize=11;fontColor=#334155;labelBackgroundColor=#ffffff;spacing=6;exitX=1;exitY=0.5;entryX=0;entryY=0.5;verticalAlign=top;" edge="1" parent="1" source="s_processing" target="s_shipped">
           <mxGeometry relative="1" as="geometry">
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_3" value="Request pickup — claims it
-(a courier)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#1f2937;fontSize=10;verticalAlign=bottom;" edge="1" parent="1" source="s_shipped" target="s_pickup_requested">
+        <mxCell id="e_2" value="Request pickup
+(a courier)
+claims it — first to ask wins" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;strokeColor=#334155;fontSize=11;fontColor=#334155;labelBackgroundColor=#ffffff;spacing=6;exitX=1;exitY=0.5;entryX=0;entryY=0.5;verticalAlign=bottom;" edge="1" parent="1" source="s_shipped" target="s_pickup_requested">
           <mxGeometry relative="1" as="geometry">
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_4" value="Picked up — confirms the handover
-(the shop)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#1f2937;fontSize=10;verticalAlign=bottom;" edge="1" parent="1" source="s_pickup_requested" target="s_picked_up">
+        <mxCell id="e_3" value="Picked up
+(the shop)
+confirms the handover really happened" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;strokeColor=#334155;fontSize=11;fontColor=#334155;labelBackgroundColor=#ffffff;spacing=6;exitX=1;exitY=0.5;entryX=0;entryY=0.5;verticalAlign=top;" edge="1" parent="1" source="s_pickup_requested" target="s_picked_up">
           <mxGeometry relative="1" as="geometry">
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_5" value="Delivered
-(the courier)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#1f2937;fontSize=10;verticalAlign=bottom;" edge="1" parent="1" source="s_picked_up" target="s_delivered">
+        <mxCell id="e_4" value="Delivered
+(the courier)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;strokeColor=#334155;fontSize=11;fontColor=#334155;labelBackgroundColor=#ffffff;spacing=6;exitX=1;exitY=0.5;entryX=0;entryY=0.5;verticalAlign=bottom;" edge="1" parent="1" source="s_picked_up" target="s_delivered">
           <mxGeometry relative="1" as="geometry">
           </mxGeometry>
         </mxCell>
-        <mxCell id="end" value="" style="ellipse;shape=endState;html=1;fillColor=#1f2937;strokeColor=#1f2937;" vertex="1" parent="1">
-          <mxGeometry x="1190" y="118" width="24" height="24" as="geometry" />
-        </mxCell>
-        <mxCell id="e_end" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#1f2937;fontSize=10;" edge="1" parent="1" source="s_delivered" target="end">
+        <mxCell id="e_end" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;strokeColor=#334155;fontSize=11;fontColor=#334155;labelBackgroundColor=#ffffff;spacing=6;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="s_delivered" target="end">
           <mxGeometry relative="1" as="geometry">
           </mxGeometry>
         </mxCell>
-        <mxCell id="e_deny" value="Not picked up — the shop says the courier never came.
-The parcel returns to the pool and the customer is told why." style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#1f2937;fontSize=10;verticalAlign=bottom;strokeColor=#c2410c;fontColor=#c2410c;dashed=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="s_pickup_requested" target="s_shipped">
+        <mxCell id="e_deny" value="Not picked up  —  the shop says the courier never came.
+The parcel returns to the pool and the customer is told why." style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;strokeColor=#334155;fontSize=11;fontColor=#334155;labelBackgroundColor=#ffffff;spacing=6;strokeColor=#c2410c;fontColor=#9a3412;dashed=1;strokeWidth=2;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="s_pickup_requested" target="s_shipped">
           <mxGeometry relative="1" as="geometry">
-            <Array as="points"><mxPoint x="742.5" y="300" /><mxPoint x="567.5" y="300" /></Array>
+            <Array as="points"><mxPoint x="1195" y="400" /><mxPoint x="875" y="400" /></Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="cancel" value="cancelled" style="rounded=1;arcSize=40;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1f2937;fontSize=11;fillColor=#fef2f2;strokeColor=#b91c1c;" vertex="1" parent="1">
-          <mxGeometry x="130" y="400" width="145" height="60" as="geometry" />
+        <mxCell id="cancel" value="cancelled" style="rounded=1;arcSize=30;whiteSpace=wrap;html=1;fillColor=#fff1f2;strokeColor=#e11d48;fontColor=#9f1239;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="460" y="530" width="190" height="64" as="geometry" />
         </mxCell>
-        <mxCell id="e_cancel" value="the shop cancels — stock goes back on the shelf.
-Refused once a courier has collected it." style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#1f2937;fontSize=10;verticalAlign=bottom;strokeColor=#b91c1c;fontColor=#b91c1c;" edge="1" parent="1" source="s_placed" target="cancel">
+        <mxCell id="e_cancel" value="the shop cancels
+stock goes back on the shelf" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;strokeColor=#334155;fontSize=11;fontColor=#334155;labelBackgroundColor=#ffffff;spacing=6;strokeColor=#b91c1c;fontColor=#7f1d1d;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="s_placed" target="cancel">
           <mxGeometry relative="1" as="geometry">
+            <Array as="points"><mxPoint x="235" y="562" /></Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="note-escalate" value="Escalation: a parcel left in the pool for an hour is assigned
-automatically to the on-duty courier carrying the fewest.
-Assignment is not collection — that courier still requests it,
-and the shop still confirms." style="shape=note;whiteSpace=wrap;html=1;size=14;fillColor=#fffbeb;strokeColor=#b45309;align=left;spacingLeft=6;fontSize=10;verticalAlign=top;" vertex="1" parent="1">
-          <mxGeometry x="520" y="400" width="330" height="90" as="geometry" />
+        <mxCell id="noteEscalate" value="Escalation
+
+A parcel left in the pool for an hour is assigned automatically to the on-duty courier carrying the fewest.
+
+Assignment is not collection — that courier still requests it, and the shop still confirms." style="shape=note;whiteSpace=wrap;html=1;size=16;fillColor=#fffbeb;strokeColor=#b45309;align=left;spacingLeft=10;spacingTop=4;fontSize=11;verticalAlign=top;fontColor=#78350f;" vertex="1" parent="1">
+          <mxGeometry x="780" y="510" width="330" height="150" as="geometry" />
         </mxCell>
-        <mxCell id="note-gate" value="The courier’s name and number reach the customer only
-at picked_up. Before the shop confirms, nobody has
-actually taken the parcel." style="shape=note;whiteSpace=wrap;html=1;size=14;fillColor=#fffbeb;strokeColor=#b45309;align=left;spacingLeft=6;fontSize=10;verticalAlign=top;" vertex="1" parent="1">
-          <mxGeometry x="880" y="400" width="320" height="80" as="geometry" />
+        <mxCell id="noteGate" value="Why two parties
+
+A courier pressing &quot;collected&quot; is only their word for it. Until the shop confirms, nobody has actually taken the parcel.
+
+The courier’s name and number reach the customer at picked_up, and not before." style="shape=note;whiteSpace=wrap;html=1;size=16;fillColor=#eef2ff;strokeColor=#4f46e5;align=left;spacingLeft=10;spacingTop=4;fontSize=11;verticalAlign=top;fontColor=#4338ca;" vertex="1" parent="1">
+          <mxGeometry x="1160" y="510" width="330" height="150" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>

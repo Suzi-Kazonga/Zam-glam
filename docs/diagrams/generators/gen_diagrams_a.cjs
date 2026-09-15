@@ -1,205 +1,314 @@
 // Use case, architecture and site map.
+//
+// Layout here is deliberate rather than automatic: use cases sit in the column belonging to
+// the actor who performs them, so the lines from actor to case stay short and rarely cross.
 const fs = require('fs');
 const path = require('path');
-const { node, edge, file, S } = require('./drawio.cjs');
+const { node, edge, file, header, roleLegend, S, roleBox, roleActor, roleUseCase } = require('./drawio.cjs');
 
 const OUT = process.argv[2] || '.';
 
-// --- 01: use case ------------------------------------------------------------------
+// ================= 01: use case =================
 {
   const cells = [];
-  cells.push(node({ id: 'title', value: 'Use case diagram', x: 40, y: 10, w: 600, h: 30, style: S.title }));
+  const top = header(
+    cells,
+    'Use case diagram',
+    'Four actors. The proposal promised interfaces for customers and store owners; couriers and an administrator were needed to make delivery and trust work.',
+    { width: 1200 },
+  );
+
+  const UC_W = 230;
+  const UC_H = 62;
+  const UC_GAP = 26;
+  const COL_LEFT = 340;      // the customer / shop / courier column
+  const COL_RIGHT = 700;     // shared cases, and the administrator's
+
+  // The boundary is drawn first so everything sits on top of it.
+  const boundaryTop = top;
+  const boundaryHeight = 1180;
   cells.push(node({
-    id: 'sub',
-    value: 'Four actors. The proposal named customers and store owners; couriers and an administrator were needed to make delivery and trust work.',
-    x: 40, y: 34, w: 1000, h: 20, style: S.caption,
+    id: 'boundary',
+    value: 'Zamglam',
+    x: 300, y: boundaryTop, w: 700, h: boundaryHeight,
+    style: S.groupClear + 'align=center;spacingLeft=0;fontSize=15;',
   }));
 
-  // The system boundary.
-  cells.push(node({ id: 'boundary', value: 'Zamglam', x: 280, y: 80, w: 560, h: 940, style: S.layer + 'align=center;spacingLeft=0;fillColor=#fbfdff;' }));
-
-  const actors = [
-    { id: 'aCustomer', label: 'Customer', x: 80, y: 180 },
-    { id: 'aShop', label: 'Shop\n(vendor)', x: 80, y: 480 },
-    { id: 'aCourier', label: 'Courier', x: 80, y: 760 },
-    { id: 'aAdmin', label: 'Administrator', x: 900, y: 480 },
+  // Each actor gets a band of the boundary, with their cases stacked inside it.
+  const bands = [
+    {
+      role: 'customer',
+      actor: { id: 'aCustomer', label: 'Customer', x: 120, y: top + 120 },
+      column: COL_LEFT,
+      start: top + 40,
+      cases: [
+        ['uBrowse', 'Browse the catalogue'],
+        ['uBasket', 'Fill a basket'],
+        ['uOrder', 'Place an order'],
+        ['uTrack', 'Track an order'],
+        ['uRate', 'Rate a shop after delivery'],
+      ],
+    },
+    {
+      role: 'shop',
+      actor: { id: 'aShop', label: 'Shop\n(vendor)', x: 120, y: top + 560 },
+      column: COL_LEFT,
+      start: top + 490,
+      cases: [
+        ['uList', 'List and edit products'],
+        ['uDocs', 'Submit registration documents'],
+        ['uPack', 'Pack and release a parcel'],
+        ['uReply', 'Reply to a rating'],
+      ],
+    },
+    {
+      role: 'courier',
+      actor: { id: 'aCourier', label: 'Courier', x: 120, y: top + 950 },
+      column: COL_LEFT,
+      start: top + 880,
+      cases: [
+        ['uDuty', 'Go on and off duty'],
+        ['uPool', 'See parcels waiting'],
+        ['uPickup', 'Request a pickup'],
+        ['uDeliver', 'Mark a parcel delivered'],
+      ],
+    },
   ];
-  actors.forEach((a) => cells.push(node({ id: a.id, value: a.label, x: a.x, y: a.y, w: 40, h: 70, style: S.actor })));
 
-  const cases = [
-    // customer
-    { id: 'uBrowse', label: 'Browse the catalogue', x: 330, y: 120, actors: ['aCustomer'] },
-    { id: 'uBasket', label: 'Fill a basket', x: 330, y: 185, actors: ['aCustomer'] },
-    { id: 'uOrder', label: 'Place an order', x: 330, y: 250, actors: ['aCustomer'] },
-    { id: 'uTrack', label: 'Track an order', x: 330, y: 315, actors: ['aCustomer'] },
-    { id: 'uRate', label: 'Rate a shop', x: 330, y: 380, actors: ['aCustomer'] },
-    // shop
-    { id: 'uList', label: 'List and edit products', x: 330, y: 470, actors: ['aShop'] },
-    { id: 'uDocs', label: 'Submit registration\ndocuments', x: 330, y: 535, actors: ['aShop'] },
-    { id: 'uPack', label: 'Pack and release\na parcel', x: 330, y: 605, actors: ['aShop'] },
-    { id: 'uConfirm', label: 'Confirm or deny\na handover', x: 330, y: 675, actors: ['aShop', 'aCourier'] },
-    { id: 'uReply', label: 'Reply to a rating', x: 330, y: 745, actors: ['aShop'] },
-    // courier
-    { id: 'uDuty', label: 'Go on and off duty', x: 330, y: 810, actors: ['aCourier'] },
-    { id: 'uPool', label: 'See parcels waiting', x: 330, y: 875, actors: ['aCourier'] },
-    { id: 'uPickup', label: 'Request a pickup', x: 330, y: 940, actors: ['aCourier'] },
-    { id: 'uDeliver', label: 'Mark delivered', x: 585, y: 875, actors: ['aCourier'] },
-    // shared
-    { id: 'uReport', label: 'Report another party\non an order', x: 585, y: 740, actors: ['aCustomer', 'aShop', 'aCourier'] },
-    { id: 'uSignIn', label: 'Register and sign in', x: 585, y: 120, actors: ['aCustomer', 'aShop', 'aCourier', 'aAdmin'] },
-    // admin
-    { id: 'uVerify', label: 'Verify a shop', x: 585, y: 250, actors: ['aAdmin'] },
-    { id: 'uApprove', label: 'Approve a courier', x: 585, y: 315, actors: ['aAdmin'] },
-    { id: 'uComplaints', label: 'Review complaints', x: 585, y: 380, actors: ['aAdmin'] },
-    { id: 'uSuspend', label: 'Suspend or reinstate\nan account', x: 585, y: 445, actors: ['aAdmin'] },
-    { id: 'uAccounts', label: 'Edit, delete or restore\nan account', x: 585, y: 520, actors: ['aAdmin'] },
-    { id: 'uStats', label: 'See platform figures', x: 585, y: 600, actors: ['aAdmin'] },
-  ];
-
-  cases.forEach((c) => cells.push(node({
-    id: c.id, value: c.label, x: c.x, y: c.y, w: 200, h: 55, style: S.useCase, parent: '1',
-  })));
-
-  let n = 0;
-  cases.forEach((c) => c.actors.forEach((a) => {
-    cells.push(edge({ id: `uc${n += 1}`, source: a, target: c.id, style: S.plain }));
-  }));
-
-  cells.push(node({
-    id: 'note-uc',
-    value: 'Confirming a handover is joined to two actors on purpose:\n'
-      + 'the courier asks for the parcel and the shop answers.\n'
-      + 'Neither can complete it alone — which is the point.',
-    x: 900, y: 660, w: 300, h: 80, style: S.note,
-  }));
-
-  fs.writeFileSync(path.join(OUT, '01-use-case.drawio'), file('Use cases', cells));
-  console.log('01-use-case.drawio          4 actors, ' + cases.length + ' use cases');
-}
-
-// --- 02: architecture ---------------------------------------------------------------
-{
-  const cells = [];
-  cells.push(node({ id: 'title', value: 'System architecture', x: 40, y: 10, w: 600, h: 30, style: S.title }));
-  cells.push(node({
-    id: 'sub',
-    value: 'The layered design the proposal described, as built. The proposal’s four modules are marked; two more were added as the work went on.',
-    x: 40, y: 34, w: 1000, h: 20, style: S.caption,
-  }));
-
-  // Presentation
-  cells.push(node({ id: 'L1', value: 'User interface layer   —   React + Vite + Tailwind', x: 60, y: 90, w: 1040, h: 130, style: S.layer }));
-  ['Customer pages', 'Shop dashboard', 'Courier dashboard', 'Admin console'].forEach((label, i) => {
-    cells.push(node({ id: `ui${i}`, value: label, x: 90 + i * 250, y: 135, w: 215, h: 60, style: S.box }));
+  const placed = {};
+  bands.forEach((band) => {
+    cells.push(node({ id: band.actor.id, value: band.actor.label, x: band.actor.x, y: band.actor.y, w: 44, h: 78, style: roleActor(band.role) }));
+    band.cases.forEach(([id, label], i) => {
+      const y = band.start + i * (UC_H + UC_GAP);
+      placed[id] = y;
+      cells.push(node({ id, value: label, x: band.column, y, w: UC_W, h: UC_H, style: roleUseCase(band.role) }));
+      cells.push(edge({ id: `l_${id}`, source: band.actor.id, target: id, style: S.link }));
+    });
   });
 
-  cells.push(node({ id: 'httpNote', value: 'HTTP  ·  a relative /api, so the same build works from a phone', x: 60, y: 235, w: 500, h: 20, style: S.caption }));
-
-  // API
-  cells.push(node({ id: 'L2', value: 'API layer   —   Express', x: 60, y: 265, w: 1040, h: 120, style: S.layer }));
-  cells.push(node({ id: 'routes', value: 'Routes\n(what URL reaches what)', x: 90, y: 310, w: 230, h: 60, style: S.box }));
-  cells.push(node({ id: 'mw', value: 'Middleware\nauth · role · suspension ·\nrate limit · uploads', x: 340, y: 310, w: 250, h: 60, style: S.boxWarn }));
-  cells.push(node({ id: 'ctrl', value: 'Controllers\n(request in, status code out)', x: 610, y: 310, w: 230, h: 60, style: S.box }));
-  cells.push(node({ id: 'err', value: 'Error handling', x: 860, y: 310, w: 210, h: 60, style: S.box }));
-
-  // Domain modules
-  cells.push(node({ id: 'L3', value: 'Domain modules   —   the rules, in models/', x: 60, y: 405, w: 1040, h: 210, style: S.layer }));
-  const modules = [
-    { id: 'mVendor', label: 'Vendor management\nregistration · storefronts ·\nverification', proposal: true, x: 90, y: 450 },
-    { id: 'mCatalogue', label: 'Product catalogue\nlistings · photos · stock ·\ncategories', proposal: true, x: 350, y: 450 },
-    { id: 'mCourier', label: 'Courier & delivery\npool · handover · shifts ·\ntracking · escalation', proposal: true, x: 610, y: 450 },
-    { id: 'mOrders', label: 'Orders\none parcel per shop ·\npricing · stock', proposal: false, x: 870, y: 450 },
-    { id: 'mTrust', label: 'Trust & moderation\nratings · complaints ·\nsuspension', proposal: false, x: 90, y: 545 },
-    { id: 'mAdmin', label: 'Administration\nfigures · approvals ·\naccount lifecycle', proposal: false, x: 350, y: 545 },
+  // The administrator, on the other side, so their lines never cross anybody else's.
+  cells.push(node({ id: 'aAdmin', value: 'Administrator', x: 1060, y: top + 440, w: 44, h: 78, style: roleActor('admin') }));
+  const adminCases = [
+    ['uVerify', 'Verify a shop'],
+    ['uApprove', 'Approve a courier'],
+    ['uComplaints', 'Review complaints'],
+    ['uSuspend', 'Suspend or reinstate an account'],
+    ['uAccounts', 'Edit, delete or restore an account'],
+    ['uStats', 'See platform figures'],
   ];
-  modules.forEach((m) => cells.push(node({
-    id: m.id, value: m.label, x: m.x, y: m.y, w: 240, h: m.y === 450 ? 85 : 60,
-    style: m.proposal ? S.boxAccent : S.box,
-  })));
-  cells.push(node({
-    id: 'legend',
-    value: 'Shaded = named in the proposal’s methodology.\nUnshaded = added during development.',
-    x: 610, y: 545, w: 300, h: 50, style: S.caption,
-  }));
+  adminCases.forEach(([id, label], i) => {
+    const y = top + 300 + i * (UC_H + UC_GAP);
+    cells.push(node({ id, value: label, x: COL_RIGHT, y, w: UC_W, h: UC_H, style: roleUseCase('admin') }));
+    cells.push(edge({ id: `l_${id}`, source: 'aAdmin', target: id, style: S.link }));
+  });
 
-  // Services and data
-  cells.push(node({ id: 'L4', value: 'Supporting services', x: 60, y: 635, w: 500, h: 110, style: S.layer }));
-  cells.push(node({ id: 'svcPlaces', value: 'Place lookup\n(Zambian towns and\nLusaka areas)', x: 90, y: 678, w: 200, h: 55, style: S.box }));
-  cells.push(node({ id: 'svcCourier', value: 'Delivery pricing\n(pluggable provider)', x: 310, y: 678, w: 220, h: 55, style: S.box }));
-
-  cells.push(node({ id: 'L5', value: 'Data', x: 600, y: 635, w: 500, h: 110, style: S.layer }));
-  cells.push(node({ id: 'db', value: 'MySQL / MariaDB\n18 tables · schema created and\nmigrated by the application', x: 630, y: 673, w: 280, h: 62, style: S.boxAccent }));
-  cells.push(node({ id: 'uploads', value: 'uploads/\nproduct photos,\ndocuments', x: 930, y: 673, w: 150, h: 62, style: S.box }));
-
-  cells.push(edge({ id: 'a1', source: 'L1', target: 'L2', style: S.arrow }));
-  cells.push(edge({ id: 'a2', source: 'L2', target: 'L3', style: S.arrow }));
-  cells.push(edge({ id: 'a3', source: 'L3', target: 'L5', style: S.arrow }));
-  cells.push(edge({ id: 'a4', source: 'L3', target: 'L4', style: S.arrow }));
+  // Cases more than one actor performs, in their own colour so the sharing is visible.
+  const shared = [
+    { id: 'uSignIn', label: 'Register and sign in', y: top + 60, actors: ['aCustomer', 'aShop', 'aCourier', 'aAdmin'] },
+    { id: 'uConfirm', label: 'Confirm or deny a handover', y: top + 880, actors: ['aShop', 'aCourier'] },
+    { id: 'uReport', label: 'Report another party on an order', y: top + 1000, actors: ['aCustomer', 'aShop', 'aCourier'] },
+  ];
+  shared.forEach((c) => {
+    cells.push(node({ id: c.id, value: c.label, x: COL_RIGHT, y: c.y, w: UC_W, h: UC_H, style: S.boxWarn + 'rounded=1;arcSize=50;' }));
+    c.actors.forEach((a, i) => cells.push(edge({ id: `l_${c.id}_${i}`, source: a, target: c.id, style: S.link })));
+  });
 
   cells.push(node({
-    id: 'note-arch',
-    value: 'The rules live in the domain modules, not the controllers,\n'
-      + 'so they hold whichever route, test or script reaches them.\n'
-      + 'Controllers do HTTP and nothing else; there is no SQL in them.',
-    x: 60, y: 765, w: 420, h: 70, style: S.note,
+    id: 'ucNote',
+    value: 'Confirming a handover joins two actors on purpose.\n\n'
+      + 'The courier asks for the parcel and the shop answers. Neither can complete it '
+      + 'alone — which is the whole point, and the project’s answer to logistics being '
+      + '"organized manually between sellers and courier services".',
+    x: 1060, y: top + 860, w: 320, h: 140, style: S.noteKey,
+  }));
+  cells.push(node({
+    id: 'ucLegend',
+    value: 'Amber cases are performed by more than one kind of account.\n\n'
+      + 'Every other colour is the one the application itself uses: customer indigo, '
+      + 'shop purple, courier emerald, administrator slate.',
+    x: 1060, y: top + 60, w: 320, h: 110, style: S.note,
   }));
 
-  fs.writeFileSync(path.join(OUT, '02-architecture.drawio'), file('Architecture', cells));
-  console.log('02-architecture.drawio      5 layers, ' + modules.length + ' domain modules');
+  fs.writeFileSync(
+    path.join(OUT, '01-use-case.drawio'),
+    file('Use cases', cells, { width: 1460, height: boundaryTop + boundaryHeight + 80 }),
+  );
+  console.log(`01-use-case.drawio             4 actors, ${Object.keys(placed).length + adminCases.length + shared.length} use cases`);
 }
 
-// --- 09: site map -------------------------------------------------------------------
+// ================= 02: architecture =================
 {
   const cells = [];
-  cells.push(node({ id: 'title', value: 'What each kind of account can reach', x: 40, y: 10, w: 700, h: 30, style: S.title }));
+  const top = header(
+    cells,
+    'System architecture',
+    'The layered design the proposal described, as built. The proposal’s four modules are shaded; two more were added as the work went on.',
+    { width: 1200 },
+  );
+
+  const PAGE_W = 1240;
+  const BAND_X = 60;
+  const BAND_W = 1120;
+
+  // Boxes are children of their layer, so a layer and its contents can never drift apart.
+  let y = top;
+
+  // --- interface layer ---
+  cells.push(node({ id: 'L1', value: 'User interface layer   —   React + Vite + Tailwind', x: BAND_X, y, w: BAND_W, h: 132, style: S.group }));
+  [['Customer pages', 'customer'], ['Shop dashboard', 'shop'], ['Courier dashboard', 'courier'], ['Admin console', 'admin']]
+    .forEach(([label, role], i) => {
+      cells.push(node({ id: `ui${i}`, value: label, x: 28 + i * 268, y: 48, w: 240, h: 62, style: roleBox(role), parent: 'L1' }));
+    });
+  y += 132;
+
   cells.push(node({
-    id: 'sub',
-    value: 'Objective 3 asked for interfaces for customers and store owners. Four were built.',
-    x: 40, y: 34, w: 900, h: 20, style: S.caption,
+    id: 'httpNote',
+    value: 'HTTP  ·  a relative /api, proxied to the backend — which is what makes the same build work from a phone',
+    x: BAND_X + 20, y: y + 12, w: 700, h: 20, style: S.caption,
   }));
+  y += 46;
+
+  // --- api layer ---
+  cells.push(node({ id: 'L2', value: 'API layer   —   Express', x: BAND_X, y, w: BAND_W, h: 132, style: S.group }));
+  const api = [
+    ['routes', 'Routes\nwhat URL reaches what', S.box],
+    ['mw', 'Middleware\nauth · role · suspension\nrate limit · uploads', S.boxWarn],
+    ['ctrl', 'Controllers\nrequest in, status code out', S.box],
+    ['err', 'Error handling', S.box],
+  ];
+  api.forEach(([id, label, style], i) => {
+    cells.push(node({ id, value: label, x: 28 + i * 268, y: 48, w: 240, h: 62, style, parent: 'L2' }));
+  });
+  y += 132 + 46;
+
+  // --- domain modules ---
+  cells.push(node({ id: 'L3', value: 'Domain modules   —   the rules, in models/', x: BAND_X, y, w: BAND_W, h: 230, style: S.group }));
+  const modules = [
+    ['mVendor', 'Vendor management\nregistration · storefronts\nverification', true, 0, 0],
+    ['mCatalogue', 'Product catalogue\nlistings · photos · stock\ncategories', true, 1, 0],
+    ['mCourier', 'Courier &amp; delivery\npool · handover · shifts\ntracking · escalation', true, 2, 0],
+    ['mUI', 'User interface layer\n(the band above)', true, 3, 0],
+    ['mOrders', 'Orders\none parcel per shop\npricing · stock', false, 0, 1],
+    ['mTrust', 'Trust &amp; moderation\nratings · complaints\nsuspension', false, 1, 1],
+    ['mAdmin', 'Administration\nfigures · approvals\naccount lifecycle', false, 2, 1],
+  ];
+  modules.forEach(([id, label, proposed, col, rowIndex]) => {
+    cells.push(node({
+      id, value: label,
+      x: 28 + col * 268, y: 48 + rowIndex * 88, w: 240, h: 76,
+      style: proposed ? S.boxAccent : S.box,
+      parent: 'L3',
+    }));
+  });
+  cells.push(node({
+    id: 'moduleLegend',
+    value: 'Shaded  =  named in the proposal’s methodology\nPlain   =  added during development',
+    x: 828, y: 140, w: 270, h: 60, style: S.caption, parent: 'L3',
+  }));
+  y += 230 + 46;
+
+  // --- services and data, side by side ---
+  cells.push(node({ id: 'L4', value: 'Supporting services', x: BAND_X, y, w: 540, h: 128, style: S.group }));
+  cells.push(node({ id: 'svcPlaces', value: 'Place lookup\nZambian towns and\nLusaka neighbourhoods', x: 28, y: 46, w: 230, h: 62, style: S.box, parent: 'L4' }));
+  cells.push(node({ id: 'svcCourier', value: 'Delivery pricing\npluggable provider', x: 282, y: 46, w: 230, h: 62, style: S.box, parent: 'L4' }));
+
+  cells.push(node({ id: 'L5', value: 'Data', x: BAND_X + 580, y, w: 540, h: 128, style: S.group }));
+  cells.push(node({ id: 'db', value: 'MySQL / MariaDB\n18 tables · schema created and\nmigrated by the application', x: 28, y: 46, w: 280, h: 62, style: S.boxAccent, parent: 'L5' }));
+  cells.push(node({ id: 'uploads', value: 'uploads/\nphotos and documents', x: 332, y: 46, w: 180, h: 62, style: S.box, parent: 'L5' }));
+
+  cells.push(edge({ id: 'a1', source: 'L1', target: 'L2', style: S.flow + 'exitX=0.5;exitY=1;entryX=0.5;entryY=0;' }));
+  cells.push(edge({ id: 'a2', source: 'L2', target: 'L3', style: S.flow + 'exitX=0.5;exitY=1;entryX=0.5;entryY=0;' }));
+  cells.push(edge({ id: 'a3', source: 'L3', target: 'L4', style: S.flow + 'exitX=0.25;exitY=1;entryX=0.5;entryY=0;' }));
+  cells.push(edge({ id: 'a4', source: 'L3', target: 'L5', style: S.flow + 'exitX=0.75;exitY=1;entryX=0.5;entryY=0;' }));
+
+  cells.push(node({
+    id: 'archNote',
+    value: 'The rules live in the domain modules, not the controllers, so they hold whichever '
+      + 'route, test or script reaches them. Controllers do HTTP and nothing else — there is '
+      + 'no SQL in any of them.',
+    x: BAND_X, y: y + 148, w: 560, h: 70, style: S.note,
+  }));
+
+  fs.writeFileSync(
+    path.join(OUT, '02-architecture.drawio'),
+    file('Architecture', cells, { width: PAGE_W, height: y + 260 }),
+  );
+  console.log('02-architecture.drawio         5 bands, 7 domain modules');
+}
+
+// ================= 09: site map =================
+{
+  const cells = [];
+  const top = header(
+    cells,
+    'What each kind of account can reach',
+    'Objective 3 asked for interfaces for customers and store owners. Four were built.',
+    { width: 1100 },
+  );
+
+  const COL_W = 270;
+  const COL_GAP = 40;
+  const ITEM_H = 40;
+  const ITEM_GAP = 10;
 
   const columns = [
     {
-      id: 'c1', title: 'Customer', x: 40,
-      pages: ['Home  /', 'Collections  /collections', 'All products  /products', 'One product  /product/:id',
-        'A storefront  /stores/:id', 'Basket and checkout  /cart', 'My dashboard  /customer/dashboard',
-        'Track an order  /orders/:id', 'My account  /account'],
+      id: 'c1', title: 'Customer', role: 'customer',
+      pages: ['Home  /', 'Collections', 'All products', 'One product', 'A storefront',
+        'Basket and checkout', '› My dashboard', '› Track an order', 'My account'],
     },
     {
-      id: 'c2', title: 'Shop (vendor)', x: 330,
-      pages: ['Home  /  (own stock)', 'My dashboard  /seller/dashboard', '· Products', '· Orders and handover',
-        '· Verification', '· Ratings', '· Figures', 'My storefront  /stores/:id', 'My account  /account'],
+      id: 'c2', title: 'Shop  (vendor)', role: 'shop',
+      pages: ['Home  /  — own stock', '› Dashboard · Products', '› Dashboard · Orders',
+        '› Dashboard · Verification', '› Dashboard · Ratings', '› Dashboard · Figures',
+        'My storefront', 'My account'],
     },
     {
-      id: 'c3', title: 'Courier', x: 620,
-      pages: ['Home  /  (parcels waiting)', 'My dashboard  /courier/dashboard', '· Available to collect',
-        '· Out for delivery', '· Completed', '· Shops I collect from', 'Track a parcel  /orders/:id', 'My account  /account'],
+      id: 'c3', title: 'Courier', role: 'courier',
+      pages: ['Home  /  — parcels waiting', '› Dashboard · Available', '› Dashboard · Out for delivery',
+        '› Dashboard · Completed', '› Dashboard · Shops', 'Track a parcel', 'My account'],
     },
     {
-      id: 'c4', title: 'Administrator', x: 910,
-      pages: ['Console  /admin/dashboard', '· Subscribers and activity', '· Verification queue',
-        '· Complaints queue', '· Unclaimed parcels', 'Customers  /admin/users/customers',
-        'Shops  /admin/users/sellers', 'Couriers  /admin/users/couriers'],
+      id: 'c4', title: 'Administrator', role: 'admin',
+      pages: ['› Console · Subscribers', '› Console · Verification queue', '› Console · Complaints',
+        '› Console · Unclaimed parcels', 'Customers', 'Shops', 'Couriers'],
     },
   ];
 
-  columns.forEach((col) => {
-    cells.push(node({ id: col.id, value: col.title, x: col.x, y: 90, w: 250, h: 40, style: S.boxAccent + 'fontStyle=1;' }));
+  let deepest = 0;
+  columns.forEach((col, index) => {
+    const x = 60 + index * (COL_W + COL_GAP);
+    cells.push(node({ id: col.id, value: col.title, x, y: top, w: COL_W, h: 44, style: roleBox(col.role, 'fontStyle=1;fontSize=14;') }));
     col.pages.forEach((page, i) => {
-      const nested = page.startsWith('·');
+      const nested = page.startsWith('›');
+      const y = top + 62 + i * (ITEM_H + ITEM_GAP);
+      deepest = Math.max(deepest, y + ITEM_H);
       cells.push(node({
-        id: `${col.id}p${i}`, value: page,
-        x: col.x + (nested ? 20 : 0), y: 145 + i * 46, w: nested ? 230 : 250, h: 38,
-        style: nested ? S.boxMuted : S.box,
+        id: `${col.id}p${i}`,
+        value: nested ? page.slice(2) : page,
+        x: x + (nested ? 22 : 0), y, w: COL_W - (nested ? 22 : 0), h: ITEM_H,
+        style: nested ? S.boxMuted : roleBox(col.role, 'fillColor=#ffffff;'),
       }));
     });
   });
 
-  cells.push(node({ id: 'shared', value: 'Open to everybody, signed in or not', x: 40, y: 570, w: 400, h: 24, style: S.caption + 'fontStyle=1;fontSize=13;fontColor=#1f2937;' }));
-  ['Sign in  /login', 'Sign up  /signup  (choose a role)', 'About  ·  Contact  ·  Policies'].forEach((p, i) => {
-    cells.push(node({ id: `sh${i}`, value: p, x: 40 + i * 290, y: 605, w: 270, h: 40, style: S.box }));
+  const sharedY = deepest + 70;
+  cells.push(node({ id: 'sharedTitle', value: 'Open to everybody, signed in or not', x: 60, y: sharedY, w: 500, h: 26, style: S.heading }));
+  ['Sign in', 'Sign up  —  choose a role', 'About  ·  Contact  ·  Policies'].forEach((p, i) => {
+    cells.push(node({ id: `sh${i}`, value: p, x: 60 + i * (COL_W + COL_GAP), y: sharedY + 36, w: COL_W, h: ITEM_H, style: S.box }));
   });
 
-  fs.writeFileSync(path.join(OUT, '09-site-map.drawio'), file('Site map by role', cells));
-  console.log('09-site-map.drawio          4 roles');
+  cells.push(node({
+    id: 'mapNote',
+    value: 'Indented entries are sections within a dashboard rather than separate pages.\n\n'
+      + 'Every dashboard reflows for a phone: the section list becomes a drawer, and the '
+      + 'tables scroll sideways rather than the page.',
+    x: 60 + 4 * (COL_W + COL_GAP), y: top, w: 300, h: 120, style: S.note,
+  }));
+
+  fs.writeFileSync(
+    path.join(OUT, '09-site-map.drawio'),
+    file('Site map by role', cells, { width: 60 + 5 * (COL_W + COL_GAP) + 60, height: sharedY + 140 }),
+  );
+  console.log('09-site-map.drawio             4 roles');
 }

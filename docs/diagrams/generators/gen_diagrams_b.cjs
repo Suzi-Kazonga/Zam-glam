@@ -1,277 +1,372 @@
 // The two sequence diagrams, the deployment diagram and the module dependencies.
+//
+// Sequence layout is done arithmetically: lifelines are spaced wide enough for the longest
+// message label, and each message is given its own row, so nothing overlaps whatever the
+// wording ends up being.
 const fs = require('fs');
 const path = require('path');
-const { node, edge, freeEdge, file, S } = require('./drawio.cjs');
+const { node, edge, freeEdge, file, header, S, roleLifeline } = require('./drawio.cjs');
 
 const OUT = process.argv[2] || '.';
 
-// Draws a set of lifelines and returns where each one's line sits horizontally.
-function lifelines(cells, names, { y = 90, height = 620, width = 170, gap = 60 } = {}) {
+// Draws lifelines and hands back the x of each one's centre line.
+function lifelines(cells, names, { y, height, width = 200, gap = 150, roles = {} }) {
   const at = {};
   names.forEach((name, i) => {
-    const x = 60 + i * (width + gap);
-    cells.push(node({ id: `ll_${i}`, value: name, x, y, w: width, h: height, style: S.lifeline }));
+    const x = 70 + i * (width + gap);
+    // Each participant takes the colour the application gives that role.
+    const style = roles[name] ? roleLifeline(roles[name]) : S.lifeline;
+    cells.push(node({ id: `ll_${i}`, value: name, x, y, w: width, h: height, style }));
     at[name] = x + width / 2;
   });
+  at.__rightEdge = 70 + (names.length - 1) * (width + gap) + width;
   return at;
 }
 
-// --- 05: placing an order across several shops --------------------------------------
-{
-  const cells = [];
-  cells.push(node({ id: 'title', value: 'Placing an order across several shops', x: 40, y: 10, w: 700, h: 30, style: S.title }));
-  cells.push(node({
-    id: 'sub',
-    value: 'The basket is priced before anything is created, then written as one order and one parcel per shop, in a single transaction.',
-    x: 40, y: 34, w: 1000, h: 20, style: S.caption,
-  }));
-
-  const at = lifelines(cells, ['Customer', 'Express API', 'Order model', 'MySQL'], { height: 660 });
-
-  const msgs = [
-    { y: 150, from: 'Customer', to: 'Express API', text: 'POST /api/orders/quote  (the basket)' },
-    { y: 185, from: 'Express API', to: 'Order model', text: 'quoteForItems(items, location)' },
-    { y: 220, from: 'Order model', to: 'MySQL', text: 'read each product’s price, stock and shop' },
-    { y: 255, from: 'MySQL', to: 'Order model', text: 'rows', ret: true },
-    { y: 300, from: 'Order model', to: 'Express API', text: 'one parcel per shop, each with its own delivery fee', ret: true },
-    { y: 335, from: 'Express API', to: 'Customer', text: 'items total · delivery total · total', ret: true },
-
-    { y: 400, from: 'Customer', to: 'Express API', text: 'POST /api/orders  (confirm)' },
-    { y: 435, from: 'Express API', to: 'Order model', text: 'createForCustomer(...)' },
-    { y: 470, from: 'Order model', to: 'MySQL', text: 'BEGIN' },
-    { y: 500, from: 'Order model', to: 'MySQL', text: 'price the basket again, server-side' },
-    { y: 530, from: 'Order model', to: 'MySQL', text: 'insert the order' },
-    { y: 560, from: 'Order model', to: 'MySQL', text: 'insert its items  ·  take the stock off the shelf' },
-    { y: 590, from: 'Order model', to: 'MySQL', text: 'insert ONE SHIPMENT PER SHOP' },
-    { y: 620, from: 'Order model', to: 'MySQL', text: 'COMMIT' },
-    { y: 655, from: 'Order model', to: 'Express API', text: 'order id', ret: true },
-    { y: 685, from: 'Express API', to: 'Customer', text: '201  ·  { id, status: "placed" }', ret: true },
-  ];
-
-  msgs.forEach((m, i) => cells.push(freeEdge({
-    id: `m${i}`, value: m.text,
-    x1: at[m.from], y1: m.y, x2: at[m.to], y2: m.y,
-    style: m.ret ? S.msgReturn : S.msg,
-  })));
-
-  cells.push(node({
-    id: 'note-price',
-    value: 'Prices are read from the database both times, never taken\n'
-      + 'from the request — so a tampered basket changes nothing, and\n'
-      + 'the customer is charged exactly what the quote showed.',
-    x: 980, y: 260, w: 340, h: 70, style: S.note,
-  }));
-  cells.push(node({
-    id: 'note-tx',
-    value: 'All of it in one transaction. A failure half way cannot leave\n'
-      + 'stock deducted for an order that does not exist.',
-    x: 980, y: 500, w: 340, h: 55, style: S.note,
-  }));
-  cells.push(node({
-    id: 'note-split',
-    value: 'THIS is what makes the platform multi-vendor:\n'
-      + 'three shops in one basket become three parcels,\n'
-      + 'each collected from a different place, priced on\n'
-      + 'its own distance, and delivered separately.',
-    x: 980, y: 580, w: 340, h: 80, style: S.note + 'fillColor=#eef2ff;strokeColor=#4338ca;',
-  }));
-
-  fs.writeFileSync(path.join(OUT, '05-sequence-order.drawio'), file('Placing an order', cells));
-  console.log('05-sequence-order.drawio    ' + msgs.length + ' messages');
+// One message per row, so labels can never land on top of one another.
+function messages(cells, at, list, { startY, step = 46, prefix = 'm' }) {
+  list.forEach((m, i) => {
+    const y = startY + i * step;
+    const self = m.from === m.to;
+    cells.push(freeEdge({
+      id: `${prefix}${i}`,
+      value: m.text,
+      x1: at[m.from],
+      y1: y,
+      x2: self ? at[m.to] + 90 : at[m.to],
+      y2: y,
+      style: m.style || (m.back ? S.msgBack : S.msg),
+    }));
+  });
+  return startY + list.length * step;
 }
 
-// --- 06: the two-party handover ------------------------------------------------------
+// ================= 05: placing an order across several shops =================
 {
   const cells = [];
-  cells.push(node({ id: 'title', value: 'The handover: a courier collects a parcel', x: 40, y: 10, w: 700, h: 30, style: S.title }));
+  const top = header(
+    cells,
+    'Placing an order across several shops',
+    'The basket is priced before anything is created, then written as one order and one parcel per shop — all inside a single transaction.',
+    { width: 1200 },
+  );
+
+  const LIFELINE_TOP = top + 20;
+  const LIFELINE_HEIGHT = 740;
+  const at = lifelines(cells, ['Customer', 'Express API', 'Order model', 'MySQL'], {
+    y: LIFELINE_TOP, height: LIFELINE_HEIGHT,
+    roles: { Customer: 'customer' },
+  });
+
+  // Phase one: what will this cost?
   cells.push(node({
-    id: 'sub',
-    value: 'It takes both sides. The courier asks for the parcel; the shop says whether the handover actually happened.',
-    x: 40, y: 34, w: 1000, h: 20, style: S.caption,
+    id: 'phase1',
+    value: '1.  Price the basket — nothing is created yet',
+    x: 70, y: LIFELINE_TOP + 66, w: 420, h: 24, style: S.heading,
+  }));
+  let y = messages(cells, at, [
+    { from: 'Customer', to: 'Express API', text: 'POST /api/orders/quote   (the basket)' },
+    { from: 'Express API', to: 'Order model', text: 'quoteForItems(items, location)' },
+    { from: 'Order model', to: 'MySQL', text: 'read each product’s price, stock and shop' },
+    { from: 'MySQL', to: 'Order model', text: 'rows', back: true },
+    { from: 'Order model', to: 'Order model', text: 'group by shop, price delivery for each' },
+    { from: 'Order model', to: 'Express API', text: 'one parcel per shop, each with its own fee', back: true },
+    { from: 'Express API', to: 'Customer', text: 'items total  ·  delivery total  ·  total', back: true },
+  ], { startY: LIFELINE_TOP + 110, prefix: 'q' });
+
+  // Phase two: place it.
+  y += 30;
+  cells.push(node({
+    id: 'phase2',
+    value: '2.  Place the order — all of it, or none of it',
+    x: 70, y: y - 26, w: 420, h: 24, style: S.heading,
+  }));
+  y = messages(cells, at, [
+    { from: 'Customer', to: 'Express API', text: 'POST /api/orders   (confirm)' },
+    { from: 'Express API', to: 'Order model', text: 'createForCustomer(...)' },
+    { from: 'Order model', to: 'MySQL', text: 'BEGIN' },
+    { from: 'Order model', to: 'MySQL', text: 'price the basket again, server-side' },
+    { from: 'Order model', to: 'MySQL', text: 'insert the order' },
+    { from: 'Order model', to: 'MySQL', text: 'insert its items  ·  take the stock off the shelf' },
+    { from: 'Order model', to: 'MySQL', text: 'insert ONE SHIPMENT PER SHOP' },
+    { from: 'Order model', to: 'MySQL', text: 'COMMIT' },
+    { from: 'Order model', to: 'Express API', text: 'the new order id', back: true },
+    { from: 'Express API', to: 'Customer', text: '201   { id, status: "placed" }', back: true },
+  ], { startY: y + 20, prefix: 'p' });
+
+  const asideX = at.__rightEdge + 90;
+  cells.push(node({
+    id: 'notePrice',
+    value: 'Priced twice, from the database both times\n\n'
+      + 'Prices are never taken from the request, so a tampered basket changes nothing — '
+      + 'and the customer is charged exactly what the quote showed them.',
+    x: asideX, y: LIFELINE_TOP + 110, w: 320, h: 120, style: S.note,
+  }));
+  cells.push(node({
+    id: 'noteTx',
+    value: 'One transaction\n\n'
+      + 'Stock, the order, its items and its parcels are written together or not at all. '
+      + 'A failure half way cannot leave stock deducted for an order that does not exist.',
+    x: asideX, y: LIFELINE_TOP + 270, w: 320, h: 120, style: S.note,
+  }));
+  cells.push(node({
+    id: 'noteSplit',
+    value: 'This is what makes it multi-vendor\n\n'
+      + 'Three shops in one basket become three parcels — each collected from a different '
+      + 'place, priced on its own distance, and delivered separately.\n\n'
+      + 'One delivery fee and one status would have been a fiction.',
+    x: asideX, y: LIFELINE_TOP + 430, w: 320, h: 160, style: S.noteKey,
   }));
 
-  const at = lifelines(cells, ['Shop', 'Zamglam', 'Courier', 'Customer'], { height: 700 });
+  fs.writeFileSync(
+    path.join(OUT, '05-sequence-order.drawio'),
+    file('Placing an order', cells, { width: asideX + 400, height: LIFELINE_TOP + LIFELINE_HEIGHT + 80 }),
+  );
+  console.log('05-sequence-order.drawio       17 messages in two phases');
+}
 
-  const main = [
-    { y: 140, from: 'Shop', to: 'Zamglam', text: 'mark the parcel shipped — it enters the pool' },
-    { y: 175, from: 'Zamglam', to: 'Courier', text: 'appears in every on-duty courier’s list', ret: true },
-    { y: 215, from: 'Courier', to: 'Zamglam', text: 'request pickup' },
-    { y: 250, from: 'Zamglam', to: 'Zamglam', text: 'claim it — first to ask wins' },
-    { y: 290, from: 'Zamglam', to: 'Courier', text: 'yours to collect', ret: true },
-    { y: 325, from: 'Zamglam', to: 'Shop', text: 'notification: "<name> is collecting order #N"', ret: true },
-    { y: 360, from: 'Zamglam', to: 'Customer', text: 'tracking: a courier is collecting it', ret: true },
-    { y: 400, from: 'Courier', to: 'Shop', text: 'arrives at the counter  (in person)' },
-  ];
-  main.forEach((m, i) => cells.push(freeEdge({
-    id: `h${i}`, value: m.text,
-    x1: at[m.from], y1: m.y, x2: m.from === m.to ? at[m.to] + 70 : at[m.to], y2: m.y,
-    style: (m.ret ? S.msgReturn : S.msg) + (m.from === m.to ? 'dashed=0;' : ''),
-  })));
+// ================= 06: the two-party handover =================
+{
+  const cells = [];
+  const top = header(
+    cells,
+    'The handover: a courier collects a parcel',
+    'It takes both sides. The courier asks for the parcel; the shop says whether the handover actually happened. Neither can complete it alone.',
+    { width: 1200 },
+  );
 
-  // The two answers the shop can give.
-  cells.push(node({ id: 'altBox', value: 'alt   the shop answers', x: 40, y: 430, w: 900, h: 290, style: S.layer + 'fillColor=none;strokeColor=#1f2937;dashed=1;' }));
-  cells.push(node({ id: 'altYes', value: '[ the courier really took it ]', x: 60, y: 460, w: 260, h: 22, style: S.caption + 'fontStyle=2;fontColor=#047857;' }));
+  const LIFELINE_TOP = top + 20;
+  const LIFELINE_HEIGHT = 860;
+  const at = lifelines(cells, ['Shop', 'Zamglam', 'Courier', 'Customer'], {
+    y: LIFELINE_TOP, height: LIFELINE_HEIGHT,
+    roles: { Shop: 'shop', Courier: 'courier', Customer: 'customer' },
+  });
 
-  const yes = [
-    { y: 500, from: 'Shop', to: 'Zamglam', text: 'confirm the handover' },
-    { y: 535, from: 'Zamglam', to: 'Customer', text: 'the courier’s name and number are released', ret: true },
-    { y: 565, from: 'Zamglam', to: 'Courier', text: 'now out for delivery', ret: true },
-  ];
-  yes.forEach((m, i) => cells.push(freeEdge({
-    id: `hy${i}`, value: m.text, x1: at[m.from], y1: m.y, x2: at[m.to], y2: m.y,
-    style: (m.ret ? S.msgReturn : S.msg) + 'strokeColor=#047857;fontColor=#047857;',
-  })));
+  cells.push(node({
+    id: 'phaseMain',
+    value: '1.  Into the pool, and claimed',
+    x: 70, y: LIFELINE_TOP + 66, w: 420, h: 24, style: S.heading,
+  }));
+  let y = messages(cells, at, [
+    { from: 'Shop', to: 'Zamglam', text: 'mark the parcel shipped  —  it enters the pool' },
+    { from: 'Zamglam', to: 'Courier', text: 'appears in every on-duty courier’s list', back: true },
+    { from: 'Courier', to: 'Zamglam', text: 'request pickup' },
+    { from: 'Zamglam', to: 'Zamglam', text: 'claim it — one conditional update, first to ask wins' },
+    { from: 'Zamglam', to: 'Courier', text: 'yours to collect', back: true },
+    { from: 'Zamglam', to: 'Shop', text: 'notification: "<name> is collecting order #N"', back: true },
+    { from: 'Zamglam', to: 'Customer', text: 'tracking: a courier is collecting it', back: true },
+    { from: 'Courier', to: 'Shop', text: 'arrives at the counter   (in person)' },
+  ], { startY: LIFELINE_TOP + 110, prefix: 'h' });
 
-  cells.push(freeEdge({ id: 'altDiv', x1: 45, y1: 595, x2: 935, y2: 595, style: 'html=1;endArrow=none;dashed=1;strokeColor=#1f2937;' }));
-  cells.push(node({ id: 'altNo', value: '[ the courier never came ]', x: 60, y: 600, w: 260, h: 22, style: S.caption + 'fontStyle=2;fontColor=#c2410c;' }));
+  // The two answers the shop can give, each in its own framed block.
+  const altTop = y + 24;
+  const altHeight = 300;
+  cells.push(node({
+    id: 'altFrame',
+    value: '2.  alt   —   the shop answers',
+    x: 60, y: altTop, w: at.__rightEdge - 20, h: altHeight,
+    style: S.groupClear + 'fontSize=14;',
+  }));
 
-  const no = [
-    { y: 640, from: 'Shop', to: 'Zamglam', text: 'not picked up  (+ a reason)' },
-    { y: 670, from: 'Zamglam', to: 'Courier', text: 'the parcel leaves your list', ret: true },
-    { y: 700, from: 'Zamglam', to: 'Customer', text: 'tracking: why it is still waiting', ret: true },
-  ];
-  no.forEach((m, i) => cells.push(freeEdge({
-    id: `hn${i}`, value: m.text, x1: at[m.from], y1: m.y, x2: at[m.to], y2: m.y,
-    style: (m.ret ? S.msgReturn : S.msg) + 'strokeColor=#c2410c;fontColor=#c2410c;',
-  })));
+  cells.push(node({
+    id: 'altYes',
+    value: '[ the courier really took it ]',
+    x: 80, y: altTop + 36, w: 300, h: 22,
+    style: S.caption + 'fontStyle=2;fontColor=#047857;fontSize=12;',
+  }));
+  messages(cells, at, [
+    { from: 'Shop', to: 'Zamglam', text: 'confirm the handover', style: S.msgGood },
+    { from: 'Zamglam', to: 'Customer', text: 'the courier’s name and number are released', style: S.msgGood },
+    { from: 'Zamglam', to: 'Courier', text: 'now out for delivery', style: S.msgGood },
+  ], { startY: altTop + 88, prefix: 'hy' });
+
+  const divideY = altTop + 180;
+  cells.push(freeEdge({
+    id: 'altDivide',
+    x1: 62, y1: divideY, x2: at.__rightEdge + 38, y2: divideY,
+    style: 'html=1;endArrow=none;dashed=1;strokeColor=#94a3b8;',
+  }));
+  cells.push(node({
+    id: 'altNo',
+    value: '[ the courier never came ]',
+    x: 80, y: divideY + 8, w: 300, h: 22,
+    style: S.caption + 'fontStyle=2;fontColor=#c2410c;fontSize=12;',
+  }));
+  messages(cells, at, [
+    { from: 'Shop', to: 'Zamglam', text: 'not picked up   (+ a reason)', style: S.msgBad },
+    { from: 'Zamglam', to: 'Courier', text: 'the parcel leaves your list', style: S.msgBad },
+    { from: 'Zamglam', to: 'Customer', text: 'tracking: why it is still waiting', style: S.msgBad },
+  ], { startY: divideY + 58, prefix: 'hn' });
+
   cells.push(node({
     id: 'backToPool',
-    value: '→ back into the pool for another courier',
-    x: 400, y: 725, w: 320, h: 24, style: S.caption + 'fontColor=#c2410c;fontStyle=1;',
+    value: '↲  back into the pool for another courier',
+    x: at[ 'Zamglam' ] - 150, y: altTop + altHeight - 34, w: 340, h: 24,
+    style: S.caption + 'fontColor=#9a3412;fontStyle=1;fontSize=12;align=center;',
   }));
 
+  const asideX = at.__rightEdge + 90;
   cells.push(node({
-    id: 'note-gate',
-    value: 'Why it takes two parties:\n\n'
-      + 'A courier pressing "collected" is only their word for it.\n'
-      + 'Until the shop confirms, nobody has actually taken the\n'
-      + 'parcel — so it is not treated as collected, and the\n'
-      + 'customer is not given anybody’s number.\n\n'
-      + 'The one exception: the shop being asked to confirm sees\n'
-      + 'the courier’s name from the moment they ask, because it\n'
-      + 'is being asked to verify that this person took it.',
-    x: 980, y: 140, w: 360, h: 170, style: S.note,
+    id: 'noteWhy',
+    value: 'Why it takes two parties\n\n'
+      + 'A courier pressing "collected" is only their word for it. Until the shop confirms, '
+      + 'nobody has actually taken the parcel — so it is not treated as collected, and the '
+      + 'customer is given nobody’s number.\n\n'
+      + 'This is the project’s answer to the problem statement: logistics "organized '
+      + 'manually between sellers and courier services".',
+    x: asideX, y: LIFELINE_TOP + 110, w: 340, h: 190, style: S.noteKey,
   }));
   cells.push(node({
-    id: 'note-race',
-    value: 'Claiming is a single conditional update, so two couriers\n'
-      + 'racing for the same parcel cannot both win. The second\n'
-      + 'is told somebody got there first.',
-    x: 980, y: 330, w: 360, h: 60, style: S.note,
+    id: 'noteRace',
+    value: 'Two couriers cannot both win\n\n'
+      + 'Claiming is a single conditional UPDATE. The second courier changes no rows and '
+      + 'is told somebody got there first, so nobody travels for a parcel that is gone.',
+    x: asideX, y: LIFELINE_TOP + 330, w: 340, h: 130, style: S.note,
+  }));
+  cells.push(node({
+    id: 'noteException',
+    value: 'One exception to the gating\n\n'
+      + 'The shop being asked to confirm sees the courier’s name from the moment they ask — '
+      + 'it is being asked to verify that this person took the parcel, which it cannot do '
+      + 'against an anonymous claim.',
+    x: asideX, y: LIFELINE_TOP + 490, w: 340, h: 150, style: S.note,
   }));
 
-  fs.writeFileSync(path.join(OUT, '06-sequence-handover.drawio'), file('The handover', cells));
-  console.log('06-sequence-handover.drawio ' + (main.length + yes.length + no.length) + ' messages, with both answers');
+  fs.writeFileSync(
+    path.join(OUT, '06-sequence-handover.drawio'),
+    file('The handover', cells, { width: asideX + 420, height: LIFELINE_TOP + LIFELINE_HEIGHT + 80 }),
+  );
+  console.log('06-sequence-handover.drawio    14 messages, both answers framed');
 }
 
-// --- 10: deployment ------------------------------------------------------------------
+// ================= 10: deployment =================
 {
   const cells = [];
-  cells.push(node({ id: 'title', value: 'Deployment', x: 40, y: 10, w: 600, h: 30, style: S.title }));
+  const top = header(
+    cells,
+    'Deployment',
+    'How the pieces are hosted, and where the encryption the proposal commits to is applied.',
+    { width: 1100 },
+  );
+
+  cells.push(node({ id: 'clients', value: 'Clients', x: 60, y: top, w: 220, h: 250, style: S.group }));
+  cells.push(node({ id: 'phone', value: 'Phone\nbrowser', x: 30, y: 50, w: 160, h: 80, style: S.box, parent: 'clients' }));
+  cells.push(node({ id: 'laptop', value: 'Computer\nbrowser', x: 30, y: 150, w: 160, h: 80, style: S.box, parent: 'clients' }));
+
+  cells.push(node({ id: 'host', value: 'Server   —   one host, or one Docker network', x: 400, y: top, w: 720, h: 400, style: S.group }));
+  cells.push(node({ id: 'nginx', value: 'nginx\nserves the built React files\nproxies /api to the backend\nTLS terminates here', x: 40, y: 60, w: 290, h: 110, style: S.boxWarn, parent: 'host' }));
+  cells.push(node({ id: 'files', value: 'uploads/\nproduct photos and\nregistration documents\n(a mounted volume)', x: 380, y: 60, w: 290, h: 110, style: S.box, parent: 'host' }));
+  cells.push(node({ id: 'api', value: 'Express\nnode server.js  ·  port 5000\nthe API, and the hourly sweep', x: 40, y: 240, w: 290, h: 110, style: S.boxAccent, parent: 'host' }));
+  cells.push(node({ id: 'mysql', value: 'MySQL / MariaDB\nport 3306\nschema created and migrated\nby the application', x: 380, y: 240, w: 290, h: 110, style: S.boxAccent, parent: 'host' }));
+
+  cells.push(edge({ id: 'd1', value: 'HTTPS', source: 'phone', target: 'nginx', style: S.flow + 'strokeColor=#c2410c;fontColor=#9a3412;fontStyle=1;strokeWidth=2;exitX=1;exitY=0.5;entryX=0;entryY=0.5;' }));
+  cells.push(edge({ id: 'd2', value: 'HTTPS', source: 'laptop', target: 'nginx', style: S.flow + 'strokeColor=#c2410c;fontColor=#9a3412;fontStyle=1;strokeWidth=2;exitX=1;exitY=0.5;entryX=0;entryY=0.8;' }));
+  cells.push(edge({ id: 'd3', value: '/api', source: 'nginx', target: 'api', style: S.flow + 'exitX=0.5;exitY=1;entryX=0.5;entryY=0;' }));
+  cells.push(edge({ id: 'd4', value: 'SQL', source: 'api', target: 'mysql', style: S.flow + 'exitX=1;exitY=0.5;entryX=0;entryY=0.5;' }));
+  cells.push(edge({ id: 'd5', value: 'reads and writes', source: 'api', target: 'files', style: S.flow + 'exitX=1;exitY=0.2;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;' }));
+
+  const asideX = 1180;
   cells.push(node({
-    id: 'sub',
-    value: 'How the pieces are hosted, and where the encryption the proposal commits to is applied.',
-    x: 40, y: 34, w: 900, h: 20, style: S.caption,
-  }));
-
-  cells.push(node({ id: 'phone', value: 'Phone\n(browser)', x: 60, y: 130, w: 130, h: 70, style: S.box }));
-  cells.push(node({ id: 'laptop', value: 'Computer\n(browser)', x: 60, y: 230, w: 130, h: 70, style: S.box }));
-
-  cells.push(node({ id: 'host', value: 'Server  /  development machine', x: 280, y: 100, w: 700, h: 400, style: S.layer }));
-
-  cells.push(node({ id: 'nginx', value: 'nginx\nserves the built React files\nproxies /api to the backend\nTLS terminates here', x: 320, y: 150, w: 260, h: 100, style: S.boxWarn }));
-  cells.push(node({ id: 'api', value: 'Express\nnode server.js  ·  port 5000\n· the API\n· the hourly sweep', x: 320, y: 290, w: 260, h: 100, style: S.boxAccent }));
-  cells.push(node({ id: 'mysql', value: 'MySQL / MariaDB\nport 3306\nschema created and migrated\nby the application', x: 640, y: 290, w: 280, h: 100, style: S.boxAccent }));
-  cells.push(node({ id: 'files', value: 'uploads/\nproduct photos and\nregistration documents\n(a mounted volume)', x: 640, y: 150, w: 280, h: 100, style: S.box }));
-
-  cells.push(edge({ id: 'd1', value: 'HTTPS', source: 'phone', target: 'nginx', style: S.arrowLabel + 'strokeColor=#c2410c;fontColor=#c2410c;fontStyle=1;' }));
-  cells.push(edge({ id: 'd2', value: 'HTTPS', source: 'laptop', target: 'nginx', style: S.arrowLabel + 'strokeColor=#c2410c;fontColor=#c2410c;fontStyle=1;' }));
-  cells.push(edge({ id: 'd3', value: '/api  (inside the host)', source: 'nginx', target: 'api', style: S.arrowLabel }));
-  cells.push(edge({ id: 'd4', value: 'SQL', source: 'api', target: 'mysql', style: S.arrowLabel }));
-  cells.push(edge({ id: 'd5', value: 'reads and writes', source: 'api', target: 'files', style: S.arrowLabel }));
-
-  cells.push(node({
-    id: 'note-tls',
-    value: 'Objective 4 and the proposal’s ethical section commit to HTTPS/SSL.\n'
-      + 'That is applied here, at nginx. Running the project locally for\n'
-      + 'marking uses plain HTTP on localhost, where there is no network\n'
-      + 'to intercept.',
-    x: 1010, y: 130, w: 350, h: 90, style: S.note,
-  }));
-  cells.push(node({
-    id: 'note-docker',
-    value: 'docker-compose.yml defines all of this as containers on one\n'
-      + 'network, plus phpMyAdmin and the optional Flask courier service.\n\n'
-      + 'Honest caveat: Docker is not installed on the development\n'
-      + 'machine, so the container stack is defined but has not been run\n'
-      + 'end to end. The tested way to run it is in docs/01-SETUP.md.',
-    x: 1010, y: 250, w: 350, h: 120, style: S.note + 'fillColor=#fef2f2;strokeColor=#b91c1c;',
+    id: 'noteTls',
+    value: 'Objective 4, and the proposal’s ethical section, commit to HTTPS and SSL.\n\n'
+      + 'That is applied here, at nginx. Running the project locally for marking uses plain '
+      + 'HTTP on localhost, where there is no network to intercept.',
+    x: asideX, y: top, w: 340, h: 140, style: S.note,
   }));
   cells.push(node({
-    id: 'note-relative',
-    value: 'The browser calls a relative /api, never an absolute address —\n'
-      + 'which is exactly why the same build works from a phone.',
-    x: 280, y: 520, w: 480, h: 50, style: S.note,
+    id: 'noteDocker',
+    value: 'Honest caveat\n\n'
+      + 'docker-compose.yml defines all of this as containers, plus phpMyAdmin and the '
+      + 'optional Flask courier service.\n\n'
+      + 'Docker is not installed on the development machine, so the container stack is '
+      + 'defined but has never been run end to end. The tested way to run Zamglam is in '
+      + 'docs/01-SETUP.md.',
+    x: asideX, y: top + 170, w: 340, h: 210, style: S.noteBad,
+  }));
+  cells.push(node({
+    id: 'noteRelative',
+    value: 'The browser calls a relative /api, never an absolute address — which is exactly '
+      + 'why the same build works from a phone.',
+    x: 400, y: top + 430, w: 500, h: 55, style: S.note,
   }));
 
-  fs.writeFileSync(path.join(OUT, '10-deployment.drawio'), file('Deployment', cells));
-  console.log('10-deployment.drawio        hosts, TLS boundary and the Docker caveat');
+  fs.writeFileSync(
+    path.join(OUT, '10-deployment.drawio'),
+    file('Deployment', cells, { width: asideX + 420, height: top + 540 }),
+  );
+  console.log('10-deployment.drawio           hosts, the TLS boundary and the Docker caveat');
 }
 
-// --- 11: module dependencies ----------------------------------------------------------
+// ================= 11: module dependencies =================
 {
   const cells = [];
-  cells.push(node({ id: 'title', value: 'How the backend fits together', x: 40, y: 10, w: 700, h: 30, style: S.title }));
-  cells.push(node({
-    id: 'sub',
-    value: 'A dependency diagram rather than a UML class diagram: the backend is modules of functions over SQL, not an object model with inheritance.',
-    x: 40, y: 34, w: 1000, h: 20, style: S.caption,
-  }));
+  const top = header(
+    cells,
+    'How the backend fits together',
+    'A dependency diagram rather than a UML class diagram: the backend is modules of functions over SQL, not an object model with inheritance.',
+    { width: 1200 },
+  );
+
+  const W = 260;
+  const H = 74;
+  const LEFT = 80;
+  const MID = 420;
+  const RIGHT = 760;
+  const ROW = 120;
 
   const boxes = [
-    { id: 'server', label: 'server.js\nlistens  ·  runs the sweep', x: 60, y: 100, w: 240, h: 60, style: S.box },
-    { id: 'app', label: 'app.js\nthe Express application\n(no port, no timers)', x: 60, y: 200, w: 240, h: 70, style: S.boxAccent },
-    { id: 'routes', label: 'routes/\nwhat URL reaches what', x: 60, y: 310, w: 240, h: 55, style: S.box },
-    { id: 'middleware', label: 'middleware/\nauth · role · suspension\nrate limit · uploads · errors', x: 370, y: 310, w: 240, h: 70, style: S.boxWarn },
-    { id: 'controllers', label: 'controllers/\nrequest in, status code out', x: 60, y: 410, w: 240, h: 55, style: S.box },
-    { id: 'models', label: 'models/\nthe rules, and all the SQL', x: 60, y: 510, w: 240, h: 55, style: S.boxAccent },
-    { id: 'services', label: 'services/\ndelivery pricing · place lookup\n(no database)', x: 370, y: 505, w: 240, h: 70, style: S.box },
-    { id: 'utils', label: 'utils/accounts.js\nturns a signed-in user into\ntheir profile id', x: 370, y: 410, w: 240, h: 70, style: S.box },
-    { id: 'config', label: 'config/db.js\nthe pool, the schema,\nthe migrations', x: 60, y: 610, w: 240, h: 70, style: S.boxAccent },
-    { id: 'tests', label: 'tests/\ndrive app.js directly through\nsupertest — the real routes', x: 660, y: 200, w: 260, h: 70, style: S.boxMuted },
+    ['server', 'server.js\nlistens  ·  runs the sweep', LEFT, top, S.box],
+    ['app', 'app.js\nthe Express application\nno port, no timers', LEFT, top + ROW, S.boxAccent],
+    ['routes', 'routes/\nwhat URL reaches what', LEFT, top + 2 * ROW, S.box],
+    ['controllers', 'controllers/\nrequest in, status code out', LEFT, top + 3 * ROW, S.box],
+    ['models', 'models/\nthe rules, and all the SQL', LEFT, top + 4 * ROW, S.boxAccent],
+    ['config', 'config/db.js\nthe pool, the schema,\nthe migrations', LEFT, top + 5 * ROW, S.boxAccent],
+
+    ['middleware', 'middleware/\nauth · role · suspension\nrate limit · uploads · errors', MID, top + 2 * ROW, S.boxWarn],
+    ['utils', 'utils/accounts.js\nturns a signed-in user into\ntheir profile id', MID, top + 3 * ROW, S.box],
+    ['services', 'services/\ndelivery pricing · place lookup\n(no database)', MID, top + 4 * ROW, S.box],
+
+    ['tests', 'tests/\ndrive app.js directly through\nsupertest — the real routes', RIGHT, top + ROW, S.boxMuted],
   ];
-  boxes.forEach((b) => cells.push(node(b)));
+  boxes.forEach(([id, label, x, y, style]) => cells.push(node({ id, value: label, x, y, w: W, h: H, style })));
+
+  const down = 'exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;';
+  const across = 'exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;';
 
   const deps = [
-    ['server', 'app', ''], ['app', 'routes', ''], ['app', 'middleware', ''],
-    ['routes', 'middleware', ''], ['routes', 'controllers', ''],
-    ['controllers', 'models', ''], ['controllers', 'utils', ''],
-    ['models', 'config', ''], ['models', 'services', ''], ['models', 'utils', ''],
-    ['middleware', 'models', 'suspension asks for standing'],
-    ['tests', 'app', ''],
-    ['server', 'models', 'the sweep'],
+    ['server', 'app', '', down],
+    ['app', 'routes', '', down],
+    ['routes', 'controllers', '', down],
+    ['controllers', 'models', '', down],
+    ['models', 'config', '', down],
+    ['routes', 'middleware', '', across],
+    ['controllers', 'utils', '', across],
+    ['models', 'services', '', across],
+    ['tests', 'app', 'drives the real app', 'exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;'],
   ];
-  deps.forEach(([from, to, label], i) => cells.push(edge({
-    id: `dep${i}`, value: label, source: from, target: to, style: S.arrowLabel,
+  deps.forEach(([from, to, label, ports], i) => cells.push(edge({
+    id: `dep${i}`, value: label, source: from, target: to, style: S.flow + ports,
   })));
 
   cells.push(node({
-    id: 'note-dir',
-    value: 'Dependencies only ever point downwards.\n'
-      + 'No model imports a controller, and no controller\n'
-      + 'contains SQL — which is what keeps a rule in one\n'
-      + 'place rather than repeated per route.',
-    x: 660, y: 410, w: 330, h: 80, style: S.note,
+    id: 'noteDirection',
+    value: 'Dependencies only ever point downwards\n\n'
+      + 'No model imports a controller, and no controller contains SQL — which is what keeps '
+      + 'a rule in one place rather than repeated once per route.',
+    x: RIGHT, y: top + 3 * ROW, w: 340, h: 120, style: S.note,
   }));
   cells.push(node({
-    id: 'note-class',
-    value: 'Why this rather than a class diagram:\n\n'
-      + 'The models are collections of static functions over SQL.\n'
-      + 'Drawing them as UML classes with associations would show\n'
-      + 'relationships the code does not have.',
-    x: 660, y: 520, w: 330, h: 95, style: S.note,
+    id: 'noteClass',
+    value: 'Why not a class diagram\n\n'
+      + 'The models are collections of functions over SQL. Drawing them as UML classes with '
+      + 'associations and inheritance would show relationships the code does not have — '
+      + 'which an examiner reading the source would notice.',
+    x: RIGHT, y: top + 4 * ROW + 40, w: 340, h: 150, style: S.noteKey,
   }));
 
-  fs.writeFileSync(path.join(OUT, '11-module-dependencies.drawio'), file('Module dependencies', cells));
-  console.log('11-module-dependencies.drawio  ' + boxes.length + ' modules');
+  fs.writeFileSync(
+    path.join(OUT, '11-module-dependencies.drawio'),
+    file('Module dependencies', cells, { width: RIGHT + 420, height: top + 6 * ROW + 80 }),
+  );
+  console.log('11-module-dependencies.drawio  10 modules, dependencies pointing one way');
 }

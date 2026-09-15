@@ -50,6 +50,24 @@ with this documentation; ask if you need them re-run.
 
 **The other eight are hand-laid** and will need editing by hand if the system changes.
 
+## The colours mean something
+
+Every diagram uses the palette the interface itself uses, from
+`frontend/src/utils/roleTheme.js`:
+
+| | Role | Where you have seen it |
+| --- | --- | --- |
+| Indigo | **Customer** | The shopper header and buttons |
+| Purple | **Shop** (vendor) | The seller dashboard |
+| Emerald | **Courier** | The courier dashboard |
+| Slate | **Administrator** | The admin console |
+
+Amber means waiting on somebody — a shop not yet verified, a courier not yet approved, a
+handover not yet confirmed. Rose means refused, suspended, deleted or cancelled.
+
+So a reader who has used Zamglam recognises what they are looking at without a legend, and
+a reader who has not can match a diagram against a screenshot.
+
 ## Notation
 
 Standard UML where UML has a notation for it: use case, sequence, state machine, deployment.

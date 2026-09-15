@@ -1,170 +1,248 @@
 // The two state diagrams.
 //
-// 07 is built from TRACK_ORDER in backend/src/models/Order.js, so the parcel statuses shown
-// are the ones the code actually uses. If a status is ever added or removed, regenerating
-// this picks it up rather than leaving the diagram quietly wrong.
+// 07 is built from TRACK_ORDER in backend/src/models/Order.js, so the statuses shown are
+// the ones the code actually uses. Adding or removing one and regenerating keeps the
+// picture true; editing the file by hand does not.
 const fs = require('fs');
 const path = require('path');
-const { node, edge, file, S } = require('./drawio.cjs');
+const { node, edge, file, header, S, roleState } = require('./drawio.cjs');
 
 const OUT = process.argv[2] || '.';
-const ORDER_MODEL = process.argv[3] || '../backend/src/models/Order.js';
+const ORDER_MODEL = process.argv[3] || path.join(__dirname, '../../../backend/src/models/Order.js');
 
-// --- 07: the life of a parcel -------------------------------------------------------
+// ================= 07: the life of a parcel =================
 {
   const source = fs.readFileSync(ORDER_MODEL, 'utf8');
   const match = source.match(/const TRACK_ORDER = \[([^\]]+)\]/);
   if (!match) throw new Error('Could not find TRACK_ORDER in ' + ORDER_MODEL);
   const statuses = match[1].split(',').map((s) => s.trim().replace(/^'|'$/g, '')).filter(Boolean);
 
-  // Who causes each move, and what it is called in the interface.
-  const CAUSE = {
-    processing: ['the shop', 'Start packing'],
-    shipped: ['the shop', 'Hand to courier — enters the pool'],
-    pickup_requested: ['a courier', 'Request pickup — claims it'],
-    picked_up: ['the shop', 'Picked up — confirms the handover'],
-    delivered: ['the courier', 'Delivered'],
+  // What the shop, courier or customer sees, and who does it.
+  const STEP = {
+    processing: { label: 'Start packing', who: 'the shop', role: 'shop' },
+    shipped: { label: 'Hand to courier', who: 'the shop', role: 'shop', note: 'the parcel enters the pool' },
+    pickup_requested: { label: 'Request pickup', who: 'a courier', role: 'courier', note: 'claims it — first to ask wins' },
+    picked_up: { label: 'Picked up', who: 'the shop', role: 'shop', note: 'confirms the handover really happened' },
+    delivered: { label: 'Delivered', who: 'the courier', role: 'courier' },
   };
 
+  // 'placed' is the customer's doing; every state after it belongs to a shop or a courier,
+  // so each is drawn in the colour of whoever put the parcel there.
+  const STATE_ROLE = { placed: 'customer' };
+  Object.entries(STEP).forEach(([status, step]) => { STATE_ROLE[status] = step.role; });
+
   const cells = [];
-  cells.push(node({ id: 'title', value: 'The life of a parcel', x: 40, y: 10, w: 600, h: 30, style: S.title }));
-  cells.push(node({
-    id: 'sub',
-    value: 'One shop’s items within an order. Generated from TRACK_ORDER in models/Order.js.',
-    x: 40, y: 34, w: 800, h: 20, style: S.caption,
-  }));
+  const top = header(
+    cells,
+    'The life of a parcel',
+    'One shop’s items within an order. The statuses are read from TRACK_ORDER in models/Order.js, so this cannot drift from the code.',
+    { width: 1200 },
+  );
 
-  cells.push(node({ id: 'start', value: '', x: 60, y: 118, w: 24, h: 24, style: S.stateStart }));
+  // Generous horizontal spacing: each state is 190 wide with 130 of clear air, which is
+  // where the transition labels sit.
+  const STATE_W = 190;
+  const STATE_H = 64;
+  const STRIDE = 320;
+  const ROW_Y = top + 90;
 
-  const x0 = 130;
-  const gap = 175;
+  cells.push(node({ id: 'start', value: '', x: 60, y: ROW_Y + 20, w: 26, h: 26, style: S.stateStart }));
+
   statuses.forEach((status, i) => {
+    const handover = ['pickup_requested', 'picked_up'].includes(status);
     cells.push(node({
       id: `s_${status}`,
       value: status,
-      x: x0 + i * gap, y: 100, w: 145, h: 60,
-      style: ['pickup_requested', 'picked_up'].includes(status) ? S.state + 'fillColor=#eef2ff;strokeColor=#4338ca;' : S.state,
+      x: 140 + i * STRIDE,
+      y: ROW_Y,
+      w: STATE_W,
+      h: STATE_H,
+      // The two handover states are drawn heavier: they are the point of the diagram.
+      style: roleState(STATE_ROLE[status] || 'customer', handover ? 'strokeWidth=3;fontStyle=1;' : ''),
     }));
   });
 
-  cells.push(edge({ id: 'e_start', value: 'customer places the order', source: 'start', target: `s_${statuses[0]}`, style: S.arrowLabel }));
+  const lastX = 140 + (statuses.length - 1) * STRIDE;
+  cells.push(node({ id: 'end', value: '', x: lastX + STATE_W + 70, y: ROW_Y + 20, w: 26, h: 26, style: S.stateEnd }));
 
-  for (let i = 1; i < statuses.length; i += 1) {
-    const [who, label] = CAUSE[statuses[i]] || ['', ''];
+  cells.push(edge({
+    id: 'e_start',
+    value: 'the customer\nplaces the order',
+    source: 'start',
+    target: `s_${statuses[0]}`,
+    style: S.flow + 'exitX=1;exitY=0.5;entryX=0;entryY=0.5;',
+  }));
+
+  // Transition labels alternate above and below the line, so two long ones never collide.
+  statuses.slice(1).forEach((status, index) => {
+    const step = STEP[status] || { label: '', who: '' };
+    const above = index % 2 === 0;
+    const text = `${step.label}\n(${step.who})${step.note ? `\n${step.note}` : ''}`;
     cells.push(edge({
-      id: `e_${i}`,
-      value: `${label}\n(${who})`,
-      source: `s_${statuses[i - 1]}`,
-      target: `s_${statuses[i]}`,
-      style: S.arrowLabel,
+      id: `e_${index}`,
+      value: text,
+      source: `s_${statuses[index]}`,
+      target: `s_${status}`,
+      style: S.flow + `exitX=1;exitY=0.5;entryX=0;entryY=0.5;verticalAlign=${above ? 'bottom' : 'top'};`,
     }));
-  }
+  });
 
-  cells.push(node({ id: 'end', value: '', x: x0 + statuses.length * gap + 10, y: 118, w: 24, h: 24, style: S.stateEnd }));
-  cells.push(edge({ id: 'e_end', source: `s_${statuses[statuses.length - 1]}`, target: 'end', style: S.arrow }));
+  cells.push(edge({
+    id: 'e_end',
+    source: `s_${statuses[statuses.length - 1]}`,
+    target: 'end',
+    style: S.flow + 'exitX=1;exitY=0.5;entryX=0;entryY=0.5;',
+  }));
 
-  // The branch that makes the handover two-sided.
+  // The branch that makes the handover two-sided. Routed well below the main row so it
+  // crosses nothing, with its own channel.
+  const DENY_Y = ROW_Y + 200;
   cells.push(edge({
     id: 'e_deny',
-    value: 'Not picked up — the shop says the courier never came.\nThe parcel returns to the pool and the customer is told why.',
+    value: 'Not picked up  —  the shop says the courier never came.\nThe parcel returns to the pool and the customer is told why.',
     source: 's_pickup_requested',
     target: 's_shipped',
-    style: S.arrowLabel + 'strokeColor=#c2410c;fontColor=#c2410c;dashed=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;',
-    points: [{ x: x0 + 3.5 * gap, y: 300 }, { x: x0 + 2.5 * gap, y: 300 }],
+    style: S.flow + 'strokeColor=#c2410c;fontColor=#9a3412;dashed=1;strokeWidth=2;'
+      + 'exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;',
+    points: [
+      { x: 140 + 3 * STRIDE + STATE_W / 2, y: DENY_Y },
+      { x: 140 + 2 * STRIDE + STATE_W / 2, y: DENY_Y },
+    ],
   }));
 
-  cells.push(node({
-    id: 'cancel',
-    value: 'cancelled',
-    x: x0, y: 400, w: 145, h: 60,
-    style: S.state + 'fillColor=#fef2f2;strokeColor=#b91c1c;',
-  }));
+  // Cancellation, well clear of everything else.
+  const CANCEL_Y = ROW_Y + 330;
+  cells.push(node({ id: 'cancel', value: 'cancelled', x: 140 + STRIDE, y: CANCEL_Y, w: STATE_W, h: STATE_H, style: S.stateBad }));
   cells.push(edge({
     id: 'e_cancel',
-    value: 'the shop cancels — stock goes back on the shelf.\nRefused once a courier has collected it.',
-    source: 's_placed', target: 'cancel', style: S.arrowLabel + 'strokeColor=#b91c1c;fontColor=#b91c1c;',
+    value: 'the shop cancels\nstock goes back on the shelf',
+    source: 's_placed',
+    target: 'cancel',
+    style: S.flow + 'strokeColor=#b91c1c;fontColor=#7f1d1d;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;',
+    points: [{ x: 140 + STATE_W / 2, y: CANCEL_Y + STATE_H / 2 }],
+  }));
+
+  const noteY = CANCEL_Y - 20;
+  cells.push(node({
+    id: 'noteEscalate',
+    value: 'Escalation\n\n'
+      + 'A parcel left in the pool for an hour is assigned automatically to the on-duty '
+      + 'courier carrying the fewest.\n\n'
+      + 'Assignment is not collection — that courier still requests it, and the shop '
+      + 'still confirms.',
+    x: 140 + 2 * STRIDE, y: noteY, w: 330, h: 150, style: S.note,
   }));
 
   cells.push(node({
-    id: 'note-escalate',
-    value: 'Escalation: a parcel left in the pool for an hour is assigned\n'
-      + 'automatically to the on-duty courier carrying the fewest.\n'
-      + 'Assignment is not collection — that courier still requests it,\n'
-      + 'and the shop still confirms.',
-    x: 520, y: 400, w: 330, h: 90, style: S.note,
+    id: 'noteGate',
+    value: 'Why two parties\n\n'
+      + 'A courier pressing "collected" is only their word for it. Until the shop confirms, '
+      + 'nobody has actually taken the parcel.\n\n'
+      + 'The courier’s name and number reach the customer at picked_up, and not before.',
+    x: 140 + 3 * STRIDE + 60, y: noteY, w: 330, h: 150, style: S.noteKey,
   }));
 
-  cells.push(node({
-    id: 'note-gate',
-    value: 'The courier’s name and number reach the customer only\n'
-      + 'at picked_up. Before the shop confirms, nobody has\n'
-      + 'actually taken the parcel.',
-    x: 880, y: 400, w: 320, h: 80, style: S.note,
-  }));
-
-  fs.writeFileSync(path.join(OUT, '07-state-parcel.drawio'), file('Parcel states', cells));
-  console.log('07-state-parcel.drawio      ' + statuses.length + ' statuses read from the code');
+  fs.writeFileSync(
+    path.join(OUT, '07-state-parcel.drawio'),
+    file('Parcel states', cells, { width: lastX + STATE_W + 200, height: CANCEL_Y + 220 }),
+  );
+  console.log(`07-state-parcel.drawio         ${statuses.length} statuses read from the code`);
 }
 
-// --- 08: the life of an account -----------------------------------------------------
+// ================= 08: the life of an account =================
 {
   const cells = [];
-  cells.push(node({ id: 'title', value: 'The life of an account', x: 40, y: 10, w: 600, h: 30, style: S.title }));
+  const top = header(
+    cells,
+    'The life of an account',
+    'Registration, vetting, and everything an administrator can do afterwards. Shops and couriers are vetted differently; suspension and deletion apply to all three.',
+    { width: 1200 },
+  );
+
+  const W = 210;
+  const H = 66;
+  const COL = [80, 380, 680, 980];
+
+  // --- a shop ---
+  const shopY = top + 40;
+  cells.push(node({ id: 'shopBand', value: 'A shop  —  verification', x: 60, y: shopY - 34, w: 1120, h: 190, style: S.groupClear }));
+  cells.push(node({ id: 'shopStart', value: '', x: COL[0] - 40, y: shopY + 60, w: 26, h: 26, style: S.stateStart }));
+  cells.push(node({ id: 'shopPending', value: 'pending\ncan sell, shows as unverified', x: COL[0], y: shopY + 40, w: W, h: H, style: S.stateWaiting }));
+  cells.push(node({ id: 'shopVerified', value: 'verified\ncarries the badge shoppers see', x: COL[1], y: shopY, w: W, h: H, style: roleState('shop', 'strokeWidth=3;fontStyle=1;') }));
+  cells.push(node({ id: 'shopRejected', value: 'rejected', x: COL[1], y: shopY + 100, w: W, h: 48, style: S.stateBad }));
+
+  cells.push(edge({ id: 'se1', value: 'registers', source: 'shopStart', target: 'shopPending', style: S.flow + 'exitX=1;exitY=0.5;entryX=0;entryY=0.5;' }));
+  cells.push(edge({ id: 'se2', value: 'admin accepts\nthe documents', source: 'shopPending', target: 'shopVerified', style: S.flow + 'exitX=1;exitY=0.5;entryX=0;entryY=0.5;' }));
+  cells.push(edge({ id: 'se3', value: 'admin rejects them', source: 'shopPending', target: 'shopRejected', style: S.flow + 'exitX=1;exitY=0.5;entryX=0;entryY=0.5;' }));
+  cells.push(edge({
+    id: 'se4', value: 'submits fresh paperwork',
+    source: 'shopRejected', target: 'shopPending',
+    style: S.flow + 'dashed=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;',
+    points: [{ x: COL[1] + W / 2, y: shopY + 170 }, { x: COL[0] + W / 2, y: shopY + 170 }],
+  }));
   cells.push(node({
-    id: 'sub',
-    value: 'Registration, vetting, and what an administrator can do afterwards. Shops and couriers are vetted differently; suspension and deletion apply to all three.',
-    x: 40, y: 34, w: 1000, h: 20, style: S.caption,
+    id: 'shopNote',
+    value: 'The proposal’s first stated problem: shoppers cannot tell a checked seller from an unchecked one.',
+    x: COL[2], y: shopY + 40, w: 300, h: 60, style: S.note,
   }));
 
-  // Vetting a shop.
-  cells.push(node({ id: 'shopTitle', value: 'A shop', x: 40, y: 80, w: 200, h: 24, style: S.caption + 'fontStyle=1;fontSize=13;fontColor=#1f2937;' }));
-  cells.push(node({ id: 'shopStart', value: '', x: 60, y: 130, w: 24, h: 24, style: S.stateStart }));
-  cells.push(node({ id: 'shopPending', value: 'pending\n(can sell, shows unverified)', x: 130, y: 112, w: 175, h: 60, style: S.state }));
-  cells.push(node({ id: 'shopVerified', value: 'verified\n(carries the badge)', x: 380, y: 60, w: 165, h: 55, style: S.state + 'fillColor=#ecfdf5;strokeColor=#047857;' }));
-  cells.push(node({ id: 'shopRejected', value: 'rejected', x: 380, y: 170, w: 165, h: 45, style: S.state + 'fillColor=#fef2f2;strokeColor=#b91c1c;' }));
-  cells.push(edge({ id: 'se1', value: 'registers', source: 'shopStart', target: 'shopPending', style: S.arrowLabel }));
-  cells.push(edge({ id: 'se2', value: 'admin accepts the documents', source: 'shopPending', target: 'shopVerified', style: S.arrowLabel }));
-  cells.push(edge({ id: 'se3', value: 'admin rejects them', source: 'shopPending', target: 'shopRejected', style: S.arrowLabel }));
-  cells.push(edge({ id: 'se4', value: 'submits fresh paperwork', source: 'shopRejected', target: 'shopPending', style: S.arrowLabel + 'dashed=1;' }));
+  // --- a courier ---
+  const cY = top + 250;
+  cells.push(node({ id: 'courierBand', value: 'A courier  —  approval and duty', x: 60, y: cY - 34, w: 1120, h: 190, style: S.groupClear }));
+  cells.push(node({ id: 'cStart', value: '', x: COL[0] - 40, y: cY + 60, w: 26, h: 26, style: S.stateStart }));
+  cells.push(node({ id: 'cPending', value: 'pending\ncannot take any work', x: COL[0], y: cY + 40, w: W, h: H, style: S.stateWaiting }));
+  cells.push(node({ id: 'cApproved', value: 'approved', x: COL[1], y: cY, w: W, h: 48, style: roleState('courier') }));
+  cells.push(node({ id: 'cRejected', value: 'rejected\ntaken off duty', x: COL[1], y: cY + 95, w: W, h: 55, style: S.stateBad }));
+  cells.push(node({ id: 'cDuty', value: 'on duty\nsees the parcel pool', x: COL[2], y: cY - 5, w: W, h: H, style: roleState('courier', 'strokeWidth=3;fontStyle=1;') }));
 
-  // Vetting a courier.
-  cells.push(node({ id: 'cTitle', value: 'A courier', x: 40, y: 270, w: 200, h: 24, style: S.caption + 'fontStyle=1;fontSize=13;fontColor=#1f2937;' }));
-  cells.push(node({ id: 'cStart', value: '', x: 60, y: 320, w: 24, h: 24, style: S.stateStart }));
-  cells.push(node({ id: 'cPending', value: 'pending\n(cannot take any work)', x: 130, y: 302, w: 175, h: 60, style: S.state }));
-  cells.push(node({ id: 'cApproved', value: 'approved', x: 380, y: 270, w: 165, h: 45, style: S.state + 'fillColor=#ecfdf5;strokeColor=#047857;' }));
-  cells.push(node({ id: 'cRejected', value: 'rejected\n(taken off duty)', x: 380, y: 350, w: 165, h: 50, style: S.state + 'fillColor=#fef2f2;strokeColor=#b91c1c;' }));
-  cells.push(node({ id: 'cDuty', value: 'on duty\n(sees the parcel pool)', x: 620, y: 262, w: 175, h: 55, style: S.state + 'fillColor=#eef2ff;strokeColor=#4338ca;' }));
-  cells.push(edge({ id: 'ce1', value: 'registers', source: 'cStart', target: 'cPending', style: S.arrowLabel }));
-  cells.push(edge({ id: 'ce2', value: 'admin approves', source: 'cPending', target: 'cApproved', style: S.arrowLabel }));
-  cells.push(edge({ id: 'ce3', value: 'admin rejects', source: 'cPending', target: 'cRejected', style: S.arrowLabel }));
-  cells.push(edge({ id: 'ce4', value: 'clocks on / off', source: 'cApproved', target: 'cDuty', style: S.arrowLabel }));
+  cells.push(edge({ id: 'ce1', value: 'registers', source: 'cStart', target: 'cPending', style: S.flow + 'exitX=1;exitY=0.5;entryX=0;entryY=0.5;' }));
+  cells.push(edge({ id: 'ce2', value: 'admin approves', source: 'cPending', target: 'cApproved', style: S.flow + 'exitX=1;exitY=0.5;entryX=0;entryY=0.5;' }));
+  cells.push(edge({ id: 'ce3', value: 'admin rejects', source: 'cPending', target: 'cRejected', style: S.flow + 'exitX=1;exitY=0.5;entryX=0;entryY=0.5;' }));
+  cells.push(edge({ id: 'ce4', value: 'clocks on', source: 'cApproved', target: 'cDuty', style: S.flow + 'exitX=1;exitY=0.5;entryX=0;entryY=0.5;' }));
   cells.push(node({
-    id: 'note-duty',
-    value: 'Cannot clock off while answerable\nfor a parcel — it would be stranded,\nout of the pool and held by somebody\nwho has gone home.',
-    x: 840, y: 250, w: 250, h: 80, style: S.note,
+    id: 'dutyNote',
+    value: 'Cannot clock off while answerable for a parcel — it would be stranded, out of the pool and held by somebody who has gone home.',
+    x: COL[3] - 40, y: cY, w: 300, h: 70, style: S.note,
   }));
 
-  // What an administrator can do to any account.
-  cells.push(node({ id: 'aTitle', value: 'Any account, once it exists', x: 40, y: 450, w: 300, h: 24, style: S.caption + 'fontStyle=1;fontSize=13;fontColor=#1f2937;' }));
-  cells.push(node({ id: 'aActive', value: 'active', x: 130, y: 500, w: 150, h: 50, style: S.state + 'fillColor=#ecfdf5;strokeColor=#047857;' }));
-  cells.push(node({ id: 'aSuspended', value: 'suspended\n(can sign in and read,\ncannot act)', x: 370, y: 490, w: 185, h: 70, style: S.state + 'fillColor=#fff7ed;strokeColor=#c2410c;' }));
-  cells.push(node({ id: 'aDeleted', value: 'deleted\n(30-day restore window:\ncannot sign in, products hidden)', x: 370, y: 620, w: 235, h: 75, style: S.state + 'fillColor=#fef2f2;strokeColor=#b91c1c;' }));
-  cells.push(node({ id: 'aPurged', value: '', x: 700, y: 645, w: 24, h: 24, style: S.stateEnd }));
+  // --- any account ---
+  const aY = top + 470;
+  cells.push(node({ id: 'anyBand', value: 'Any account, once it exists  —  moderation', x: 60, y: aY - 34, w: 1120, h: 260, style: S.groupClear }));
+  cells.push(node({ id: 'aActive', value: 'active', x: COL[0], y: aY + 60, w: W, h: 55, style: roleState('courier', 'fontStyle=1;') }));
+  cells.push(node({ id: 'aSuspended', value: 'suspended\ncan sign in and read,\ncannot act', x: COL[1], y: aY, w: W, h: 76, style: S.stateWaiting }));
+  cells.push(node({ id: 'aDeleted', value: 'deleted\n30-day restore window:\ncannot sign in,\nproducts hidden', x: COL[1], y: aY + 130, w: W, h: 88, style: S.stateBad }));
+  cells.push(node({ id: 'aPurged', value: '', x: COL[2] + 60, y: aY + 160, w: 26, h: 26, style: S.stateEnd }));
 
-  cells.push(edge({ id: 'ae1', value: 'three upheld complaints,\nor an admin decision', source: 'aActive', target: 'aSuspended', style: S.arrowLabel }));
-  cells.push(edge({ id: 'ae2', value: 'reinstated — open complaints cleared', source: 'aSuspended', target: 'aActive', style: S.arrowLabel + 'dashed=1;' }));
-  cells.push(edge({ id: 'ae3', value: 'admin deletes', source: 'aActive', target: 'aDeleted', style: S.arrowLabel }));
-  cells.push(edge({ id: 'ae4', value: 'restored', source: 'aDeleted', target: 'aActive', style: S.arrowLabel + 'dashed=1;' }));
-  cells.push(edge({ id: 'ae5', value: 'window closes — removed for good', source: 'aDeleted', target: 'aPurged', style: S.arrowLabel }));
+  cells.push(edge({ id: 'ae1', value: 'three upheld complaints,\nor an admin decision', source: 'aActive', target: 'aSuspended', style: S.flow + 'exitX=1;exitY=0.3;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;' }));
+  cells.push(edge({
+    id: 'ae2', value: 'reinstated\nopen complaints cleared',
+    source: 'aSuspended', target: 'aActive',
+    style: S.flow + 'dashed=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;',
+    points: [{ x: COL[1] + W / 2, y: aY - 20 }, { x: COL[0] + W / 2, y: aY - 20 }],
+  }));
+  cells.push(edge({ id: 'ae3', value: 'admin deletes', source: 'aActive', target: 'aDeleted', style: S.flow + 'exitX=1;exitY=0.7;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;' }));
+  cells.push(edge({
+    id: 'ae4', value: 'restored',
+    source: 'aDeleted', target: 'aActive',
+    style: S.flow + 'dashed=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;',
+    points: [{ x: COL[1] + W / 2, y: aY + 240 }, { x: COL[0] + W / 2, y: aY + 240 }],
+  }));
+  cells.push(edge({ id: 'ae5', value: 'the window closes\nremoved for good', source: 'aDeleted', target: 'aPurged', style: S.flow + 'exitX=1;exitY=0.5;entryX=0;entryY=0.5;' }));
 
   cells.push(node({
-    id: 'note-purge',
-    value: 'A row that order history still points at is kept\n'
-      + 'rather than destroyed, so an order never refers\n'
-      + 'to an account that is gone.',
-    x: 700, y: 700, w: 300, h: 70, style: S.note,
+    id: 'purgeNote',
+    value: 'A row that order history still points at is kept rather than destroyed, so an order never refers to an account that is gone.',
+    x: COL[3] - 40, y: aY + 130, w: 300, h: 70, style: S.note,
+  }));
+  cells.push(node({
+    id: 'suspendNote',
+    value: 'A suspended account can still file a complaint — being suspended does not silence somebody with a genuine grievance about whoever got them suspended.',
+    x: COL[3] - 40, y: aY, w: 300, h: 85, style: S.note,
   }));
 
-  fs.writeFileSync(path.join(OUT, '08-state-account.drawio'), file('Account states', cells));
-  console.log('08-state-account.drawio     shop vetting, courier vetting, suspension and deletion');
+  fs.writeFileSync(
+    path.join(OUT, '08-state-account.drawio'),
+    file('Account states', cells, { width: 1500, height: aY + 320 }),
+  );
+  console.log('08-state-account.drawio        three bands: verification, approval, moderation');
 }
