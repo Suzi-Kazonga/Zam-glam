@@ -1,3 +1,5 @@
+// Complaints, and the moderation decisions that follow them.
+
 import Report from '../models/Report.js';
 
 // File a complaint against another party on an order.
@@ -49,6 +51,8 @@ export const getReportSummary = async (req, res) => {
   }
 };
 
+// Admin: the individual complaints against one party, so a decision is made on what was
+// actually said rather than on a count.
 export const getReportsAgainst = async (req, res) => {
   try {
     res.json(await Report.listAgainst(req.params.role, req.params.id));

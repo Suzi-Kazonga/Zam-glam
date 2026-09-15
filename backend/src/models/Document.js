@@ -5,6 +5,7 @@ import { pool } from '../config/db.js';
 // sellers hold their own logins — a seller id is not a users id, so the old user_id write
 // failed with a foreign key error for every real seller.
 class Document {
+  // Record a document a shop has uploaded. It starts as pending review.
   static async create({ seller_id, type, url, doc_number }) {
     const [result] = await pool.query(
       'INSERT INTO documents (seller_id, type, url, doc_number, status) VALUES (?, ?, ?, ?, ?)',
@@ -13,12 +14,14 @@ class Document {
     return result.insertId;
   }
 
+  // One shop’s own documents.
   static async findBySeller(seller_id) {
     const [rows] = await pool.query('SELECT * FROM documents WHERE seller_id = ? ORDER BY created_at DESC', [seller_id]);
     return rows;
   }
 
   // Every seller's documents, for the admin review queue.
+  // Every document with the shop it belongs to, for the admin queue.
   static async findAllWithSellers() {
     const [rows] = await pool.query(
       `SELECT d.*, s.shop_name, s.email AS seller_email, s.verification_status
@@ -28,11 +31,13 @@ class Document {
     return rows;
   }
 
+  // One document.
   static async findById(id) {
     const [rows] = await pool.query('SELECT * FROM documents WHERE id = ?', [id]);
     return rows[0];
   }
 
+  // An administrator accepts or rejects one document, with an optional note saying why.
   static async updateStatus(id, status, review_note) {
     const [result] = await pool.query(
       'UPDATE documents SET status = ?, review_note = ? WHERE id = ?',
@@ -41,6 +46,7 @@ class Document {
     return result.affectedRows > 0;
   }
 
+  // Remove a document.
   static async delete(id) {
     const [result] = await pool.query('DELETE FROM documents WHERE id = ?', [id]);
     return result.affectedRows > 0;

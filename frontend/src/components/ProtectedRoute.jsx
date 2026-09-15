@@ -1,3 +1,5 @@
+// Wraps pages that need somebody signed in, sending anyone else to the sign-in page.
+
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 

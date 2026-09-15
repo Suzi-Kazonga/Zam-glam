@@ -1,3 +1,8 @@
+// Sign-up form for a courier.
+//
+// A new rider cannot take any work until an administrator approves the account, because
+// couriers carry other people’s parcels.
+
 import { useState } from 'react';
 import * as authApi from '../api/authApi';
 import { useNavigate } from 'react-router-dom';

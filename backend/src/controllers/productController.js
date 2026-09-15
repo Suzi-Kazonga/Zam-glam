@@ -1,3 +1,5 @@
+// Products: browsing the catalogue, and a shop managing its own listings.
+
 import Product from '../models/Product.js';
 import { resolveSellerId, resolveStoreIdForSeller, resolveCategoryId } from '../utils/accounts.js';
 
@@ -11,7 +13,10 @@ function uploadedImagePaths(req) {
   return files.map((file) => `/uploads/${file.filename}`);
 }
 
-// Create product
+// A shop adds something to sell.
+//
+// The shop and its store come from the sign-in token, never from the request — otherwise
+// anyone could list a product under somebody else’s shop by sending their id.
 export const createProduct = async (req, res) => {
   try {
     const { store_id, category_id, category, name, description, price, stock, image_url, audience, sizes } =
@@ -64,7 +69,7 @@ export const createProduct = async (req, res) => {
   }
 };
 
-// Get product by ID
+// One product, with its shop, category and rating attached.
 export const getProduct = async (req, res) => {
   try {
     const { id } = req.params;
@@ -80,7 +85,8 @@ export const getProduct = async (req, res) => {
   }
 };
 
-// Get filtered products (audience + category)
+// The catalogue. The three filters match what the shop pages offer: one storefront, who
+// the clothes are for, and a category.
 export const getFilteredProducts = async (req, res) => {
   try {
     const { store_id, audience, category_id } = req.query;
@@ -97,7 +103,7 @@ export const getFilteredProducts = async (req, res) => {
   }
 };
 
-// Get seller's products
+// Everything the signed-in shop is selling, for its own dashboard.
 export const getSellerProducts = async (req, res) => {
   try {
     const sellerId = await resolveSellerId(req.user.id);
@@ -113,7 +119,7 @@ export const getSellerProducts = async (req, res) => {
   }
 };
 
-// Update product
+// A shop edits one of its own listings.
 export const updateProduct = async (req, res) => {
   try {
     const { id } = req.params;
@@ -154,7 +160,7 @@ export const updateProduct = async (req, res) => {
   }
 };
 
-// Delete product
+// A shop removes one of its own listings.
 export const deleteProduct = async (req, res) => {
   try {
     const { id } = req.params;

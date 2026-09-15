@@ -1,3 +1,6 @@
+// One page per group of accounts — customers, shops, couriers — where an administrator
+// edits, suspends, deletes and restores them.
+
 import { useEffect, useMemo, useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';

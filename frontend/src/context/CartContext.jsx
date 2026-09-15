@@ -1,3 +1,9 @@
+// The shopping basket, shared with every page that needs it.
+//
+// Held in React state and mirrored into the browser’s storage, so a half-filled basket
+// survives a refresh. The server keeps its own copy too (api/cart), which is what lets a
+// basket follow somebody to another device.
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 const CartContext = createContext();

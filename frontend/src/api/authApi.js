@@ -1,3 +1,8 @@
+// Signing up, signing in, and signing out.
+//
+// The token and the signed-in person are kept in the browser’s storage so a refresh does
+// not sign anybody out. axios.js attaches the token to every request after this.
+
 import apiClient from './axios';
 
 // Register user

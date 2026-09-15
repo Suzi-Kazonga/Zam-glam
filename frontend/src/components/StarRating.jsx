@@ -1,3 +1,8 @@
+// Five stars, either to show a score or to pick one.
+//
+// Read-only mode is used wherever a score is displayed; the clickable mode is the rating
+// form. Each star is labelled for screen readers.
+
 export default function StarRating({ value = 0, onChange, readOnly = false, size = 'md' }) {
   const sizes = { sm: 'text-base', md: 'text-2xl', lg: 'text-3xl' };
 

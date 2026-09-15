@@ -1,3 +1,5 @@
+// The rider’s dashboard: parcels to collect, parcels in hand, and their duty switch.
+
 import { useEffect, useMemo, useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import DashboardCard from '../components/DashboardCard';

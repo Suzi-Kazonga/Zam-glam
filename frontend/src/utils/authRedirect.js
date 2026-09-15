@@ -1,3 +1,9 @@
+// Where somebody should land after signing in.
+//
+// Each role has its own home: a shop goes to its dashboard, a rider to theirs. A shopper
+// with something in their basket goes to the basket, because that is almost certainly why
+// they signed in.
+
 export function dashboardForRole(role) {
   if (role === 'seller') return '/seller/dashboard';
   if (role === 'admin') return '/admin/dashboard';

@@ -1,3 +1,5 @@
+// The choice of what to sign up as: shopper, shop or courier.
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';

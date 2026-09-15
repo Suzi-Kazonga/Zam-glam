@@ -1,3 +1,8 @@
+// The shop’s dashboard: stock, orders, verification, ratings and figures.
+//
+// The Orders section is where the handover happens — packing a parcel, releasing it for
+// collection, and confirming or denying that a courier actually took it.
+
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import DashboardCard from '../components/DashboardCard';

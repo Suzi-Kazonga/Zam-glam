@@ -1,3 +1,6 @@
+// The bar across the top of every public page: the wordmark, navigation, and whatever
+// icons the signed-in role needs. On a phone the navigation folds into the ☰ button.
+
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';

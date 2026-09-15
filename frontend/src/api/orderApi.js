@@ -1,3 +1,8 @@
+// Orders, parcels and the handover — every call the app makes about a delivery.
+//
+// The backend answers with database column names; the pages were written against
+// friendlier ones. adaptOrder below translates, so neither side has to bend to the other.
+
 import apiClient from './axios';
 import { STATUS_META, TRACK_STEPS } from '../utils/orderStore';
 

@@ -1,3 +1,10 @@
+// The database connection, and the schema itself.
+//
+// There is no separate SQL file to run: initializeDatabase() below creates the database,
+// every table, and applies each change that has been made since — and it is safe to run
+// again, every time the server starts. An old copy of the database catches up simply by
+// being started.
+
 import mysql from 'mysql2/promise';
 import dotenv from 'dotenv';
 
@@ -16,8 +23,18 @@ const config = {
   connectTimeout: 5000,
 };
 
+// A pool rather than a single connection: several requests can be in the database at once,
+// and connections are handed back and reused instead of being opened each time.
+//
+// decimalNumbers makes prices come back as numbers rather than strings, so money can be
+// added up without converting it at every call site.
 const pool = mysql.createPool(config);
 
+// Build the database up to the current schema. Runs on every startup.
+//
+// Everything in here is written so that running it twice changes nothing the second time:
+// CREATE ... IF NOT EXISTS, columns added only when missing, and data repairs that match
+// nothing once they have been applied.
 export async function initializeDatabase() {
   try {
     let adminConnection;
@@ -114,6 +131,7 @@ export async function initializeDatabase() {
     );
   `);
 
+  // Product categories. Created on demand when a shop types a new one.
   await pool.query(`
     CREATE TABLE IF NOT EXISTS categories (
       id INT AUTO_INCREMENT PRIMARY KEY,
@@ -123,6 +141,8 @@ export async function initializeDatabase() {
     );
   `);
 
+  // A shop’s storefront. Its location is where couriers collect, and what delivery from
+  // this shop is priced against.
   await pool.query(`
     CREATE TABLE IF NOT EXISTS stores (
       id INT AUTO_INCREMENT PRIMARY KEY,
@@ -139,6 +159,8 @@ export async function initializeDatabase() {
     );
   `);
 
+  // What shops sell. sizes and images hold lists; MariaDB stores them as text, and the
+  // model turns them back into arrays on the way out.
   await pool.query(`
     CREATE TABLE IF NOT EXISTS products (
       id INT AUTO_INCREMENT PRIMARY KEY,
@@ -157,6 +179,8 @@ export async function initializeDatabase() {
     );
   `);
 
+  // A basket kept on the server, so it survives changing device. One row per product per
+  // shopper — adding the same thing again raises its quantity.
   await pool.query(`
     CREATE TABLE IF NOT EXISTS cart (
       id INT AUTO_INCREMENT PRIMARY KEY,
@@ -170,6 +194,8 @@ export async function initializeDatabase() {
     );
   `);
 
+  // What somebody bought. The totals are stored separately so a receipt can always show
+  // goods and delivery apart. Its status is a rollup of the parcels below.
   await pool.query(`
     CREATE TABLE IF NOT EXISTS orders (
       id INT AUTO_INCREMENT PRIMARY KEY,
@@ -185,6 +211,8 @@ export async function initializeDatabase() {
     );
   `);
 
+  // The lines of an order. The price is copied in at the time of the order, so changing a
+  // product’s price later never rewrites what somebody paid.
   await pool.query(`
     CREATE TABLE IF NOT EXISTS order_items (
       id INT AUTO_INCREMENT PRIMARY KEY,
@@ -264,6 +292,8 @@ export async function initializeDatabase() {
     );
   `);
 
+  // Payment records. Written for every order, but no payment gateway is connected — see
+  // docs/08-PROJECT_STATUS.md. Nothing here moves money.
   await pool.query(`
     CREATE TABLE IF NOT EXISTS payments (
       id INT AUTO_INCREMENT PRIMARY KEY,
@@ -292,6 +322,7 @@ export async function initializeDatabase() {
     );
   `);
 
+  // Registration paperwork a shop uploads for verification.
   await pool.query(`
     CREATE TABLE IF NOT EXISTS documents (
       id INT AUTO_INCREMENT PRIMARY KEY,
@@ -316,6 +347,8 @@ export async function initializeDatabase() {
     return rows[0] || null;
   };
 
+  // Adds a column only if it is not already there, so a database built by an older version
+  // catches up simply by starting, and a current one is untouched.
   const addColumnIfMissing = async (table, column, definition) => {
     if (!(await columnInfo(table, column))) {
       await pool.query(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
@@ -480,6 +513,8 @@ export async function initializeDatabase() {
   }
 }
 
+// A quick check that the database is actually reachable, so a failure is reported at
+// startup rather than on somebody’s first request.
 export async function testConnection() {
   try {
     const [rows] = await pool.query('SELECT 1 AS ok');

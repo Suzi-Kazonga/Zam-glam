@@ -1,3 +1,6 @@
+// The bar across the top of every dashboard: the wordmark, search, the notification
+// icons for that role, and the account menu.
+
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';

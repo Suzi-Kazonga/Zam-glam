@@ -14,13 +14,18 @@ function parseJsonArray(value) {
   }
 }
 
+// Tidies one product row on its way out, so the API always answers with real arrays.
 function normalize(row) {
   if (!row) return row;
   return { ...row, sizes: parseJsonArray(row.sizes), images: parseJsonArray(row.images) };
 }
 
+// Products — what shops sell and shoppers browse.
 class Product {
-  // Create a new product
+  // Add a new listing.
+  //
+  // The two list columns are turned into text here, because that is how the database
+  // stores them, and back into arrays by normalize() on the way out.
   static async create({
     seller_id,
     store_id,
@@ -54,7 +59,6 @@ class Product {
     return result.insertId;
   }
 
-  // Find product by ID
   // Products always travel with their shop's name — the storefront labels every card with
   // it, and the home banner credits the store whose item it is showing.
   static get selectWithStore() {
@@ -70,18 +74,19 @@ class Product {
             LEFT JOIN sellers sel ON sel.id = p.seller_id`;
   }
 
+  // One product.
   static async findById(id) {
     const [rows] = await pool.query(`${Product.selectWithStore} WHERE p.id = ?`, [id]);
     return normalize(rows[0]);
   }
 
-  // Get products by store
+  // Everything one shop is selling, including anything a shopper cannot see.
   static async findByStore(seller_id) {
     const [rows] = await pool.query(`${Product.selectWithStore} WHERE p.seller_id = ?`, [seller_id]);
     return rows.map(normalize);
   }
 
-  // Get filtered products (audience + category)
+  // The catalogue shoppers see, with optional filters.
   static async getFiltered(filters = {}) {
     // A deleted shop's products leave the catalogue while it is in the grace period.
     let query = `${Product.selectWithStore} WHERE sel.deleted_at IS NULL`;
@@ -129,7 +134,8 @@ class Product {
     return result.affectedRows > 0;
   }
 
-  // Delete product
+  // Remove a listing for good. Orders already placed keep their own copy of the name and
+  // price, so past receipts do not change.
   static async delete(id) {
     const query = 'DELETE FROM products WHERE id = ?';
     const [result] = await pool.query(query, [id]);

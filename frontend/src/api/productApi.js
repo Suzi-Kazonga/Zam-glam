@@ -1,3 +1,5 @@
+// Products: the catalogue shoppers browse, and a shop’s own listings.
+
 import apiClient from './axios';
 
 // Get filtered products

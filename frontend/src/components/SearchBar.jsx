@@ -1,3 +1,5 @@
+// The search box. Types straight through to whatever list is on the page.
+
 import { useEffect, useState } from 'react';
 import { useDebounce } from '../hooks/useDebounce';
 

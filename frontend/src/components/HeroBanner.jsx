@@ -1,3 +1,5 @@
+// The large banner at the top of the home page.
+
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import apiClient from '../api/axios';

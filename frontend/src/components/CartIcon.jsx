@@ -1,3 +1,5 @@
+// The basket in the header, with a count of what is in it.
+
 import { Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 

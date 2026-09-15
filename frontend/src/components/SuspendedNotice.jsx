@@ -1,3 +1,5 @@
+// The notice a suspended account sees on every page, saying why and since when.
+
 import { useEffect, useState } from 'react';
 import { getMyStanding } from '../api/reportApi';
 import { useAuth } from '../context/AuthContext';

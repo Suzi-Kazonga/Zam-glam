@@ -1,3 +1,9 @@
+// One order, followed parcel by parcel.
+//
+// A basket spanning several shops arrives as several parcels, at different times and
+// possibly with different couriers, so each is tracked on its own. Once a parcel is
+// delivered the shopper is asked to rate that shop.
+
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import CourierInfo from '../components/CourierInfo';

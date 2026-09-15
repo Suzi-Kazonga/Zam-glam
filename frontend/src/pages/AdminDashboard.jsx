@@ -1,3 +1,6 @@
+// The administrator’s dashboard: subscriber figures, approvals, complaints, and the
+// parcels nobody has collected.
+
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import DashboardCard from '../components/DashboardCard';

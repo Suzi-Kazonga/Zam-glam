@@ -1,3 +1,8 @@
+// Sign-up form for a shop.
+//
+// A new shop can sign in and list immediately, but shows as unverified until it uploads
+// its registration documents and an administrator checks them.
+
 import { useState } from 'react';
 import * as authApi from '../api/authApi';
 import { useNavigate } from 'react-router-dom';

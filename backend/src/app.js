@@ -1,3 +1,9 @@
+// Builds the Express application: middleware, then routes, then error handling.
+//
+// Deliberately contains nothing that starts anything. server.js listens with this app,
+// and the tests drive the very same object, so what they check is the real application
+// rather than a copy of its rules.
+
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';

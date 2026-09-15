@@ -1,3 +1,5 @@
+// The shop’s notification bell in the header.
+
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { confirmPickup, denyPickup, getMyOrders } from '../api/orderApi';

@@ -1,3 +1,8 @@
+// Reporting another party on an order.
+//
+// Only the people who were actually on the order can be reported, and only once each, so
+// the list of who can be reported comes from the server rather than being guessed here.
+
 import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { getReportableParties, reportParty } from '../api/reportApi';

@@ -1,3 +1,5 @@
+// One product in a list: its picture, price, the shop selling it, and that shop’s standing.
+
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';

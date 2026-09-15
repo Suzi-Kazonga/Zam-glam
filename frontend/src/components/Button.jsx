@@ -1,3 +1,5 @@
+// The standard button, so every page uses the same shapes and colours.
+
 import React from 'react';
 
 const Button = ({ 

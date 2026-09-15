@@ -1,3 +1,5 @@
+// One product: its photos, sizes, price and the shop selling it.
+
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useCart } from '../context/CartContext';

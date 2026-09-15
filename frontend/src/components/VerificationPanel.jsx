@@ -1,3 +1,5 @@
+// Where a shop uploads its registration documents and sees where its verification stands.
+
 import { useEffect, useState } from 'react';
 import { getDocuments, uploadDocuments } from '../api/storeApi';
 import { isLocalDemoSession } from '../utils/localSession';

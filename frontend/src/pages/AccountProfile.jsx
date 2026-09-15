@@ -1,3 +1,5 @@
+// "My account" — the signed-in person’s own details, whatever kind of account they have.
+
 import { useState, useEffect } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';

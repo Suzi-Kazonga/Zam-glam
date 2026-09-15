@@ -1,3 +1,8 @@
+// The delivery panel on an order: who is carrying it, how far it is going and what it cost.
+//
+// The courier’s name and number are only filled in once the shop has confirmed the
+// handover; before that the server sends nothing, and this shows the waiting state.
+
 import { formatZmwPrice } from '../utils/currency';
 import { formatWaiting } from '../utils/waiting';
 

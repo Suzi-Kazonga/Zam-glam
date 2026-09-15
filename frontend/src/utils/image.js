@@ -1,3 +1,6 @@
+// Turns picked files into data the browser can show before they are uploaded, so a shop
+// sees a preview of its photos while filling in the form.
+
 export function fileToDataUrl(file, maxWidth = 900) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();

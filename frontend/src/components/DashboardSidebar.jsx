@@ -1,3 +1,5 @@
+// The section list down the side of a dashboard.
+
 import { Link } from 'react-router-dom';
 
 export default function DashboardSidebar({ role = 'customer' }) {

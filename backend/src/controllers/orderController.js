@@ -1,5 +1,15 @@
+// Orders, parcels, and the handover between a shop and a courier.
+//
+// One order can span several shops, and each shop’s items travel as their own PARCEL.
+// Most handlers below therefore act on a parcel, not on the whole order.
+//
+// These are thin on purpose: they check who is asking, hand the work to models/Order.js,
+// and turn whatever it says into a status code. The rules live in the model, where they
+// apply no matter which route reached them.
+
 import Order from '../models/Order.js';
 
+// Place an order.
 // Create an order from the customer's cart
 export const createOrder = async (req, res) => {
   try {
@@ -134,6 +144,11 @@ export const getShift = async (req, res) => {
   }
 };
 
+// A courier clocking on or off.
+//
+// The model refuses two cases: an account not yet approved going on duty, and a courier
+// clocking off while still answerable for a parcel — which would strand it, out of the
+// pool and claimed by somebody who has gone home.
 export const setShift = async (req, res) => {
   try {
     const result = await Order.setCourierShift(req.user.id, Boolean(req.body.on_shift));
@@ -156,6 +171,8 @@ export const requestPickupParcel = async (req, res) => {
   }
 };
 
+// The shop confirms the handover really happened. This is the moment the parcel counts as
+// collected, and the moment the customer is given the courier's number.
 export const confirmPickupParcel = async (req, res) => {
   try {
     if (req.user.role !== 'seller') return res.status(403).json({ error: 'Only the shop can confirm a handover' });

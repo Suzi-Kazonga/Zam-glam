@@ -1,3 +1,5 @@
+// Sign-up form for a shopper.
+
 import { useState } from 'react';
 import * as authApi from '../api/authApi';
 import { useNavigate } from 'react-router-dom';

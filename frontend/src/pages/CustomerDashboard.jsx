@@ -1,3 +1,5 @@
+// The shopper’s dashboard: their orders, basket, profile and saved items.
+
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import apiClient from '../api/axios';

@@ -1,3 +1,5 @@
+// Stops a suspended account from doing anything, wherever it tries.
+
 import Report from '../models/Report.js';
 
 // A suspended account can still sign in and read — that is how it sees the SUSPENDED
@@ -6,7 +8,12 @@ import Report from '../models/Report.js';
 // standing between a suspended account and the action.
 export async function blockIfSuspended(req, res, next) {
   try {
+    // Administrators are never suspended, and are the people who lift a suspension, so
+    // they are waved through without a lookup.
     if (!req.user || req.user.role === 'admin') return next();
+
+    // Asks the reports model for this account's standing. A suspended account is told why
+    // and when, so the notice it sees can explain itself rather than just refusing.
 
     const standing = await Report.statusFor(req.user.role, req.user.id);
     if (standing?.suspended) {

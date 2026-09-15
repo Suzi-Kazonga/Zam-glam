@@ -6,6 +6,7 @@ export const VERIFICATION_STATUSES = ['pending', 'verified', 'rejected'];
 // tell a checked seller from an unchecked one, so this status is surfaced on storefronts
 // and product listings.
 class Seller {
+  // One shop account.
   static async findById(id) {
     const [rows] = await pool.query(
       'SELECT id, shop_name, email, phone, verification_status, verified_at FROM sellers WHERE id = ?',
@@ -16,6 +17,8 @@ class Seller {
 
   // Every seller with their store and how many documents they have submitted — the admin
   // review queue.
+  // Every shop for the admin review queue, with how much paperwork and stock each has.
+  // Ordered so the ones waiting for a decision come first.
   static async findAllForReview() {
     const [rows] = await pool.query(
       `SELECT s.id, s.shop_name, s.email, s.phone, s.verification_status, s.verified_at,
@@ -29,6 +32,8 @@ class Seller {
     return rows;
   }
 
+  // Record an administrator’s decision. Approving stamps the time, so a badge can say when
+  // the shop was checked; anything else clears it.
   static async setVerificationStatus(id, status) {
     const [result] = await pool.query(
       `UPDATE sellers SET verification_status = ?, verified_at = ${status === 'verified' ? 'CURRENT_TIMESTAMP' : 'NULL'} WHERE id = ?`,

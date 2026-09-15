@@ -1,3 +1,5 @@
+// Lays out product cards in a grid that reflows on a phone.
+
 import React from 'react';
 import ProductCard from './ProductCard';
 

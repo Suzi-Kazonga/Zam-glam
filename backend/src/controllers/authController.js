@@ -1,3 +1,9 @@
+// Signing up and signing in.
+//
+// A successful sign-in hands back a token that stands in for the password on every
+// request after it. The token says who the account is and what kind it is, and is signed
+// so it cannot be edited: change a single character and the signature stops matching.
+
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 import { pool } from '../config/db.js';
@@ -15,7 +21,11 @@ async function deletedAtFor(user) {
   return rows[0]?.deleted_at || null;
 }
 
-// Register a new user
+// Create an account and sign it straight in, so nobody has to type their password twice.
+//
+// What kind of account is created depends on `role`. A shop can list things immediately
+// but shows as unverified until its paperwork is checked; a courier cannot work at all
+// until an administrator approves it.
 export const register = async (req, res) => {
   try {
     const { name, email, password, phone, role, address, shop_name, location, city } = req.body;
@@ -68,7 +78,7 @@ export const register = async (req, res) => {
   }
 };
 
-// Login user
+// Sign in with an email and password.
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -117,7 +127,8 @@ export const login = async (req, res) => {
   }
 };
 
-// Get current user
+// Who is signed in, according to the token. The app calls this on startup to check a
+// stored token is still good before showing somebody their dashboard.
 export const getCurrentUser = async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
