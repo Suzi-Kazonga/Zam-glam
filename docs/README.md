@@ -13,7 +13,7 @@ Read in this order. Each document assumes the ones before it.
 | 6 | [06-TESTING.md](06-TESTING.md) | What the tests cover and how to run them |
 | 7 | [07-DEPLOYMENT.md](07-DEPLOYMENT.md) | Running it in Docker, and deploying it |
 | 8 | [08-PROJECT_STATUS.md](08-PROJECT_STATUS.md) | What is built, what is deliberately not, and what is known to be weak |
-| 9 | [09-DIAGRAMS.md](09-DIAGRAMS.md) | Eleven .drawio diagrams, and which objective each evidences |
+| 9 | [09-DIAGRAMS.md](09-DIAGRAMS.md) | Seven .drawio diagrams, and which objective each evidences |
 
 **If you only read one**, read the user manual: it explains what the system does before
 getting into how.

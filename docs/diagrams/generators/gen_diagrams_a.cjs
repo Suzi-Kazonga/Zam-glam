@@ -1,4 +1,4 @@
-// Use case, architecture and site map.
+// Use case and architecture.
 //
 // Layout here is deliberate rather than automatic: use cases sit in the column belonging to
 // the actor who performs them, so the lines from actor to case stay short and rarely cross.
@@ -234,81 +234,4 @@ const OUT = process.argv[2] || '.';
     file('Architecture', cells, { width: PAGE_W, height: y + 260 }),
   );
   console.log('02-architecture.drawio         5 bands, 7 domain modules');
-}
-
-// ================= 09: site map =================
-{
-  const cells = [];
-  const top = header(
-    cells,
-    'What each kind of account can reach',
-    'Objective 3 asked for interfaces for customers and store owners. Four were built.',
-    { width: 1100 },
-  );
-
-  const COL_W = 270;
-  const COL_GAP = 40;
-  const ITEM_H = 40;
-  const ITEM_GAP = 10;
-
-  const columns = [
-    {
-      id: 'c1', title: 'Customer', role: 'customer',
-      pages: ['Home  /', 'Collections', 'All products', 'One product', 'A storefront',
-        'Basket and checkout', '› My dashboard', '› Track an order', 'My account'],
-    },
-    {
-      id: 'c2', title: 'Shop  (vendor)', role: 'shop',
-      pages: ['Home  /  — own stock', '› Dashboard · Products', '› Dashboard · Orders',
-        '› Dashboard · Verification', '› Dashboard · Ratings', '› Dashboard · Figures',
-        'My storefront', 'My account'],
-    },
-    {
-      id: 'c3', title: 'Courier', role: 'courier',
-      pages: ['Home  /  — parcels waiting', '› Dashboard · Available', '› Dashboard · Out for delivery',
-        '› Dashboard · Completed', '› Dashboard · Shops', 'Track a parcel', 'My account'],
-    },
-    {
-      id: 'c4', title: 'Administrator', role: 'admin',
-      pages: ['› Console · Subscribers', '› Console · Verification queue', '› Console · Complaints',
-        '› Console · Unclaimed parcels', 'Customers', 'Shops', 'Couriers'],
-    },
-  ];
-
-  let deepest = 0;
-  columns.forEach((col, index) => {
-    const x = 60 + index * (COL_W + COL_GAP);
-    cells.push(node({ id: col.id, value: col.title, x, y: top, w: COL_W, h: 44, style: roleBox(col.role, 'fontStyle=1;fontSize=14;') }));
-    col.pages.forEach((page, i) => {
-      const nested = page.startsWith('›');
-      const y = top + 62 + i * (ITEM_H + ITEM_GAP);
-      deepest = Math.max(deepest, y + ITEM_H);
-      cells.push(node({
-        id: `${col.id}p${i}`,
-        value: nested ? page.slice(2) : page,
-        x: x + (nested ? 22 : 0), y, w: COL_W - (nested ? 22 : 0), h: ITEM_H,
-        style: nested ? S.boxMuted : roleBox(col.role, 'fillColor=#ffffff;'),
-      }));
-    });
-  });
-
-  const sharedY = deepest + 70;
-  cells.push(node({ id: 'sharedTitle', value: 'Open to everybody, signed in or not', x: 60, y: sharedY, w: 500, h: 26, style: S.heading }));
-  ['Sign in', 'Sign up  —  choose a role', 'About  ·  Contact  ·  Policies'].forEach((p, i) => {
-    cells.push(node({ id: `sh${i}`, value: p, x: 60 + i * (COL_W + COL_GAP), y: sharedY + 36, w: COL_W, h: ITEM_H, style: S.box }));
-  });
-
-  cells.push(node({
-    id: 'mapNote',
-    value: 'Indented entries are sections within a dashboard rather than separate pages.\n\n'
-      + 'Every dashboard reflows for a phone: the section list becomes a drawer, and the '
-      + 'tables scroll sideways rather than the page.',
-    x: 60 + 4 * (COL_W + COL_GAP), y: top, w: 300, h: 120, style: S.note,
-  }));
-
-  fs.writeFileSync(
-    path.join(OUT, '09-site-map.drawio'),
-    file('Site map by role', cells, { width: 60 + 5 * (COL_W + COL_GAP) + 60, height: sharedY + 140 }),
-  );
-  console.log('09-site-map.drawio             4 roles');
 }

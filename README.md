@@ -21,7 +21,7 @@ Four kinds of account use it: **shoppers**, **shops**, **couriers** and **admini
 | 6 | [Testing](docs/06-TESTING.md) | What the tests cover |
 | 7 | [Deployment](docs/07-DEPLOYMENT.md) | Docker, and going live |
 | 8 | [Project status](docs/08-PROJECT_STATUS.md) | What is built, what is not, and what is weak |
-| 9 | [Diagrams](docs/09-DIAGRAMS.md) | Use case, ER, schema, sequence, state, deployment |
+| 9 | [Diagrams](docs/09-DIAGRAMS.md) | Use case, architecture, ER, schema, sequence, state |
 
 ---
 

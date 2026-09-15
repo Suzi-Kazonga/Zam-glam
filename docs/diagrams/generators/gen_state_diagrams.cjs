@@ -1,6 +1,6 @@
 // The two state diagrams.
 //
-// 07 is built from TRACK_ORDER in backend/src/models/Order.js, so the statuses shown are
+// 06 is built from TRACK_ORDER in backend/src/models/Order.js, so the statuses shown are
 // the ones the code actually uses. Adding or removing one and regenerating keeps the
 // picture true; editing the file by hand does not.
 const fs = require('fs');
@@ -10,7 +10,7 @@ const { node, edge, file, header, S, roleState } = require('./drawio.cjs');
 const OUT = process.argv[2] || '.';
 const ORDER_MODEL = process.argv[3] || path.join(__dirname, '../../../backend/src/models/Order.js');
 
-// ================= 07: the life of a parcel =================
+// ================= 06: the life of a parcel =================
 {
   const source = fs.readFileSync(ORDER_MODEL, 'utf8');
   const match = source.match(/const TRACK_ORDER = \[([^\]]+)\]/);
@@ -143,13 +143,13 @@ const ORDER_MODEL = process.argv[3] || path.join(__dirname, '../../../backend/sr
   }));
 
   fs.writeFileSync(
-    path.join(OUT, '07-state-parcel.drawio'),
+    path.join(OUT, '06-state-parcel.drawio'),
     file('Parcel states', cells, { width: lastX + STATE_W + 200, height: CANCEL_Y + 220 }),
   );
-  console.log(`07-state-parcel.drawio         ${statuses.length} statuses read from the code`);
+  console.log(`06-state-parcel.drawio         ${statuses.length} statuses read from the code`);
 }
 
-// ================= 08: the life of an account =================
+// ================= 07: the life of an account =================
 {
   const cells = [];
   const top = header(
@@ -241,8 +241,8 @@ const ORDER_MODEL = process.argv[3] || path.join(__dirname, '../../../backend/sr
   }));
 
   fs.writeFileSync(
-    path.join(OUT, '08-state-account.drawio'),
+    path.join(OUT, '07-state-account.drawio'),
     file('Account states', cells, { width: 1500, height: aY + 320 }),
   );
-  console.log('08-state-account.drawio        three bands: verification, approval, moderation');
+  console.log('07-state-account.drawio        three bands: verification, approval, moderation');
 }
