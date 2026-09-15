@@ -1,8 +1,11 @@
 # Zamglam
 
 A multi-vendor e-commerce platform for Zambian clothing and footwear retailers, with
-delivery carried out by independent couriers on the platform. Built as a University of
-Zambia final-year project.
+delivery carried out by independent couriers on the platform.
+
+Final-year project, Department of Computing and Informatics, University of Zambia, 2026.
+Supervisor: Mr Alinani Simukonga. How it measures against the proposal’s objectives is in
+[docs/08-PROJECT_STATUS.md](docs/08-PROJECT_STATUS.md).
 
 Four kinds of account use it: **shoppers**, **shops**, **couriers** and **administrators**.
 
