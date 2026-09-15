@@ -1,0 +1,136 @@
+<mxfile host="app.diagrams.net" agent="Zamglam diagram generator" type="device">
+  <diagram name="Architecture" id="Architecture">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="826" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="System architecture" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=16;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="10" width="600" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="sub" value="The layered design the proposal described, as built. The proposal’s four modules are marked; two more were added as the work went on." style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;fontSize=11;fontColor=#475569;" vertex="1" parent="1">
+          <mxGeometry x="40" y="34" width="1000" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="L1" value="User interface layer   —   React + Vite + Tailwind" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f1f5f9;strokeColor=#64748b;verticalAlign=top;align=left;spacingLeft=10;spacingTop=6;fontStyle=1;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="60" y="90" width="1040" height="130" as="geometry" />
+        </mxCell>
+        <mxCell id="ui0" value="Customer pages" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1f2937;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="90" y="135" width="215" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="ui1" value="Shop dashboard" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1f2937;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="340" y="135" width="215" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="ui2" value="Courier dashboard" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1f2937;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="590" y="135" width="215" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="ui3" value="Admin console" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1f2937;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="840" y="135" width="215" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="httpNote" value="HTTP  ·  a relative /api, so the same build works from a phone" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;fontSize=11;fontColor=#475569;" vertex="1" parent="1">
+          <mxGeometry x="60" y="235" width="500" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="L2" value="API layer   —   Express" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f1f5f9;strokeColor=#64748b;verticalAlign=top;align=left;spacingLeft=10;spacingTop=6;fontStyle=1;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="60" y="265" width="1040" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="routes" value="Routes
+(what URL reaches what)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1f2937;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="90" y="310" width="230" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="mw" value="Middleware
+auth · role · suspension ·
+rate limit · uploads" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff7ed;strokeColor=#c2410c;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="340" y="310" width="250" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="ctrl" value="Controllers
+(request in, status code out)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1f2937;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="610" y="310" width="230" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="err" value="Error handling" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1f2937;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="860" y="310" width="210" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="L3" value="Domain modules   —   the rules, in models/" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f1f5f9;strokeColor=#64748b;verticalAlign=top;align=left;spacingLeft=10;spacingTop=6;fontStyle=1;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="60" y="405" width="1040" height="210" as="geometry" />
+        </mxCell>
+        <mxCell id="mVendor" value="Vendor management
+registration · storefronts ·
+verification" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#eef2ff;strokeColor=#4338ca;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="90" y="450" width="240" height="85" as="geometry" />
+        </mxCell>
+        <mxCell id="mCatalogue" value="Product catalogue
+listings · photos · stock ·
+categories" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#eef2ff;strokeColor=#4338ca;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="350" y="450" width="240" height="85" as="geometry" />
+        </mxCell>
+        <mxCell id="mCourier" value="Courier &amp; delivery
+pool · handover · shifts ·
+tracking · escalation" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#eef2ff;strokeColor=#4338ca;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="610" y="450" width="240" height="85" as="geometry" />
+        </mxCell>
+        <mxCell id="mOrders" value="Orders
+one parcel per shop ·
+pricing · stock" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1f2937;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="870" y="450" width="240" height="85" as="geometry" />
+        </mxCell>
+        <mxCell id="mTrust" value="Trust &amp; moderation
+ratings · complaints ·
+suspension" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1f2937;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="90" y="545" width="240" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="mAdmin" value="Administration
+figures · approvals ·
+account lifecycle" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1f2937;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="350" y="545" width="240" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="legend" value="Shaded = named in the proposal’s methodology.
+Unshaded = added during development." style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;fontSize=11;fontColor=#475569;" vertex="1" parent="1">
+          <mxGeometry x="610" y="545" width="300" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="L4" value="Supporting services" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f1f5f9;strokeColor=#64748b;verticalAlign=top;align=left;spacingLeft=10;spacingTop=6;fontStyle=1;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="60" y="635" width="500" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="svcPlaces" value="Place lookup
+(Zambian towns and
+Lusaka areas)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1f2937;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="90" y="678" width="200" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="svcCourier" value="Delivery pricing
+(pluggable provider)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1f2937;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="310" y="678" width="220" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="L5" value="Data" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f1f5f9;strokeColor=#64748b;verticalAlign=top;align=left;spacingLeft=10;spacingTop=6;fontStyle=1;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="600" y="635" width="500" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="db" value="MySQL / MariaDB
+18 tables · schema created and
+migrated by the application" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#eef2ff;strokeColor=#4338ca;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="630" y="673" width="280" height="62" as="geometry" />
+        </mxCell>
+        <mxCell id="uploads" value="uploads/
+product photos,
+documents" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1f2937;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="930" y="673" width="150" height="62" as="geometry" />
+        </mxCell>
+        <mxCell id="a1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#1f2937;fontSize=10;" edge="1" parent="1" source="L1" target="L2">
+          <mxGeometry relative="1" as="geometry">
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="a2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#1f2937;fontSize=10;" edge="1" parent="1" source="L2" target="L3">
+          <mxGeometry relative="1" as="geometry">
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="a3" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#1f2937;fontSize=10;" edge="1" parent="1" source="L3" target="L5">
+          <mxGeometry relative="1" as="geometry">
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="a4" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#1f2937;fontSize=10;" edge="1" parent="1" source="L3" target="L4">
+          <mxGeometry relative="1" as="geometry">
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="note-arch" value="The rules live in the domain modules, not the controllers,
+so they hold whichever route, test or script reaches them.
+Controllers do HTTP and nothing else; there is no SQL in them." style="shape=note;whiteSpace=wrap;html=1;size=14;fillColor=#fffbeb;strokeColor=#b45309;align=left;spacingLeft=6;fontSize=10;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="60" y="765" width="420" height="70" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

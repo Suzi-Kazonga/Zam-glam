@@ -1,0 +1,142 @@
+<mxfile host="app.diagrams.net" agent="Zamglam diagram generator" type="device">
+  <diagram name="Site map by role" id="Site-map-by-role">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="826" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="What each kind of account can reach" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=16;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="10" width="700" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="sub" value="Objective 3 asked for interfaces for customers and store owners. Four were built." style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;fontSize=11;fontColor=#475569;" vertex="1" parent="1">
+          <mxGeometry x="40" y="34" width="900" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="c1" value="Customer" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#eef2ff;strokeColor=#4338ca;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="90" width="250" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="c1p0" value="Home  /" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1f2937;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="40" y="145" width="250" height="38" as="geometry" />
+        </mxCell>
+        <mxCell id="c1p1" value="Collections  /collections" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1f2937;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="40" y="191" width="250" height="38" as="geometry" />
+        </mxCell>
+        <mxCell id="c1p2" value="All products  /products" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1f2937;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="40" y="237" width="250" height="38" as="geometry" />
+        </mxCell>
+        <mxCell id="c1p3" value="One product  /product/:id" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1f2937;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="40" y="283" width="250" height="38" as="geometry" />
+        </mxCell>
+        <mxCell id="c1p4" value="A storefront  /stores/:id" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1f2937;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="40" y="329" width="250" height="38" as="geometry" />
+        </mxCell>
+        <mxCell id="c1p5" value="Basket and checkout  /cart" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1f2937;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="40" y="375" width="250" height="38" as="geometry" />
+        </mxCell>
+        <mxCell id="c1p6" value="My dashboard  /customer/dashboard" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1f2937;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="40" y="421" width="250" height="38" as="geometry" />
+        </mxCell>
+        <mxCell id="c1p7" value="Track an order  /orders/:id" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1f2937;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="40" y="467" width="250" height="38" as="geometry" />
+        </mxCell>
+        <mxCell id="c1p8" value="My account  /account" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1f2937;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="40" y="513" width="250" height="38" as="geometry" />
+        </mxCell>
+        <mxCell id="c2" value="Shop (vendor)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#eef2ff;strokeColor=#4338ca;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="330" y="90" width="250" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="c2p0" value="Home  /  (own stock)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1f2937;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="330" y="145" width="250" height="38" as="geometry" />
+        </mxCell>
+        <mxCell id="c2p1" value="My dashboard  /seller/dashboard" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1f2937;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="330" y="191" width="250" height="38" as="geometry" />
+        </mxCell>
+        <mxCell id="c2p2" value="· Products" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8fafc;strokeColor=#94a3b8;fontSize=11;fontColor=#475569;" vertex="1" parent="1">
+          <mxGeometry x="350" y="237" width="230" height="38" as="geometry" />
+        </mxCell>
+        <mxCell id="c2p3" value="· Orders and handover" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8fafc;strokeColor=#94a3b8;fontSize=11;fontColor=#475569;" vertex="1" parent="1">
+          <mxGeometry x="350" y="283" width="230" height="38" as="geometry" />
+        </mxCell>
+        <mxCell id="c2p4" value="· Verification" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8fafc;strokeColor=#94a3b8;fontSize=11;fontColor=#475569;" vertex="1" parent="1">
+          <mxGeometry x="350" y="329" width="230" height="38" as="geometry" />
+        </mxCell>
+        <mxCell id="c2p5" value="· Ratings" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8fafc;strokeColor=#94a3b8;fontSize=11;fontColor=#475569;" vertex="1" parent="1">
+          <mxGeometry x="350" y="375" width="230" height="38" as="geometry" />
+        </mxCell>
+        <mxCell id="c2p6" value="· Figures" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8fafc;strokeColor=#94a3b8;fontSize=11;fontColor=#475569;" vertex="1" parent="1">
+          <mxGeometry x="350" y="421" width="230" height="38" as="geometry" />
+        </mxCell>
+        <mxCell id="c2p7" value="My storefront  /stores/:id" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1f2937;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="330" y="467" width="250" height="38" as="geometry" />
+        </mxCell>
+        <mxCell id="c2p8" value="My account  /account" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1f2937;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="330" y="513" width="250" height="38" as="geometry" />
+        </mxCell>
+        <mxCell id="c3" value="Courier" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#eef2ff;strokeColor=#4338ca;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="620" y="90" width="250" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="c3p0" value="Home  /  (parcels waiting)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1f2937;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="620" y="145" width="250" height="38" as="geometry" />
+        </mxCell>
+        <mxCell id="c3p1" value="My dashboard  /courier/dashboard" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1f2937;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="620" y="191" width="250" height="38" as="geometry" />
+        </mxCell>
+        <mxCell id="c3p2" value="· Available to collect" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8fafc;strokeColor=#94a3b8;fontSize=11;fontColor=#475569;" vertex="1" parent="1">
+          <mxGeometry x="640" y="237" width="230" height="38" as="geometry" />
+        </mxCell>
+        <mxCell id="c3p3" value="· Out for delivery" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8fafc;strokeColor=#94a3b8;fontSize=11;fontColor=#475569;" vertex="1" parent="1">
+          <mxGeometry x="640" y="283" width="230" height="38" as="geometry" />
+        </mxCell>
+        <mxCell id="c3p4" value="· Completed" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8fafc;strokeColor=#94a3b8;fontSize=11;fontColor=#475569;" vertex="1" parent="1">
+          <mxGeometry x="640" y="329" width="230" height="38" as="geometry" />
+        </mxCell>
+        <mxCell id="c3p5" value="· Shops I collect from" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8fafc;strokeColor=#94a3b8;fontSize=11;fontColor=#475569;" vertex="1" parent="1">
+          <mxGeometry x="640" y="375" width="230" height="38" as="geometry" />
+        </mxCell>
+        <mxCell id="c3p6" value="Track a parcel  /orders/:id" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1f2937;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="620" y="421" width="250" height="38" as="geometry" />
+        </mxCell>
+        <mxCell id="c3p7" value="My account  /account" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1f2937;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="620" y="467" width="250" height="38" as="geometry" />
+        </mxCell>
+        <mxCell id="c4" value="Administrator" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#eef2ff;strokeColor=#4338ca;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="910" y="90" width="250" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="c4p0" value="Console  /admin/dashboard" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1f2937;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="910" y="145" width="250" height="38" as="geometry" />
+        </mxCell>
+        <mxCell id="c4p1" value="· Subscribers and activity" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8fafc;strokeColor=#94a3b8;fontSize=11;fontColor=#475569;" vertex="1" parent="1">
+          <mxGeometry x="930" y="191" width="230" height="38" as="geometry" />
+        </mxCell>
+        <mxCell id="c4p2" value="· Verification queue" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8fafc;strokeColor=#94a3b8;fontSize=11;fontColor=#475569;" vertex="1" parent="1">
+          <mxGeometry x="930" y="237" width="230" height="38" as="geometry" />
+        </mxCell>
+        <mxCell id="c4p3" value="· Complaints queue" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8fafc;strokeColor=#94a3b8;fontSize=11;fontColor=#475569;" vertex="1" parent="1">
+          <mxGeometry x="930" y="283" width="230" height="38" as="geometry" />
+        </mxCell>
+        <mxCell id="c4p4" value="· Unclaimed parcels" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8fafc;strokeColor=#94a3b8;fontSize=11;fontColor=#475569;" vertex="1" parent="1">
+          <mxGeometry x="930" y="329" width="230" height="38" as="geometry" />
+        </mxCell>
+        <mxCell id="c4p5" value="Customers  /admin/users/customers" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1f2937;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="910" y="375" width="250" height="38" as="geometry" />
+        </mxCell>
+        <mxCell id="c4p6" value="Shops  /admin/users/sellers" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1f2937;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="910" y="421" width="250" height="38" as="geometry" />
+        </mxCell>
+        <mxCell id="c4p7" value="Couriers  /admin/users/couriers" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1f2937;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="910" y="467" width="250" height="38" as="geometry" />
+        </mxCell>
+        <mxCell id="shared" value="Open to everybody, signed in or not" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;fontSize=11;fontColor=#475569;fontStyle=1;fontSize=13;fontColor=#1f2937;" vertex="1" parent="1">
+          <mxGeometry x="40" y="570" width="400" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="sh0" value="Sign in  /login" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1f2937;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="40" y="605" width="270" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="sh1" value="Sign up  /signup  (choose a role)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1f2937;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="330" y="605" width="270" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="sh2" value="About  ·  Contact  ·  Policies" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1f2937;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="620" y="605" width="270" height="40" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

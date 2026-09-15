@@ -1,0 +1,139 @@
+<mxfile host="app.diagrams.net" agent="Zamglam diagram generator" type="device">
+  <diagram name="Placing an order" id="Placing-an-order">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="826" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="Placing an order across several shops" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=16;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="10" width="700" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="sub" value="The basket is priced before anything is created, then written as one order and one parcel per shop, in a single transaction." style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;fontSize=11;fontColor=#475569;" vertex="1" parent="1">
+          <mxGeometry x="40" y="34" width="1000" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="ll_0" value="Customer" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=0;collapsible=0;recursiveResize=0;outlineConnect=0;fillColor=#ffffff;strokeColor=#1f2937;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="60" y="90" width="170" height="660" as="geometry" />
+        </mxCell>
+        <mxCell id="ll_1" value="Express API" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=0;collapsible=0;recursiveResize=0;outlineConnect=0;fillColor=#ffffff;strokeColor=#1f2937;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="290" y="90" width="170" height="660" as="geometry" />
+        </mxCell>
+        <mxCell id="ll_2" value="Order model" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=0;collapsible=0;recursiveResize=0;outlineConnect=0;fillColor=#ffffff;strokeColor=#1f2937;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="520" y="90" width="170" height="660" as="geometry" />
+        </mxCell>
+        <mxCell id="ll_3" value="MySQL" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=0;collapsible=0;recursiveResize=0;outlineConnect=0;fillColor=#ffffff;strokeColor=#1f2937;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="750" y="90" width="170" height="660" as="geometry" />
+        </mxCell>
+        <mxCell id="m0" value="POST /api/orders/quote  (the basket)" style="html=1;endArrow=block;endFill=1;strokeColor=#1f2937;fontSize=10;verticalAlign=bottom;align=center;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="145" y="150" as="sourcePoint" />
+            <mxPoint x="375" y="150" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m1" value="quoteForItems(items, location)" style="html=1;endArrow=block;endFill=1;strokeColor=#1f2937;fontSize=10;verticalAlign=bottom;align=center;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="375" y="185" as="sourcePoint" />
+            <mxPoint x="605" y="185" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m2" value="read each product’s price, stock and shop" style="html=1;endArrow=block;endFill=1;strokeColor=#1f2937;fontSize=10;verticalAlign=bottom;align=center;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="605" y="220" as="sourcePoint" />
+            <mxPoint x="835" y="220" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m3" value="rows" style="html=1;endArrow=open;endFill=0;dashed=1;strokeColor=#64748b;fontSize=10;verticalAlign=bottom;align=center;fontColor=#475569;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="835" y="255" as="sourcePoint" />
+            <mxPoint x="605" y="255" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m4" value="one parcel per shop, each with its own delivery fee" style="html=1;endArrow=open;endFill=0;dashed=1;strokeColor=#64748b;fontSize=10;verticalAlign=bottom;align=center;fontColor=#475569;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="605" y="300" as="sourcePoint" />
+            <mxPoint x="375" y="300" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m5" value="items total · delivery total · total" style="html=1;endArrow=open;endFill=0;dashed=1;strokeColor=#64748b;fontSize=10;verticalAlign=bottom;align=center;fontColor=#475569;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="375" y="335" as="sourcePoint" />
+            <mxPoint x="145" y="335" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m6" value="POST /api/orders  (confirm)" style="html=1;endArrow=block;endFill=1;strokeColor=#1f2937;fontSize=10;verticalAlign=bottom;align=center;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="145" y="400" as="sourcePoint" />
+            <mxPoint x="375" y="400" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m7" value="createForCustomer(...)" style="html=1;endArrow=block;endFill=1;strokeColor=#1f2937;fontSize=10;verticalAlign=bottom;align=center;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="375" y="435" as="sourcePoint" />
+            <mxPoint x="605" y="435" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m8" value="BEGIN" style="html=1;endArrow=block;endFill=1;strokeColor=#1f2937;fontSize=10;verticalAlign=bottom;align=center;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="605" y="470" as="sourcePoint" />
+            <mxPoint x="835" y="470" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m9" value="price the basket again, server-side" style="html=1;endArrow=block;endFill=1;strokeColor=#1f2937;fontSize=10;verticalAlign=bottom;align=center;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="605" y="500" as="sourcePoint" />
+            <mxPoint x="835" y="500" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m10" value="insert the order" style="html=1;endArrow=block;endFill=1;strokeColor=#1f2937;fontSize=10;verticalAlign=bottom;align=center;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="605" y="530" as="sourcePoint" />
+            <mxPoint x="835" y="530" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m11" value="insert its items  ·  take the stock off the shelf" style="html=1;endArrow=block;endFill=1;strokeColor=#1f2937;fontSize=10;verticalAlign=bottom;align=center;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="605" y="560" as="sourcePoint" />
+            <mxPoint x="835" y="560" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m12" value="insert ONE SHIPMENT PER SHOP" style="html=1;endArrow=block;endFill=1;strokeColor=#1f2937;fontSize=10;verticalAlign=bottom;align=center;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="605" y="590" as="sourcePoint" />
+            <mxPoint x="835" y="590" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m13" value="COMMIT" style="html=1;endArrow=block;endFill=1;strokeColor=#1f2937;fontSize=10;verticalAlign=bottom;align=center;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="605" y="620" as="sourcePoint" />
+            <mxPoint x="835" y="620" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m14" value="order id" style="html=1;endArrow=open;endFill=0;dashed=1;strokeColor=#64748b;fontSize=10;verticalAlign=bottom;align=center;fontColor=#475569;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="605" y="655" as="sourcePoint" />
+            <mxPoint x="375" y="655" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m15" value="201  ·  { id, status: &quot;placed&quot; }" style="html=1;endArrow=open;endFill=0;dashed=1;strokeColor=#64748b;fontSize=10;verticalAlign=bottom;align=center;fontColor=#475569;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="375" y="685" as="sourcePoint" />
+            <mxPoint x="145" y="685" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="note-price" value="Prices are read from the database both times, never taken
+from the request — so a tampered basket changes nothing, and
+the customer is charged exactly what the quote showed." style="shape=note;whiteSpace=wrap;html=1;size=14;fillColor=#fffbeb;strokeColor=#b45309;align=left;spacingLeft=6;fontSize=10;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="980" y="260" width="340" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="note-tx" value="All of it in one transaction. A failure half way cannot leave
+stock deducted for an order that does not exist." style="shape=note;whiteSpace=wrap;html=1;size=14;fillColor=#fffbeb;strokeColor=#b45309;align=left;spacingLeft=6;fontSize=10;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="980" y="500" width="340" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="note-split" value="THIS is what makes the platform multi-vendor:
+three shops in one basket become three parcels,
+each collected from a different place, priced on
+its own distance, and delivered separately." style="shape=note;whiteSpace=wrap;html=1;size=14;fillColor=#fffbeb;strokeColor=#b45309;align=left;spacingLeft=6;fontSize=10;verticalAlign=top;fillColor=#eef2ff;strokeColor=#4338ca;" vertex="1" parent="1">
+          <mxGeometry x="980" y="580" width="340" height="80" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

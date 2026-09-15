@@ -1,0 +1,111 @@
+<mxfile host="app.diagrams.net" agent="Zamglam diagram generator" type="device">
+  <diagram name="Module dependencies" id="Module-dependencies">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="826" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="How the backend fits together" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=16;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="10" width="700" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="sub" value="A dependency diagram rather than a UML class diagram: the backend is modules of functions over SQL, not an object model with inheritance." style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;fontSize=11;fontColor=#475569;" vertex="1" parent="1">
+          <mxGeometry x="40" y="34" width="1000" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="server" value="undefined" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1f2937;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="60" y="100" width="240" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="app" value="undefined" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#eef2ff;strokeColor=#4338ca;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="60" y="200" width="240" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="routes" value="undefined" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1f2937;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="60" y="310" width="240" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="middleware" value="undefined" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff7ed;strokeColor=#c2410c;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="370" y="310" width="240" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="controllers" value="undefined" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1f2937;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="60" y="410" width="240" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="models" value="undefined" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#eef2ff;strokeColor=#4338ca;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="60" y="510" width="240" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="services" value="undefined" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1f2937;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="370" y="505" width="240" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="utils" value="undefined" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1f2937;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="370" y="410" width="240" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="config" value="undefined" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#eef2ff;strokeColor=#4338ca;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="60" y="610" width="240" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="tests" value="undefined" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8fafc;strokeColor=#94a3b8;fontSize=11;fontColor=#475569;" vertex="1" parent="1">
+          <mxGeometry x="660" y="200" width="260" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="dep0" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#1f2937;fontSize=10;verticalAlign=bottom;" edge="1" parent="1" source="server" target="app">
+          <mxGeometry relative="1" as="geometry">
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="dep1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#1f2937;fontSize=10;verticalAlign=bottom;" edge="1" parent="1" source="app" target="routes">
+          <mxGeometry relative="1" as="geometry">
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="dep2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#1f2937;fontSize=10;verticalAlign=bottom;" edge="1" parent="1" source="app" target="middleware">
+          <mxGeometry relative="1" as="geometry">
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="dep3" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#1f2937;fontSize=10;verticalAlign=bottom;" edge="1" parent="1" source="routes" target="middleware">
+          <mxGeometry relative="1" as="geometry">
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="dep4" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#1f2937;fontSize=10;verticalAlign=bottom;" edge="1" parent="1" source="routes" target="controllers">
+          <mxGeometry relative="1" as="geometry">
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="dep5" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#1f2937;fontSize=10;verticalAlign=bottom;" edge="1" parent="1" source="controllers" target="models">
+          <mxGeometry relative="1" as="geometry">
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="dep6" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#1f2937;fontSize=10;verticalAlign=bottom;" edge="1" parent="1" source="controllers" target="utils">
+          <mxGeometry relative="1" as="geometry">
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="dep7" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#1f2937;fontSize=10;verticalAlign=bottom;" edge="1" parent="1" source="models" target="config">
+          <mxGeometry relative="1" as="geometry">
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="dep8" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#1f2937;fontSize=10;verticalAlign=bottom;" edge="1" parent="1" source="models" target="services">
+          <mxGeometry relative="1" as="geometry">
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="dep9" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#1f2937;fontSize=10;verticalAlign=bottom;" edge="1" parent="1" source="models" target="utils">
+          <mxGeometry relative="1" as="geometry">
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="dep10" value="suspension asks for standing" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#1f2937;fontSize=10;verticalAlign=bottom;" edge="1" parent="1" source="middleware" target="models">
+          <mxGeometry relative="1" as="geometry">
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="dep11" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#1f2937;fontSize=10;verticalAlign=bottom;" edge="1" parent="1" source="tests" target="app">
+          <mxGeometry relative="1" as="geometry">
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="dep12" value="the sweep" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#1f2937;fontSize=10;verticalAlign=bottom;" edge="1" parent="1" source="server" target="models">
+          <mxGeometry relative="1" as="geometry">
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="note-dir" value="Dependencies only ever point downwards.
+No model imports a controller, and no controller
+contains SQL — which is what keeps a rule in one
+place rather than repeated per route." style="shape=note;whiteSpace=wrap;html=1;size=14;fillColor=#fffbeb;strokeColor=#b45309;align=left;spacingLeft=6;fontSize=10;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="660" y="410" width="330" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="note-class" value="Why this rather than a class diagram:
+
+The models are collections of static functions over SQL.
+Drawing them as UML classes with associations would show
+relationships the code does not have." style="shape=note;whiteSpace=wrap;html=1;size=14;fillColor=#fffbeb;strokeColor=#b45309;align=left;spacingLeft=6;fontSize=10;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="660" y="520" width="330" height="95" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

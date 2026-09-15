@@ -1,0 +1,137 @@
+<mxfile host="app.diagrams.net" agent="Zamglam diagram generator" type="device">
+  <diagram name="Account states" id="Account-states">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="826" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="The life of an account" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=16;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="10" width="600" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="sub" value="Registration, vetting, and what an administrator can do afterwards. Shops and couriers are vetted differently; suspension and deletion apply to all three." style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;fontSize=11;fontColor=#475569;" vertex="1" parent="1">
+          <mxGeometry x="40" y="34" width="1000" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="shopTitle" value="A shop" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;fontSize=11;fontColor=#475569;fontStyle=1;fontSize=13;fontColor=#1f2937;" vertex="1" parent="1">
+          <mxGeometry x="40" y="80" width="200" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="shopStart" value="" style="ellipse;html=1;fillColor=#1f2937;strokeColor=#1f2937;" vertex="1" parent="1">
+          <mxGeometry x="60" y="130" width="24" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="shopPending" value="pending
+(can sell, shows unverified)" style="rounded=1;arcSize=40;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1f2937;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="130" y="112" width="175" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="shopVerified" value="verified
+(carries the badge)" style="rounded=1;arcSize=40;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1f2937;fontSize=11;fillColor=#ecfdf5;strokeColor=#047857;" vertex="1" parent="1">
+          <mxGeometry x="380" y="60" width="165" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="shopRejected" value="rejected" style="rounded=1;arcSize=40;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1f2937;fontSize=11;fillColor=#fef2f2;strokeColor=#b91c1c;" vertex="1" parent="1">
+          <mxGeometry x="380" y="170" width="165" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="se1" value="registers" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#1f2937;fontSize=10;verticalAlign=bottom;" edge="1" parent="1" source="shopStart" target="shopPending">
+          <mxGeometry relative="1" as="geometry">
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="se2" value="admin accepts the documents" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#1f2937;fontSize=10;verticalAlign=bottom;" edge="1" parent="1" source="shopPending" target="shopVerified">
+          <mxGeometry relative="1" as="geometry">
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="se3" value="admin rejects them" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#1f2937;fontSize=10;verticalAlign=bottom;" edge="1" parent="1" source="shopPending" target="shopRejected">
+          <mxGeometry relative="1" as="geometry">
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="se4" value="submits fresh paperwork" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#1f2937;fontSize=10;verticalAlign=bottom;dashed=1;" edge="1" parent="1" source="shopRejected" target="shopPending">
+          <mxGeometry relative="1" as="geometry">
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="cTitle" value="A courier" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;fontSize=11;fontColor=#475569;fontStyle=1;fontSize=13;fontColor=#1f2937;" vertex="1" parent="1">
+          <mxGeometry x="40" y="270" width="200" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="cStart" value="" style="ellipse;html=1;fillColor=#1f2937;strokeColor=#1f2937;" vertex="1" parent="1">
+          <mxGeometry x="60" y="320" width="24" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="cPending" value="pending
+(cannot take any work)" style="rounded=1;arcSize=40;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1f2937;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="130" y="302" width="175" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="cApproved" value="approved" style="rounded=1;arcSize=40;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1f2937;fontSize=11;fillColor=#ecfdf5;strokeColor=#047857;" vertex="1" parent="1">
+          <mxGeometry x="380" y="270" width="165" height="45" as="geometry" />
+        </mxCell>
+        <mxCell id="cRejected" value="rejected
+(taken off duty)" style="rounded=1;arcSize=40;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1f2937;fontSize=11;fillColor=#fef2f2;strokeColor=#b91c1c;" vertex="1" parent="1">
+          <mxGeometry x="380" y="350" width="165" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="cDuty" value="on duty
+(sees the parcel pool)" style="rounded=1;arcSize=40;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1f2937;fontSize=11;fillColor=#eef2ff;strokeColor=#4338ca;" vertex="1" parent="1">
+          <mxGeometry x="620" y="262" width="175" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="ce1" value="registers" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#1f2937;fontSize=10;verticalAlign=bottom;" edge="1" parent="1" source="cStart" target="cPending">
+          <mxGeometry relative="1" as="geometry">
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ce2" value="admin approves" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#1f2937;fontSize=10;verticalAlign=bottom;" edge="1" parent="1" source="cPending" target="cApproved">
+          <mxGeometry relative="1" as="geometry">
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ce3" value="admin rejects" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#1f2937;fontSize=10;verticalAlign=bottom;" edge="1" parent="1" source="cPending" target="cRejected">
+          <mxGeometry relative="1" as="geometry">
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ce4" value="clocks on / off" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#1f2937;fontSize=10;verticalAlign=bottom;" edge="1" parent="1" source="cApproved" target="cDuty">
+          <mxGeometry relative="1" as="geometry">
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="note-duty" value="Cannot clock off while answerable
+for a parcel — it would be stranded,
+out of the pool and held by somebody
+who has gone home." style="shape=note;whiteSpace=wrap;html=1;size=14;fillColor=#fffbeb;strokeColor=#b45309;align=left;spacingLeft=6;fontSize=10;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="840" y="250" width="250" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="aTitle" value="Any account, once it exists" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=top;fontSize=11;fontColor=#475569;fontStyle=1;fontSize=13;fontColor=#1f2937;" vertex="1" parent="1">
+          <mxGeometry x="40" y="450" width="300" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="aActive" value="active" style="rounded=1;arcSize=40;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1f2937;fontSize=11;fillColor=#ecfdf5;strokeColor=#047857;" vertex="1" parent="1">
+          <mxGeometry x="130" y="500" width="150" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="aSuspended" value="suspended
+(can sign in and read,
+cannot act)" style="rounded=1;arcSize=40;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1f2937;fontSize=11;fillColor=#fff7ed;strokeColor=#c2410c;" vertex="1" parent="1">
+          <mxGeometry x="370" y="490" width="185" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="aDeleted" value="deleted
+(30-day restore window:
+cannot sign in, products hidden)" style="rounded=1;arcSize=40;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#1f2937;fontSize=11;fillColor=#fef2f2;strokeColor=#b91c1c;" vertex="1" parent="1">
+          <mxGeometry x="370" y="620" width="235" height="75" as="geometry" />
+        </mxCell>
+        <mxCell id="aPurged" value="" style="ellipse;shape=endState;html=1;fillColor=#1f2937;strokeColor=#1f2937;" vertex="1" parent="1">
+          <mxGeometry x="700" y="645" width="24" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="ae1" value="three upheld complaints,
+or an admin decision" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#1f2937;fontSize=10;verticalAlign=bottom;" edge="1" parent="1" source="aActive" target="aSuspended">
+          <mxGeometry relative="1" as="geometry">
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ae2" value="reinstated — open complaints cleared" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#1f2937;fontSize=10;verticalAlign=bottom;dashed=1;" edge="1" parent="1" source="aSuspended" target="aActive">
+          <mxGeometry relative="1" as="geometry">
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ae3" value="admin deletes" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#1f2937;fontSize=10;verticalAlign=bottom;" edge="1" parent="1" source="aActive" target="aDeleted">
+          <mxGeometry relative="1" as="geometry">
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ae4" value="restored" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#1f2937;fontSize=10;verticalAlign=bottom;dashed=1;" edge="1" parent="1" source="aDeleted" target="aActive">
+          <mxGeometry relative="1" as="geometry">
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ae5" value="window closes — removed for good" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#1f2937;fontSize=10;verticalAlign=bottom;" edge="1" parent="1" source="aDeleted" target="aPurged">
+          <mxGeometry relative="1" as="geometry">
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="note-purge" value="A row that order history still points at is kept
+rather than destroyed, so an order never refers
+to an account that is gone." style="shape=note;whiteSpace=wrap;html=1;size=14;fillColor=#fffbeb;strokeColor=#b45309;align=left;spacingLeft=6;fontSize=10;verticalAlign=top;" vertex="1" parent="1">
+          <mxGeometry x="700" y="700" width="300" height="70" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
