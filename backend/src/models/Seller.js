@@ -15,8 +15,6 @@ class Seller {
     return rows[0];
   }
 
-  // Every seller with their store and how many documents they have submitted — the admin
-  // review queue.
   // Every shop for the admin review queue, with how much paperwork and stock each has.
   // Ordered so the ones waiting for a decision come first.
   static async findAllForReview() {
