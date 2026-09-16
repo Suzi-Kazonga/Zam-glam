@@ -22,7 +22,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "axios": "^1.19.0",
+    "@mapbox/node-pre-gyp": "^2.0.3",
+    "axios": "^1.20.0",
     "bcrypt": "^5.1.0",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",

@@ -82,6 +82,9 @@ export default function ProductDetail() {
             </p>
           )}
           <p className="mt-4 text-2xl font-bold text-indigo-700">K{Number(product.price).toFixed(2)}</p>
+          <p className={`mt-2 text-sm font-semibold ${Number(product.stock) < 5 ? 'text-amber-700' : 'text-emerald-700'}`}>
+            {Number(product.stock) > 0 ? `${product.stock} in stock` : 'Sold out'}
+          </p>
           <p className="mt-6 leading-7 text-slate-600">{product.description || 'A versatile Zamglam piece made for everyday styling.'}</p>
           <div className="mt-8">
             <p className="mb-3 text-sm font-semibold text-slate-700">Size</p>
@@ -96,7 +99,7 @@ export default function ProductDetail() {
           </div>
           {shopping && (
             <label className="mt-6 block text-sm font-semibold text-slate-700">Quantity
-              <input type="number" min="1" value={quantity} onChange={(event) => setQuantity(Math.max(1, Number(event.target.value) || 1))} className="mt-2 w-24 rounded-lg border border-slate-200 px-3 py-2" />
+              <input type="number" min="1" max={product.stock} value={quantity} onChange={(event) => setQuantity(Math.min(Number(product.stock), Math.max(1, Number(event.target.value) || 1)))} className="mt-2 w-24 rounded-lg border border-slate-200 px-3 py-2" />
             </label>
           )}
           {shopping ? (

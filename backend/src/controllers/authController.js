@@ -1,7 +1,20 @@
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 import { pool } from '../config/db.js';
+import { JWT_SECRET } from '../config/auth.js';
 import { resolveSellerId, resolveCustomerId, resolveCourierId } from '../utils/accounts.js';
+
+function isDatabaseUnavailable(error) {
+  return ['ECONNREFUSED', 'ECONNRESET', 'PROTOCOL_CONNECTION_LOST', 'ETIMEDOUT'].includes(error.code);
+}
+
+function sendAuthError(res, error) {
+  if (isDatabaseUnavailable(error)) {
+    return res.status(503).json({ error: 'Database unavailable. Start MySQL and try again.' });
+  }
+
+  return res.status(500).json({ error: error.message });
+}
 
 // A deleted account keeps its row for a grace period so an admin can undo a mistake.
 // Nobody should be able to sign back into it meanwhile.
@@ -46,7 +59,7 @@ export const register = async (req, res) => {
     // Generate JWT
     const token = jwt.sign(
       { id: userId, email, role: role || 'customer' },
-      process.env.JWT_SECRET,
+      JWT_SECRET,
       { expiresIn: '7d' }
     );
 
@@ -64,7 +77,7 @@ export const register = async (req, res) => {
       },
     });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    sendAuthError(res, error);
   }
 };
 
@@ -98,7 +111,7 @@ export const login = async (req, res) => {
     // Generate JWT
     const token = jwt.sign(
       { id: user.id, email: user.email, role: user.role },
-      process.env.JWT_SECRET,
+      JWT_SECRET,
       { expiresIn: '7d' }
     );
 
@@ -113,7 +126,7 @@ export const login = async (req, res) => {
       },
     });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    sendAuthError(res, error);
   }
 };
 

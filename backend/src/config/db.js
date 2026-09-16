@@ -52,7 +52,7 @@ export async function initializeDatabase() {
   // both layouts working.
   await pool.query(`
     CREATE TABLE IF NOT EXISTS users (
-      id INT AUTO_INCREMENT PRIMARY KEY,
+      id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
       email VARCHAR(255) NOT NULL UNIQUE,
       password VARCHAR(255) NOT NULL,
       role ENUM('admin','customer','seller','courier') NOT NULL DEFAULT 'customer',
@@ -62,7 +62,7 @@ export async function initializeDatabase() {
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS customers (
-      id INT AUTO_INCREMENT PRIMARY KEY,
+      id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
       name VARCHAR(255) NOT NULL,
       email VARCHAR(255) NOT NULL UNIQUE,
       password VARCHAR(255) NOT NULL,
@@ -90,8 +90,8 @@ export async function initializeDatabase() {
   // previously 'admin' fell through User.create and created a customer row instead.
   await pool.query(`
     CREATE TABLE IF NOT EXISTS admins (
-      id INT AUTO_INCREMENT PRIMARY KEY,
-      user_id INT NULL UNIQUE,
+      id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+      user_id INT UNSIGNED NULL UNIQUE,
       name VARCHAR(255) NOT NULL,
       email VARCHAR(255) NULL UNIQUE,
       password VARCHAR(255) NULL,
@@ -102,8 +102,8 @@ export async function initializeDatabase() {
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS couriers (
-      id INT AUTO_INCREMENT PRIMARY KEY,
-      user_id INT NULL UNIQUE,
+      id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+      user_id INT UNSIGNED NULL UNIQUE,
       name VARCHAR(255) NOT NULL,
       email VARCHAR(255) NULL UNIQUE,
       password VARCHAR(255) NULL,
@@ -116,7 +116,7 @@ export async function initializeDatabase() {
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS categories (
-      id INT AUTO_INCREMENT PRIMARY KEY,
+      id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
       name VARCHAR(100) NOT NULL UNIQUE,
       description TEXT,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -126,7 +126,7 @@ export async function initializeDatabase() {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS stores (
       id INT AUTO_INCREMENT PRIMARY KEY,
-      seller_id INT NOT NULL,
+      seller_id INT UNSIGNED NOT NULL,
       name VARCHAR(255) NOT NULL,
       description TEXT,
       logo_url VARCHAR(500),
@@ -142,9 +142,9 @@ export async function initializeDatabase() {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS products (
       id INT AUTO_INCREMENT PRIMARY KEY,
-      seller_id INT NOT NULL,
-      store_id INT,
-      category_id INT,
+      seller_id INT UNSIGNED NOT NULL,
+      store_id INT UNSIGNED,
+      category_id INT UNSIGNED,
       name VARCHAR(255) NOT NULL,
       description TEXT,
       price DECIMAL(10,2) NOT NULL,
@@ -160,8 +160,8 @@ export async function initializeDatabase() {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS cart (
       id INT AUTO_INCREMENT PRIMARY KEY,
-      customer_id INT NOT NULL,
-      product_id INT NOT NULL,
+      customer_id INT UNSIGNED NOT NULL,
+      product_id INT UNSIGNED NOT NULL,
       quantity INT NOT NULL DEFAULT 1,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       UNIQUE KEY uk_cart_customer_product (customer_id, product_id),
@@ -173,7 +173,7 @@ export async function initializeDatabase() {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS orders (
       id INT AUTO_INCREMENT PRIMARY KEY,
-      customer_id INT NOT NULL,
+      customer_id INT UNSIGNED NOT NULL,
       total_price DECIMAL(12,2) NOT NULL DEFAULT 0,
       status VARCHAR(50) DEFAULT 'placed',
       address VARCHAR(255),
@@ -188,8 +188,8 @@ export async function initializeDatabase() {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS order_items (
       id INT AUTO_INCREMENT PRIMARY KEY,
-      order_id INT NOT NULL,
-      product_id INT NOT NULL,
+      order_id INT UNSIGNED NOT NULL,
+      product_id INT UNSIGNED NOT NULL,
       quantity INT NOT NULL DEFAULT 1,
       price DECIMAL(10,2) NOT NULL,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -203,8 +203,8 @@ export async function initializeDatabase() {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS shipments (
       id INT AUTO_INCREMENT PRIMARY KEY,
-      order_id INT NOT NULL,
-      seller_id INT NOT NULL,
+      order_id INT UNSIGNED NOT NULL,
+      seller_id INT UNSIGNED NOT NULL,
       status VARCHAR(50) NOT NULL DEFAULT 'placed',
       courier_id INT NULL,
       driver_name VARCHAR(255),
@@ -214,7 +214,11 @@ export async function initializeDatabase() {
       direction VARCHAR(255),
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       UNIQUE KEY uk_shipment_order_seller (order_id, seller_id),
-      FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
+      KEY idx_shipments_seller (seller_id),
+      KEY idx_shipments_courier (courier_id),
+      CONSTRAINT fk_shipments_order FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
+      CONSTRAINT fk_shipments_seller FOREIGN KEY (seller_id) REFERENCES sellers(id) ON DELETE CASCADE,
+      CONSTRAINT fk_shipments_courier FOREIGN KEY (courier_id) REFERENCES couriers(id) ON DELETE SET NULL
     );
   `);
 
@@ -256,7 +260,7 @@ export async function initializeDatabase() {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS order_status_history (
       id INT AUTO_INCREMENT PRIMARY KEY,
-      order_id INT NOT NULL,
+      order_id INT UNSIGNED NOT NULL,
       status VARCHAR(50) NOT NULL,
       note VARCHAR(255),
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -267,7 +271,7 @@ export async function initializeDatabase() {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS payments (
       id INT AUTO_INCREMENT PRIMARY KEY,
-      order_id INT NOT NULL,
+      order_id INT UNSIGNED NOT NULL,
       method VARCHAR(30) NOT NULL,
       amount DECIMAL(12,2) NOT NULL,
       status VARCHAR(30) DEFAULT 'pending',
@@ -280,7 +284,7 @@ export async function initializeDatabase() {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS courier (
       id INT AUTO_INCREMENT PRIMARY KEY,
-      order_id INT NOT NULL UNIQUE,
+      order_id INT UNSIGNED NOT NULL UNIQUE,
       driver_name VARCHAR(255) NOT NULL,
       driver_phone VARCHAR(50),
       price DECIMAL(10,2) NOT NULL,
@@ -295,7 +299,7 @@ export async function initializeDatabase() {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS documents (
       id INT AUTO_INCREMENT PRIMARY KEY,
-      user_id INT NOT NULL,
+      user_id INT UNSIGNED NOT NULL,
       type VARCHAR(50) NOT NULL,
       url VARCHAR(500) NOT NULL,
       status VARCHAR(20) DEFAULT 'pending',
@@ -420,6 +424,20 @@ export async function initializeDatabase() {
   }
   // Products carry a gallery; image_url stays as the primary/thumbnail image.
   await addColumnIfMissing('products', 'images', 'JSON');
+  // Older review rows were linked only to a product/customer. Seller ratings now also
+  // need the seller id, and product/store queries reference this column even when there
+  // are no ratings yet.
+  await addColumnIfMissing('reviews', 'seller_id', 'INT UNSIGNED NULL');
+  // Some legacy review tables have no product_id at all, so only backfill when that
+  // optional relationship exists.
+  if (await columnInfo('reviews', 'product_id')) {
+    await pool.query(`
+      UPDATE reviews r
+      JOIN products p ON p.id = r.product_id
+      SET r.seller_id = p.seller_id
+      WHERE r.seller_id IS NULL
+    `);
+  }
   // Tracking events belong to a specific parcel; NULL means an order-wide event.
   await addColumnIfMissing('order_status_history', 'shipment_id', 'INT NULL');
 

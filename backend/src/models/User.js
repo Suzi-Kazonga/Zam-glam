@@ -48,10 +48,17 @@ class User {
           // Without this an admin fell through to the customers table: the account could
           // sign in and moderate, but the console counted no admins and listed them as a
           // shopper.
-          await connection.query(
-            'INSERT INTO admins (user_id, name, email) VALUES (?, ?, ?)',
-            [result.insertId, name, email],
-          );
+          if (await User.columnExists('admins', 'email')) {
+            await connection.query(
+              'INSERT INTO admins (user_id, name, email) VALUES (?, ?, ?)',
+              [result.insertId, name, email],
+            );
+          } else {
+            await connection.query(
+              'INSERT INTO admins (user_id, name) VALUES (?, ?)',
+              [result.insertId, name],
+            );
+          }
         } else {
           await connection.query(
             'INSERT INTO customers (user_id, name, address, phone, location) VALUES (?, ?, ?, ?, ?)',

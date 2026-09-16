@@ -272,6 +272,39 @@ CREATE TABLE courier (
         ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- 10a. One shipment per seller for each multi-vendor order
+CREATE TABLE shipments (
+    id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    order_id INT UNSIGNED NOT NULL,
+    seller_id INT UNSIGNED NOT NULL,
+    status VARCHAR(50) NOT NULL DEFAULT 'placed',
+    courier_id INT UNSIGNED DEFAULT NULL,
+    driver_name VARCHAR(150) DEFAULT NULL,
+    driver_phone VARCHAR(50) DEFAULT NULL,
+    price DECIMAL(10,2) NOT NULL DEFAULT 0,
+    distance VARCHAR(100) DEFAULT NULL,
+    direction VARCHAR(255) DEFAULT NULL,
+    released_at TIMESTAMP NULL DEFAULT NULL,
+    escalated_at TIMESTAMP NULL DEFAULT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_shipment_order_seller (order_id, seller_id),
+    KEY idx_shipments_seller (seller_id),
+    KEY idx_shipments_courier (courier_id),
+    CONSTRAINT fk_shipments_order
+        FOREIGN KEY (order_id) REFERENCES orders(id)
+        ON UPDATE CASCADE
+        ON DELETE CASCADE,
+    CONSTRAINT fk_shipments_seller
+        FOREIGN KEY (seller_id) REFERENCES sellers(id)
+        ON UPDATE CASCADE
+        ON DELETE CASCADE,
+    CONSTRAINT fk_shipments_courier
+        FOREIGN KEY (courier_id) REFERENCES couriers(id)
+        ON UPDATE CASCADE
+        ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 -- 11. Payments table
 CREATE TABLE payments (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
