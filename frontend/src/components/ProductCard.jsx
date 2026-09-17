@@ -7,6 +7,7 @@ import { formatZmwPrice } from '../utils/currency';
 import { getProductClickCount, recordProductClick } from '../utils/productStore';
 import { useAuth } from '../context/AuthContext';
 import { canShop } from '../utils/permissions';
+import { stockLimit } from '../utils/stock';
 
 const fallbackImage = '/images/products/mud-denim.jpg';
 
@@ -19,6 +20,8 @@ const ProductCard = ({ product }) => {
   // The shop's real score, carried on the product from the API.
   const score = { average: Number(product.store_rating || 0), count: Number(product.store_rating_count || 0) };
   const clickCount = getProductClickCount(product.id);
+  const stock = stockLimit(product.stock);
+  const soldOut = stock === 0;
 
   const handleAddToCart = () => {
     addToCart({ ...product, sellerName, store_name: sellerName });
@@ -52,19 +55,24 @@ const ProductCard = ({ product }) => {
         <h3 className="truncate font-semibold text-slate-900">{product.name}</h3>
         {score.count > 0 && <p className="mt-1 text-xs text-amber-500">★ {score.average} · {score.count} seller rating{score.count === 1 ? '' : 's'}</p>}
         <p className="mt-2 text-lg font-bold text-indigo-700">{formatZmwPrice(product.price)}</p>
-        <p className={`mt-2 text-sm font-semibold ${Number(product.stock) < 5 ? 'text-amber-700' : 'text-emerald-700'}`}>
-          {Number(product.stock) > 0 ? `${product.stock} in stock` : 'Sold out'}
-        </p>
+        {stock !== null && !product.unavailable && (
+          <p className={`mt-2 text-sm font-semibold ${stock < 5 ? 'text-amber-700' : 'text-emerald-700'}`}>
+            {stock > 0 ? `${stock} in stock` : 'Sold out'}
+          </p>
+        )}
         <p className="mt-2 text-xs text-slate-500">Same-day delivery in Lusaka | 24-48 hrs intercity</p>
         {shopping ? (
-          <button onClick={handleAddToCart} disabled={product.stock === 0 || product.unavailable} className={`mt-4 w-full rounded-lg px-4 py-2 font-semibold text-white ${added ? 'bg-emerald-600' : 'bg-indigo-600 hover:bg-indigo-700'} disabled:cursor-not-allowed disabled:bg-slate-300`}>
-            {product.stock === 0 ? 'Sold out' : added ? 'Added to cart' : 'Add to cart'}
+          <button onClick={handleAddToCart} disabled={soldOut || product.unavailable} className={`mt-4 w-full rounded-lg px-4 py-2 font-semibold text-white ${added ? 'bg-emerald-600' : 'bg-indigo-600 hover:bg-indigo-700'} disabled:cursor-not-allowed disabled:bg-slate-300`}>
+            {product.unavailable ? 'Sample only' : soldOut ? 'Sold out' : added ? 'Added to cart' : 'Add to cart'}
           </button>
         ) : (
           <Link to={`/product/${product.id}`} className="mt-4 block w-full rounded-lg border border-slate-300 px-4 py-2 text-center font-semibold text-slate-700 hover:border-indigo-600 hover:text-indigo-600">
             View details
           </Link>
         )}
+        {/* Bundled samples appear only when the real catalogue has not loaded, and the
+            server has no such product to sell — say so rather than leave a dead button. */}
+        {product.unavailable && <p className="mt-2 text-center text-xs text-slate-400">Demo item — not available to order</p>}
       </div>
     </article>
   );

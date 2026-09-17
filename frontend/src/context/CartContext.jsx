@@ -5,6 +5,7 @@
 // basket follow somebody to another device.
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { stockLimit } from '../utils/stock';
 
 const CartContext = createContext();
 
@@ -52,12 +53,14 @@ export const CartProvider = ({ children }) => {
 
   const addToCart = (product, quantity = 1) => {
     const lineId = product.lineId || makeLineId(product);
-    const stock = Number(product.stock);
+    const stock = stockLimit(product.stock);
     setCart((prevCart) => {
       const existingItem = prevCart.find((item) => item.lineId === lineId || (!item.lineId && item.id === product.id));
       const currentQuantity = existingItem ? Number(existingItem.quantity || 0) : 0;
       const requestedQuantity = Math.max(0, Number(quantity) || 0);
-      const nextQuantity = Number.isFinite(stock)
+      // Never more than the shop has. Without a stock figure there is no limit here, and
+      // the server still refuses an order it cannot fill.
+      const nextQuantity = stock !== null
         ? Math.min(stock, currentQuantity + requestedQuantity)
         : currentQuantity + requestedQuantity;
 
@@ -86,8 +89,11 @@ export const CartProvider = ({ children }) => {
 
     setCart((prevCart) => prevCart.map((item) => {
       if (item.lineId !== productId && item.id !== productId) return item;
-      const stock = Number(item.stock);
-      return { ...item, quantity: Number.isFinite(stock) ? Math.min(quantity, stock) : quantity };
+      const stock = stockLimit(item.stock);
+      if (stock === null) return { ...item, quantity };
+      // Sold out since it was added: leave the line as it is, and checkout will say so.
+      if (stock === 0) return item;
+      return { ...item, quantity: Math.min(quantity, stock) };
     }));
   };
 
