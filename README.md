@@ -174,8 +174,8 @@ it can take parcels.
 ## Tests
 
 ```powershell
-cd backend;  npm.cmd test     # 192 tests
-cd frontend; npm.cmd test     # 18 tests
+cd backend;  npm.cmd test     # 235 tests
+cd frontend; npm.cmd test     # 31 tests
 ```
 
 The backend tests drive the real Express app through supertest against a real database

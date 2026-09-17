@@ -4,14 +4,14 @@
 
 ```powershell
 cd backend
-npm.cmd test              # 192 tests
+npm.cmd test              # 235 tests
 npm.cmd run test:unit     # the unit tests only
 npm.cmd run test:coverage # with a coverage report
 ```
 
 ```powershell
 cd frontend
-npm.cmd test              # 18 tests
+npm.cmd test              # 31 tests
 ```
 
 The backend tests use **their own database**, `zamglam_db_test`, created automatically on
@@ -26,7 +26,7 @@ minutes. That is real work against real SQL, not a slow test suite.
 
 | Suite | Tests | Covers |
 | --- | --- | --- |
-| `integration/auth.test.js` | 15 | Registration, sign-in, password hashing, duplicate emails, forged tokens, a deleted account being refused and then restored |
+| `integration/auth.test.js` | 18 | Registration, sign-in, password hashing, duplicate emails, forged tokens, a deleted account being refused and then restored, consent to the terms being required and recorded, and that nobody can sign themselves up as an administrator |
 | `integration/catalogue.test.js` | 20 | Listing with photos, the ownership rules on editing and deleting, filtering, MariaDB's JSON columns coming back as arrays, verification, a suspended shop showing as unavailable |
 | `integration/orders.test.js` | 40 | Quoting, splitting into one parcel per shop, distance-based fees, stock, who may see an order, moving a parcel along, cancelling and its stock return, the saved basket |
 | `integration/handover.test.js` | 39 | The pool, shifts and approval, requesting and racing for a parcel, the shop confirming and denying, contact gating, escalation, delivery |
@@ -34,8 +34,11 @@ minutes. That is real work against real SQL, not a slow test suite.
 | `integration/adminConsole.test.js` | 28 | The figures, listing each group, courier approval, editing, soft delete, restore, the purge and what it must not destroy |
 | `integration/rateLimit.test.js` | 8 | The sign-in, sign-up and general limiters, and that a success is not counted as a failure |
 | `unit/delivery.test.js` | 13 | Place lookup, distance, pricing, and the estimate flag on an unrecognised address |
+| `unit/comments.test.js` | 40 | Every backend file parses, and every comment in it is really a comment — a guard against a comment landing inside SQL and changing what it does |
 | `frontend/api/session.test.js` | 6 | A dead token ending the session rather than showing "Invalid token" |
 | `frontend/components/components.test.jsx` | 12 | Prices, the star rating, the tracking timeline |
+| `frontend/pages/shopping.test.jsx` | 7 | A product page loading without crashing, the quantity capped at the stock, and the basket's own stock limits |
+| `frontend/pages/signup.test.jsx` | 6 | The sign-up checks, and that no account is asked for until the terms are agreed to |
 
 ## How they are written
 
@@ -83,6 +86,10 @@ repository:
   later — skipping the administrator's review entirely.
 - `GET` and `POST /api/cart` joined `customers.user_id`, a column that only exists on the
   older layout, so both answered 500 on any current database.
+- The product page put two React hooks below its "Loading…" return, so every real product
+  threw *Rendered more hooks than during the previous render* once it had loaded.
+- `POST /api/auth/register` accepted `role: "admin"`. The helper that makes an admin builds
+  it through the model, so no test had ever asked the endpoint for one.
 
 ## A trap worth knowing
 
@@ -101,5 +108,34 @@ dashboards are large components that mix fetching, state and layout, and are ver
 using them rather than by tests. The API they depend on is covered thoroughly, so what is
 untested is the rendering, not the rules.
 
-There are no end-to-end browser tests. Cypress is in `package.json` but no specs were
-written.
+## End-to-end browser tests
+
+`frontend/cypress/e2e/userFlows.cy.js` clicks through the real site in a real browser:
+signing in, refusing a wrong password, refusing a sign-up that has not agreed to the terms,
+browsing and searching, and one whole purchase — add to basket, checkout, order placed,
+track it.
+
+They drive the running site, so they need the stack up, and they **write real data**
+(an account, an order). Point them at a test database, never at one you care about:
+
+```bash
+# 1. a backend on its own database, seeded
+cd backend
+node src/seed.js                     # with DB_NAME set to a throwaway database
+PORT=5091 DB_NAME=zamglam_cypress node src/server.js
+
+# 2. a copy of the site pointed at it
+cd frontend
+ZAMGLAM_API_URL=http://localhost:5091 npx vite --port 3100
+
+# 3. the tests
+npx cypress run --config baseUrl=http://localhost:3100
+```
+
+Against the ordinary stack on port 3000, `npm run test:e2e` opens Cypress interactively and
+`npm run test:e2e:headless` runs it — but that writes to whatever database the backend on
+port 5000 is using.
+
+If Cypress refuses to start with `bad option: --smoke-test`, the terminal has
+`ELECTRON_RUN_AS_NODE` set (VS Code does this). Clear it for the command:
+`env -u ELECTRON_RUN_AS_NODE npx cypress run`.

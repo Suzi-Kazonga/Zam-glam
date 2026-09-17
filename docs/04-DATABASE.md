@@ -4,9 +4,14 @@ Every table as the application actually creates it. The definitive version is
 `backend/src/config/db.js`, which builds the schema and applies its own migrations on
 startup — there is no SQL file to run by hand.
 
-`database/schema.sql` is kept only as a historical reference. It describes the older
-account layout and has no `shipments` or `reports` tables, so it must not be used to build
-a database.
+`database/schema.sql` and `Zamglam Database.sql` are separate hand-written designs of the
+same system, kept as references. They use the older account layout, where every login is in
+one `users` table, and they are missing tables the application needs (`reports`, and in one
+case `shipments`). A database built from either **is** usable: starting the backend on it
+adds what is missing and fills in the columns the application expects — including copying
+each email onto the customer and seller rows, which is where the admin console reads it.
+Both were checked this way, running the whole order journey end to end. Neither file is
+needed for a new database: `initializeDatabase()` builds one on its own.
 
 ## How it fits together
 
@@ -41,6 +46,7 @@ The four roles live in four tables. Each row holds its own login — email and a
 | `account_status` | VARCHAR(20) DEFAULT `active` | `active` or `suspended` |
 | `suspended_at`, `suspension_reason` | | Set together with a suspension |
 | `deleted_at` | TIMESTAMP NULL | Non-null = soft deleted, inside its restore window |
+| `terms_accepted_at` | TIMESTAMP NULL | When the terms were agreed to at sign-up. Empty for seeded demo accounts and any made before consent was asked for |
 
 ### `sellers`
 
@@ -202,7 +208,14 @@ flag them for an administrator.
    `information_schema` first, so it never fails on a database that already has it.
 4. Data repairs, each written to be harmless on a database that does not need them —
    backfilling `released_at`, approving couriers that predate `approval_status`, folding
-   the retired `confirmed` status into `delivered`.
+   the retired `confirmed` status into `delivered`, copying logins onto the account rows on
+   the older layout.
+
+**Foreign-key types follow what they point at.** A key and the id it references must be the
+exact same type, or MariaDB refuses to create the table (`errno 150`). Databases built by
+this file use `INT`; ones built from the two SQL files above use `INT UNSIGNED`. So each
+key column asks `idTypeOf(table)` what the id it points at actually is, rather than assuming
+— which is what lets a new table join onto a database somebody else built.
 
 Adding a column means adding one `addColumnIfMissing` line. Nobody has to run anything by
 hand, and an old database catches up the next time it starts.

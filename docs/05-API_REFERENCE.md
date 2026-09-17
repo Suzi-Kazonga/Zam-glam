@@ -72,15 +72,23 @@ Public. Creates an account and signs it in.
   "phone": "+260 97 000 0000",
   "address": "Kabulonga, Lusaka",
   "location": "Lusaka",
-  "shop_name": "Mud"
+  "shop_name": "Mud",
+  "accepted_terms": true
 }
 ```
 
-`name`, `email` and `password` are required. `role` defaults to `customer`; `shop_name`
-applies to a seller, `address`/`location` to a customer.
+`name`, `email`, `password` and `accepted_terms` are required. `role` defaults to
+`customer` and may only be `customer`, `seller` or `courier` — an admin account cannot be
+made through this endpoint, because anyone can call it. `shop_name` applies to a seller,
+`address`/`location` to a customer.
+
+`accepted_terms` must be exactly `true`. It records that the person agreed to the terms
+(shown at `/policies#terms`) as they signed up, and the moment is kept on the account as
+`terms_accepted_at`.
 
 **201** `{ message, token, user: { id, name, email, role, phone, address, location } }`
-· **400** missing fields · **409** that email already has an account
+· **400** missing fields, terms not accepted, or a role that cannot sign itself up
+· **409** that email already has an account
 
 A new **seller** can sign in and list immediately but starts `verification_status:
 'pending'`. A new **courier** is stored `approval_status: 'pending'` and inactive: they

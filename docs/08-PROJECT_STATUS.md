@@ -125,6 +125,11 @@ Each of these is covered by tests that drive the real application — see
 
 - Four roles: customer, seller, courier, administrator.
 - Registration and sign-in, bcrypt-hashed passwords, JWT sessions with a 7-day expiry.
+- Signing up requires agreeing to the terms and conditions, which the proposal's ethical
+  section commits to. The server refuses to create an account without it and stores when it
+  was given (`terms_accepted_at`), so the consent is recorded rather than only displayed.
+- Only shoppers, shops and couriers can sign themselves up. An administrator account can
+  only be created by someone with access to the server.
 - Sign-in attempts and sign-ups capped per address; a successful sign-in is never counted
   as a failure.
 - A dead token ends the session cleanly instead of leaving the browser looking signed in.
@@ -181,7 +186,7 @@ Each of these is covered by tests that drive the real application — see
 
 ### Quality
 
-- 231 backend tests and 18 frontend tests, all passing.
+- 235 backend tests, 31 frontend tests and 8 browser tests, all passing.
 - A fresh clone seeds and runs with no SQL run by hand.
 - The interface works on a phone, including the dashboards — which the literature review
   identified as important, since most Zambian users reach the internet by smartphone.
@@ -219,7 +224,9 @@ Stated plainly rather than buried.
 - **The React pages are not directly tested.** Components with logic are covered, but the
   dashboards mix fetching, state and layout and are verified by use. The API they rely on
   is covered thoroughly, so what is untested is rendering, not rules.
-- **No end-to-end browser tests.** Cypress is installed; no specs were written.
+- **The browser tests cover one path each.** Cypress drives signing in, signing up,
+  browsing and a whole purchase (see [06-TESTING.md](06-TESTING.md)), but the seller,
+  courier and admin dashboards are not clicked through by a test.
 - **The Docker stack is unverified.** Its definitions were corrected against the code (see
   [07-DEPLOYMENT.md](07-DEPLOYMENT.md)) but Docker is not installed on the development
   machine, so it has not been run end to end.
