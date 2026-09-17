@@ -51,10 +51,12 @@ class User {
           [email, hashedPassword, accountRole],
         );
 
+        // The email is copied onto the shop and shopper rows as well, so the admin console
+        // can show who they are (see config/db.js). Signing in still goes through `users`.
         if (accountRole === 'seller') {
           await connection.query(
-            'INSERT INTO sellers (user_id, shop_name, phone) VALUES (?, ?, ?)',
-            [result.insertId, shop_name || `${name}'s store`, phone || ''],
+            'INSERT INTO sellers (user_id, shop_name, phone, email) VALUES (?, ?, ?, ?)',
+            [result.insertId, shop_name || `${name}'s store`, phone || '', email],
           );
         } else if (accountRole === 'courier') {
           await connection.query(
@@ -81,8 +83,8 @@ class User {
           }
         } else {
           await connection.query(
-            'INSERT INTO customers (user_id, name, address, phone, location) VALUES (?, ?, ?, ?, ?)',
-            [result.insertId, name, address || '', phone || '', location || ''],
+            'INSERT INTO customers (user_id, name, email, address, phone, location) VALUES (?, ?, ?, ?, ?, ?)',
+            [result.insertId, name, email, address || '', phone || '', location || ''],
           );
         }
 

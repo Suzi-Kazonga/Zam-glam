@@ -216,6 +216,19 @@ class Admin {
     values.push(id);
     const [result] = await pool.query(`UPDATE ${table} SET ${sets.join(', ')} WHERE id = ?`, values);
     if (result.affectedRows === 0) throw Object.assign(new Error('Account not found'), { status: 404 });
+
+    // On the older layout the email on this row is only a copy; the one used to sign in
+    // lives in `users`. Change both, or the account would sign in with the old address.
+    if (fields?.email !== undefined) {
+      const [link] = await pool.query(
+        `SELECT 1 FROM information_schema.columns
+         WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = 'user_id'`,
+        [table],
+      );
+      if (link.length) {
+        await pool.query(`UPDATE users u JOIN ${table} t ON t.user_id = u.id SET u.email = ? WHERE t.id = ?`, [fields.email, id]);
+      }
+    }
     return { role, id: Number(id), updated: sets.length };
   }
 }
