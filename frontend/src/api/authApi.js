@@ -17,6 +17,8 @@ export const register = async (name, email, password, role = 'customer', profile
       phone: profileData.phone || '',
       location: profileData.location || '',
       city: profileData.location || '',
+      // The server refuses to create an account without this.
+      accepted_terms: profileData.acceptedTerms === true,
     });
     return response.data;
   } catch (error) {

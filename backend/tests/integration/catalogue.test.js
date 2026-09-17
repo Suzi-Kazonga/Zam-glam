@@ -158,7 +158,7 @@ describe('The catalogue', () => {
 
   test('a shop with no storefront is told so rather than given someone else\'s', async () => {
     const storeless = await api().post('/api/auth/register').send({
-      name: 'New Owner', email: `storeless${Date.now()}@zamglam.test`, password: 'SELLER123456', role: 'seller', shop_name: 'Storeless',
+      name: 'New Owner', email: `storeless${Date.now()}@zamglam.test`, password: 'SELLER123456', role: 'seller', shop_name: 'Storeless', accepted_terms: true,
     });
     const response = await api().get('/api/stores/mine').set('Authorization', `Bearer ${storeless.body.token}`);
     expect(response.status).toBe(404);

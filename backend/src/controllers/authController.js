@@ -10,6 +10,8 @@ import { pool } from '../config/db.js';
 import { JWT_SECRET } from '../config/auth.js';
 import { resolveSellerId, resolveCustomerId, resolveCourierId } from '../utils/accounts.js';
 
+const SELF_SERVICE_ROLES = ['customer', 'seller', 'courier'];
+
 function isDatabaseUnavailable(error) {
   return ['ECONNREFUSED', 'ECONNRESET', 'PROTOCOL_CONNECTION_LOST', 'ETIMEDOUT'].includes(error.code);
 }
@@ -41,11 +43,25 @@ async function deletedAtFor(user) {
 // until an administrator approves it.
 export const register = async (req, res) => {
   try {
-    const { name, email, password, phone, role, address, shop_name, location, city } = req.body;
+    const { name, email, password, phone, address, shop_name, location, city, accepted_terms } = req.body;
+    const role = req.body.role || 'customer';
 
     // Validate input
     if (!name || !email || !password) {
       return res.status(400).json({ error: 'Name, email, and password are required' });
+    }
+
+    // Only the three public kinds of account can be made from the sign-up page. Without
+    // this, anybody could send role "admin" and give themselves the admin console.
+    // Administrators are created by someone with access to the server (see seed.js).
+    if (!SELF_SERVICE_ROLES.includes(role)) {
+      return res.status(400).json({ error: 'You can sign up as a customer, a seller or a courier' });
+    }
+
+    // Consent to the terms is part of making an account, not a box ticked in the browser
+    // alone: it is checked here, and when it was given is kept on the account.
+    if (accepted_terms !== true) {
+      return res.status(400).json({ error: 'You must accept the terms and conditions to create an account' });
     }
 
     // Check if user exists
@@ -60,15 +76,22 @@ export const register = async (req, res) => {
       email,
       password,
       phone,
-      role: role || 'customer',
+      role,
       address,
       shop_name,
       location: location || city,
     });
 
+    const table = { seller: 'sellers', customer: 'customers', courier: 'couriers' }[role];
+    const resolve = { seller: resolveSellerId, customer: resolveCustomerId, courier: resolveCourierId }[role];
+    const profileId = await resolve(userId);
+    if (profileId) {
+      await pool.query(`UPDATE ${table} SET terms_accepted_at = CURRENT_TIMESTAMP WHERE id = ?`, [profileId]);
+    }
+
     // Generate JWT
     const token = jwt.sign(
-      { id: userId, email, role: role || 'customer' },
+      { id: userId, email, role },
       JWT_SECRET,
       { expiresIn: '7d' }
     );
@@ -80,7 +103,7 @@ export const register = async (req, res) => {
         id: userId, 
         name, 
         email, 
-        role: role || 'customer',
+        role,
         phone,
         address,
         location: location || city,
