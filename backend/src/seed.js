@@ -238,10 +238,17 @@ async function seedDatabase() {
     // the box. Sellers who register themselves start as 'pending' and go through the
     // admin review queue.
     for (const seller of sellers) {
-      await pool.query(
-        "UPDATE sellers SET verification_status = 'verified', verified_at = CURRENT_TIMESTAMP WHERE email = ?",
-        [seller.email],
-      );
+      if (sellersLinkToUsers) {
+        await pool.query(
+          "UPDATE sellers s JOIN users u ON u.id = s.user_id SET s.verification_status = 'verified', s.verified_at = CURRENT_TIMESTAMP WHERE u.email = ?",
+          [seller.email],
+        );
+      } else {
+        await pool.query(
+          "UPDATE sellers SET verification_status = 'verified', verified_at = CURRENT_TIMESTAMP WHERE email = ?",
+          [seller.email],
+        );
+      }
     }
     console.log('✅ Demo sellers marked verified');
 

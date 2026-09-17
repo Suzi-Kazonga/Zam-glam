@@ -52,16 +52,25 @@ export const CartProvider = ({ children }) => {
 
   const addToCart = (product, quantity = 1) => {
     const lineId = product.lineId || makeLineId(product);
+    const stock = Number(product.stock);
     setCart((prevCart) => {
       const existingItem = prevCart.find((item) => item.lineId === lineId || (!item.lineId && item.id === product.id));
+      const currentQuantity = existingItem ? Number(existingItem.quantity || 0) : 0;
+      const requestedQuantity = Math.max(0, Number(quantity) || 0);
+      const nextQuantity = Number.isFinite(stock)
+        ? Math.min(stock, currentQuantity + requestedQuantity)
+        : currentQuantity + requestedQuantity;
+
+      if (nextQuantity <= currentQuantity) return prevCart;
+
       if (existingItem) {
         return prevCart.map((item) => (
           (item.lineId || item.id) === (existingItem.lineId || existingItem.id)
-            ? { ...item, lineId, quantity: item.quantity + quantity }
+            ? { ...item, lineId, quantity: nextQuantity, stock: product.stock }
             : item
         ));
       }
-      return [...prevCart, toCartItem(product, quantity, lineId)];
+      return [...prevCart, toCartItem(product, nextQuantity, lineId)];
     });
   };
 
@@ -75,11 +84,11 @@ export const CartProvider = ({ children }) => {
       return;
     }
 
-    setCart((prevCart) =>
-      prevCart.map((item) =>
-        item.lineId === productId || item.id === productId ? { ...item, quantity } : item,
-      ),
-    );
+    setCart((prevCart) => prevCart.map((item) => {
+      if (item.lineId !== productId && item.id !== productId) return item;
+      const stock = Number(item.stock);
+      return { ...item, quantity: Number.isFinite(stock) ? Math.min(quantity, stock) : quantity };
+    }));
   };
 
   const clearCart = () => {

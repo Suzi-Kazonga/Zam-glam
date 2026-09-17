@@ -4,6 +4,7 @@
 // "is this a real signed-in account" and "is it the right kind of account".
 
 import jwt from 'jsonwebtoken';
+import { JWT_SECRET } from '../config/auth.js';
 
 // Checks the sign-in token and remembers who it belongs to.
 //
@@ -21,7 +22,7 @@ export const authMiddleware = (req, res, next) => {
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, JWT_SECRET);
     req.user = decoded;
     next();
   } catch (error) {

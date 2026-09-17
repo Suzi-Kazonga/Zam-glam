@@ -62,3 +62,6 @@ jobs:
       # tests cannot see.
       - name: Build
         run: npm run build
+
+      - name: Run frontend tests
+        run: npm test -- --runInBand
