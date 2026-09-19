@@ -50,12 +50,12 @@ export default function HeroBanner() {
             {slide ? slide.store : 'Shop local'}
           </p>
           <h1 className="mt-4 text-4xl font-bold tracking-tight sm:text-6xl">
-            {slide ? slide.name : 'Shop Local Zambian Fashion.'}
+            {slide ? slide.name : 'Fresh Finds for Everyday Style.'}
           </h1>
           <p className="mt-5 max-w-md text-lg text-slate-200">
             {slide
               ? `${formatZmwPrice(slide.price)} · in stock now at ${slide.store}`
-              : 'Discover clothing and footwear from registered Zambian stores, delivered to your door.'}
+              : 'Discover clothing and footwear from trusted Zambian stores, delivered to your door.'}
           </p>
           <div className="mt-8 flex flex-wrap items-center gap-3">
             {/* Primary route into the full, filterable catalogue across every store. */}
