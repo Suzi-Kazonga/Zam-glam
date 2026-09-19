@@ -193,7 +193,7 @@ export default function Home() {
               className="rounded-lg bg-gradient-to-br from-indigo-600 to-purple-600 p-8 text-center text-white hover:shadow-lg transition"
             >
               <h3 className="text-2xl font-bold mb-2">Browse Collections</h3>
-              <p className="text-indigo-100">Shop by category and discover new styles</p>
+              <p className="text-indigo-100">Shop by category and discover fresh looks for every day</p>
             </Link>
             <Link
               to="/products"
