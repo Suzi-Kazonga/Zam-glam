@@ -166,10 +166,10 @@
   align-items: center;
   gap: 0.5rem;
   background: #ffffff;
-  border: 1px solid #d6d3d1;
+  border: 1px solid #cbd5e1;
   font-size: 0.9rem;
   font-weight: 600;
-  color: #44403c;
+  color: #475569;
   cursor: pointer;
   padding: 0.55rem 0.85rem;
   border-radius: 0.5rem;
@@ -180,13 +180,13 @@
 
 .back-button:hover {
   background: #fafaf9;
-  border-color: #a8a29e;
-  color: #1c1917;
+  border-color: #94a3b8;
+  color: #1f2937;
   transform: translateX(-2px);
 }
 
 .back-button:focus-visible {
-  outline: 2px solid #78716c;
+  outline: 2px solid #64748b;
   outline-offset: 2px;
 }
 

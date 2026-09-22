@@ -8,8 +8,8 @@
   font-family: 'Manrope', 'Segoe UI', 'Arial', sans-serif;
   line-height: 1.5;
   font-weight: 400;
-  color: #1c1917;
-  background: #f5f5f4;
+  color: #1f2937;
+  background: #f8fafc;
 }
 
 body {
@@ -18,8 +18,8 @@ body {
   min-height: 100vh;
   font-family: 'Manrope', 'Segoe UI', 'Arial', sans-serif;
   letter-spacing: -0.01em;
-  background: linear-gradient(180deg, #f5f5f4 0%, #f8fafc 100%);
-  color: #1c1917;
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+  color: #1f2937;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -41,20 +41,20 @@ button, a { transition: all 180ms ease; }
 }
 
 .zamglam-button:focus-visible {
-  outline: 2px solid #78716c;
+  outline: 2px solid #64748b;
   outline-offset: 2px;
 }
 
 .zamglam-bag {
-  transform-origin: 85% -5px;
-  animation: zamglam-bag-swing 2.4s ease-in-out infinite;
+  transform-origin: 82% 8%;
+  animation: zamglam-bag-swing 3.2s ease-in-out infinite;
 }
 
 @keyframes zamglam-bag-swing {
   0%, 100% { transform: rotate(0deg) translateY(0); }
-  25% { transform: rotate(-14deg) translateX(-2px) translateY(1px); }
-  50% { transform: rotate(-4deg) translateX(-1px) translateY(-1px); }
-  75% { transform: rotate(7deg) translateX(1px) translateY(1px); }
+  25% { transform: rotate(-6deg) translateY(1px); }
+  50% { transform: rotate(-1deg) translateY(0); }
+  75% { transform: rotate(4deg) translateY(1px); }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -21,9 +21,9 @@ const Header = () => {
   const profileMeta = user ? resolveUserMeta(user) : { initials: 'U', profilePhoto: '' };
   const themed = Boolean(user);
   const shellClass = themed ? `${theme.bar} border-b border-black/10` : 'border-b border-slate-200 bg-white';
-  const brandClass = themed ? 'text-white hover:text-white/80' : 'text-slate-900 hover:text-indigo-600';
+  const brandClass = themed ? 'text-white hover:text-white/80' : 'text-slate-900 hover:text-[#17365d]';
   const navClass = themed ? 'text-white/80' : 'text-slate-600';
-  const linkClass = themed ? 'hover:text-white transition' : 'hover:text-indigo-600 transition';
+  const linkClass = themed ? 'hover:text-white transition' : 'hover:text-[#17365d] transition';
 
   // The nav is hidden below lg, so without this the links are unreachable on a phone.
   const [menuOpen, setMenuOpen] = useState(false);
@@ -63,9 +63,9 @@ const Header = () => {
       <Link to="/" aria-label="Zamglam home" className={`inline-flex items-center gap-1 text-xl font-extrabold tracking-tight transition sm:text-2xl ${brandClass}`}>
         <span className="zamglam-bag inline-flex h-8 w-9 items-center justify-center" aria-hidden="true">
           <svg viewBox="0 0 36 30" className="h-8 w-9" fill="none" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M3 10h12l-.7 14H3.7z" fill="#ffb3bd" stroke="#d92d3f" strokeWidth="1.4" />
+            <path d="M3 10h12l-.7 14H3.7z" fill="#d92d3f" fillOpacity="0.45" stroke="#d92d3f" strokeWidth="1.4" />
             <path d="M6.5 10V7.8a2.5 2.5 0 0 1 5 0V10" stroke="#d92d3f" strokeWidth="1.4" />
-            <path d="M20 8h13l-.7 16H20.7z" fill="#f56b79" stroke="#d92d3f" strokeWidth="1.5" />
+            <path d="M20 8h13l-.7 16H20.7z" fill="#d92d3f" fillOpacity="0.72" stroke="#d92d3f" strokeWidth="1.5" />
             <path d="M23.5 8V5.8a3 3 0 0 1 6 0V8" stroke="#d92d3f" strokeWidth="1.5" />
             <path d="M12 12h14l-.8 16H12.8z" fill="#d92d3f" stroke="#a7192e" strokeWidth="1.5" />
             <path d="M15.5 12V9.5a3.5 3.5 0 0 1 7 0V12" stroke="#a7192e" strokeWidth="1.5" />
@@ -101,14 +101,14 @@ const Header = () => {
             <Link
               to="/login"
               state={{ from: location }}
-              className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-indigo-300 hover:text-indigo-600"
+              className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-[#7894b2] hover:text-[#17365d]"
             >
               Log In
             </Link>
             <Link
               to="/signup"
               state={{ from: location }}
-              className="inline-flex items-center justify-center rounded-lg bg-stone-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-stone-800"
+              className="inline-flex items-center justify-center rounded-lg bg-[#17365d] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#0d2340]"
             >
               Sign Up
             </Link>
@@ -134,7 +134,7 @@ const Header = () => {
           {!user && (
             <div className="mt-3 flex gap-2">
               <Link to="/login" state={{ from: location }} onClick={closeMenu} className="flex-1 rounded-lg border border-slate-300 bg-white px-4 py-3 text-center font-semibold text-slate-700 shadow-sm">Log In</Link>
-              <Link to="/signup" state={{ from: location }} onClick={closeMenu} className="flex-1 rounded-lg bg-stone-700 px-4 py-3 text-center font-semibold text-white shadow-sm hover:bg-stone-800">Sign Up</Link>
+              <Link to="/signup" state={{ from: location }} onClick={closeMenu} className="flex-1 rounded-lg bg-[#17365d] px-4 py-3 text-center font-semibold text-white shadow-sm hover:bg-[#0d2340]">Sign Up</Link>
             </div>
           )}
         </nav>
