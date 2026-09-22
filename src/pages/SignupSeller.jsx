@@ -2,6 +2,8 @@ import { useState } from 'react';
 import * as authApi from '../api/authApi';
 import { useNavigate } from 'react-router-dom';
 import BackButton from '../components/BackButton';
+import ProfilePhotoPicker from '../components/ProfilePhotoPicker';
+import PhoneInput from '../components/PhoneInput';
 import { getInitials, saveProfileData } from '../utils/profileStorage';
 
 export default function SignupSeller() {
@@ -15,14 +17,6 @@ export default function SignupSeller() {
     initials: '',
     profilePhoto: '',
   });
-
-  const handleProfilePhoto = (event) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => setForm((current) => ({ ...current, profilePhoto: String(reader.result || '') }));
-    reader.readAsDataURL(file);
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -66,12 +60,9 @@ export default function SignupSeller() {
         <input className="w-full border p-2 mb-3 rounded focus:outline-none focus:ring-2 focus:ring-black" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="Email" type="email" />
         <input className="w-full border p-2 mb-3 rounded focus:outline-none focus:ring-2 focus:ring-black" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="Password" type="password" />
         <input className="w-full border p-2 mb-3 rounded focus:outline-none focus:ring-2 focus:ring-black" value={form.shop_name} onChange={(e) => setForm({ ...form, shop_name: e.target.value })} placeholder="Shop Name" />
-        <input className="w-full border p-2 mb-3 rounded focus:outline-none focus:ring-2 focus:ring-black" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="Phone" />
+        <PhoneInput value={form.phone} onChange={(phone) => setForm((current) => ({ ...current, phone }))} />
         <input className="w-full border p-2 mb-3 rounded focus:outline-none focus:ring-2 focus:ring-black" value={form.initials} onChange={(e) => setForm({ ...form, initials: e.target.value })} placeholder="Initials (optional)" maxLength={2} />
-        <label className="block text-sm font-medium text-slate-700">Profile photo (optional)
-          <input type="file" accept="image/*" onChange={handleProfilePhoto} className="mt-2 block w-full text-sm text-slate-600" />
-        </label>
-        {form.profilePhoto && <img src={form.profilePhoto} alt="Preview" className="mt-2 h-20 w-20 rounded-full object-cover border" />}
+        <ProfilePhotoPicker value={form.profilePhoto} onChange={(profilePhoto) => setForm((current) => ({ ...current, profilePhoto }))} />
         <button className="w-full bg-black text-white p-2 rounded">Sign Up</button>
       </form>
     </div>

@@ -2,6 +2,8 @@ import { useState } from 'react';
 import * as authApi from '../api/authApi';
 import { useNavigate } from 'react-router-dom';
 import BackButton from '../components/BackButton';
+import ProfilePhotoPicker from '../components/ProfilePhotoPicker';
+import PhoneInput from '../components/PhoneInput';
 import { getInitials, saveProfileData } from '../utils/profileStorage';
 
 export default function SignupCourier() {
@@ -15,14 +17,6 @@ export default function SignupCourier() {
     initials: '',
     profilePhoto: '',
   });
-
-  const handleProfilePhoto = (event) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => setForm((current) => ({ ...current, profilePhoto: String(reader.result || '') }));
-    reader.readAsDataURL(file);
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -66,13 +60,10 @@ export default function SignupCourier() {
         <input className="w-full border p-2 mb-3 rounded focus:outline-none focus:ring-2 focus:ring-black" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Full name" />
         <input className="w-full border p-2 mb-3 rounded focus:outline-none focus:ring-2 focus:ring-black" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="Email" type="email" />
         <input className="w-full border p-2 mb-3 rounded focus:outline-none focus:ring-2 focus:ring-black" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="Password" type="password" />
-        <input className="w-full border p-2 mb-3 rounded focus:outline-none focus:ring-2 focus:ring-black" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="Phone" />
+        <PhoneInput value={form.phone} onChange={(phone) => setForm((current) => ({ ...current, phone }))} />
         <input className="w-full border p-2 mb-3 rounded focus:outline-none focus:ring-2 focus:ring-black" value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} placeholder="Base city (e.g., Lusaka)" />
         <input className="w-full border p-2 mb-3 rounded focus:outline-none focus:ring-2 focus:ring-black" value={form.initials} onChange={(e) => setForm({ ...form, initials: e.target.value })} placeholder="Initials (optional)" maxLength={2} />
-        <label className="block text-sm font-medium text-slate-700">Profile photo (optional)
-          <input type="file" accept="image/*" onChange={handleProfilePhoto} className="mt-2 block w-full text-sm text-slate-600" />
-        </label>
-        {form.profilePhoto && <img src={form.profilePhoto} alt="Preview" className="mt-2 h-20 w-20 rounded-full object-cover border" />}
+        <ProfilePhotoPicker value={form.profilePhoto} onChange={(profilePhoto) => setForm((current) => ({ ...current, profilePhoto }))} />
         <button className="w-full bg-black text-white p-2 rounded">Sign Up</button>
       </form>
       <p className="mt-5 text-center text-sm text-slate-600">Already have an account? <button type="button" onClick={() => navigate('/login', { state: { signupEmail: form.email } })} className="font-semibold text-indigo-600">Log in instead</button></p>
