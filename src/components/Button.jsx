@@ -9,7 +9,7 @@ const Button = ({
   type = 'button',
   className = '',
 }) => {
-  const baseClasses = 'font-semibold transition-colors duration-200 rounded cursor-pointer';
+  const baseClasses = 'zamglam-button font-semibold transition-all duration-200 rounded-[10px] cursor-pointer';
   
   const variantClasses = {
     primary: 'bg-blue-500 text-white hover:bg-blue-600 disabled:bg-blue-300',
