@@ -22,6 +22,11 @@ export function isSafeReturnPath(path, role) {
 
 export function getPostLoginPath(user, from, cartCount = 0) {
   const returnPath = pathFromLocationState(from);
+
+  if (user?.role === 'seller') return '/seller/dashboard';
+  if (user?.role === 'courier') return '/courier/dashboard';
+  if (user?.role === 'admin') return '/admin/dashboard';
+
   if (isSafeReturnPath(returnPath, user?.role)) return returnPath;
   if (user?.role === 'customer' && Number(cartCount) > 0) return '/cart';
   return dashboardForRole(user?.role);

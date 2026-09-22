@@ -8,6 +8,7 @@ import SellerOrderIcon from './SellerOrderIcon';
 import AdminApprovalsIcon from './AdminApprovalsIcon';
 import { getStorefrontPath } from '../utils/storeLogos';
 import { themeForRole } from '../utils/roleTheme';
+import { resolveUserMeta } from '../utils/profileStorage';
 
 const Header = () => {
   const { user } = useAuth();
@@ -17,6 +18,7 @@ const Header = () => {
   // Signed-in visitors get their role's colour bar (matching their login page and
   // dashboard); signed-out browsing stays neutral white.
   const theme = themeForRole(user?.role);
+  const profileMeta = user ? resolveUserMeta(user) : { initials: 'U', profilePhoto: '' };
   const themed = Boolean(user);
   const shellClass = themed ? `${theme.bar} border-b border-black/10` : 'border-b border-slate-200 bg-white';
   const brandClass = themed ? 'text-white hover:text-white/80' : 'text-slate-900 hover:text-indigo-600';
@@ -58,7 +60,20 @@ const Header = () => {
       >
         {menuOpen ? '✕' : '☰'}
       </button>
-      <Link to="/" className={`text-xl font-bold tracking-tight transition sm:text-2xl ${brandClass}`}>Zamglam</Link>
+      <Link to="/" aria-label="Zamglam home" className={`inline-flex items-center gap-1 text-xl font-extrabold tracking-tight transition sm:text-2xl ${brandClass}`}>
+        <span className="zamglam-bag inline-flex h-8 w-9 items-center justify-center" aria-hidden="true">
+          <svg viewBox="0 0 36 30" className="h-8 w-9" fill="none" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 10h12l-.7 14H3.7z" fill="#ffb3bd" stroke="#d92d3f" strokeWidth="1.4" />
+            <path d="M6.5 10V7.8a2.5 2.5 0 0 1 5 0V10" stroke="#d92d3f" strokeWidth="1.4" />
+            <path d="M20 8h13l-.7 16H20.7z" fill="#f56b79" stroke="#d92d3f" strokeWidth="1.5" />
+            <path d="M23.5 8V5.8a3 3 0 0 1 6 0V8" stroke="#d92d3f" strokeWidth="1.5" />
+            <path d="M12 12h14l-.8 16H12.8z" fill="#d92d3f" stroke="#a7192e" strokeWidth="1.5" />
+            <path d="M15.5 12V9.5a3.5 3.5 0 0 1 7 0V12" stroke="#a7192e" strokeWidth="1.5" />
+            <path d="m16 18 5 4m0-4-5 4" stroke="white" strokeWidth="1.5" />
+          </svg>
+        </span>
+        <span>Zamglam</span>
+      </Link>
       {themed && <span className="hidden rounded-full bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-white sm:inline">{theme.label}</span>}
       <nav className={`hidden gap-8 text-sm font-semibold lg:flex ${navClass}`}>
         {/* No Home item: the Zamglam wordmark is the way back to the home page. */}
@@ -72,17 +87,29 @@ const Header = () => {
 
         {user ? (
           <div className="flex items-center gap-3">
-            <Link to="/account" className={`inline-flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold transition hover:opacity-90 ${theme.avatar}`} title="View profile">
-              {user.name?.charAt(0)?.toUpperCase() || 'U'}
+            <Link to="/account" className={`inline-flex h-10 w-10 items-center justify-center overflow-hidden rounded-full text-sm font-bold transition hover:opacity-90 ${theme.avatar}`} title="View profile">
+              {profileMeta.profilePhoto ? (
+                <img src={profileMeta.profilePhoto} alt={user.name || 'Profile'} className="h-full w-full object-cover" />
+              ) : (
+                <span>{profileMeta.initials}</span>
+              )}
             </Link>
             <span className="hidden text-sm font-semibold text-white sm:inline">{user.name}</span>
           </div>
         ) : (
-          <div className="flex gap-2">
-            <Link to="/login" state={{ from: location }}>
-              Login
+          <div className="flex items-center gap-2">
+            <Link
+              to="/login"
+              state={{ from: location }}
+              className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-indigo-300 hover:text-indigo-600"
+            >
+              Log In
             </Link>
-            <Link to="/signup" state={{ from: location }}>
+            <Link
+              to="/signup"
+              state={{ from: location }}
+              className="inline-flex items-center justify-center rounded-lg bg-stone-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-stone-800"
+            >
               Sign Up
             </Link>
           </div>
@@ -106,8 +133,8 @@ const Header = () => {
           ))}
           {!user && (
             <div className="mt-3 flex gap-2">
-              <Link to="/login" state={{ from: location }} onClick={closeMenu} className="flex-1 rounded-lg border border-slate-300 px-4 py-3 text-center font-semibold text-slate-700">Login</Link>
-              <Link to="/signup" state={{ from: location }} onClick={closeMenu} className="flex-1 rounded-lg bg-indigo-600 px-4 py-3 text-center font-semibold text-white">Sign Up</Link>
+              <Link to="/login" state={{ from: location }} onClick={closeMenu} className="flex-1 rounded-lg border border-slate-300 bg-white px-4 py-3 text-center font-semibold text-slate-700 shadow-sm">Log In</Link>
+              <Link to="/signup" state={{ from: location }} onClick={closeMenu} className="flex-1 rounded-lg bg-stone-700 px-4 py-3 text-center font-semibold text-white shadow-sm hover:bg-stone-800">Sign Up</Link>
             </div>
           )}
         </nav>

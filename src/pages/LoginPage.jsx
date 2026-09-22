@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
+import BackButton from '../components/BackButton';
 import { dashboardForRole, getPostLoginPath } from '../utils/authRedirect';
 import { ROLE_THEMES } from '../utils/roleTheme';
 
@@ -68,6 +69,9 @@ function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-500 via-purple-600 to-indigo-800 p-4">
       <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden">
+        <div className="px-4 pt-4">
+          <BackButton to="/" label="Home" />
+        </div>
         <div className={`px-8 py-6 text-center ${roleStyles[role].header}`}>
           <h1 className="text-2xl font-bold text-white">{role === 'admin' ? 'Admin portal' : 'Welcome back'}</h1>
           <p className="text-indigo-100 mt-2">

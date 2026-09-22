@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import * as authApi from '../api/authApi';
 import { useNavigate } from 'react-router-dom';
+import BackButton from '../components/BackButton';
+import { getInitials, saveProfileData } from '../utils/profileStorage';
 
 export default function SignupCourier() {
   const navigate = useNavigate();
@@ -10,7 +12,17 @@ export default function SignupCourier() {
     password: '',
     phone: '',
     location: '',
+    initials: '',
+    profilePhoto: '',
   });
+
+  const handleProfilePhoto = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => setForm((current) => ({ ...current, profilePhoto: String(reader.result || '') }));
+    reader.readAsDataURL(file);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -18,6 +30,11 @@ export default function SignupCourier() {
       await authApi.register(form.name, form.email, form.password, 'courier', {
         phone: form.phone,
         location: form.location,
+      });
+      saveProfileData({
+        email: form.email,
+        initials: form.initials || getInitials(form.name),
+        profilePhoto: form.profilePhoto,
       });
       navigate('/login');
     } catch (error) {
@@ -40,6 +57,9 @@ export default function SignupCourier() {
 
   return (
     <div className="max-w-xl mx-auto p-6">
+      <div className="mb-4">
+        <BackButton to="/signup" label="Back" />
+      </div>
       <h1 className="text-2xl font-bold mb-2">Create courier account</h1>
       <p className="mb-6 text-sm text-slate-600">Deliver parcels for Zamglam shops. Parcels are assigned to you at checkout, and you confirm each delivery.</p>
       <form onSubmit={handleSubmit} className="space-y-3">
@@ -48,6 +68,11 @@ export default function SignupCourier() {
         <input className="w-full border p-2 mb-3 rounded focus:outline-none focus:ring-2 focus:ring-black" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="Password" type="password" />
         <input className="w-full border p-2 mb-3 rounded focus:outline-none focus:ring-2 focus:ring-black" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="Phone" />
         <input className="w-full border p-2 mb-3 rounded focus:outline-none focus:ring-2 focus:ring-black" value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} placeholder="Base city (e.g., Lusaka)" />
+        <input className="w-full border p-2 mb-3 rounded focus:outline-none focus:ring-2 focus:ring-black" value={form.initials} onChange={(e) => setForm({ ...form, initials: e.target.value })} placeholder="Initials (optional)" maxLength={2} />
+        <label className="block text-sm font-medium text-slate-700">Profile photo (optional)
+          <input type="file" accept="image/*" onChange={handleProfilePhoto} className="mt-2 block w-full text-sm text-slate-600" />
+        </label>
+        {form.profilePhoto && <img src={form.profilePhoto} alt="Preview" className="mt-2 h-20 w-20 rounded-full object-cover border" />}
         <button className="w-full bg-black text-white p-2 rounded">Sign Up</button>
       </form>
       <p className="mt-5 text-center text-sm text-slate-600">Already have an account? <button type="button" onClick={() => navigate('/login', { state: { signupEmail: form.email } })} className="font-semibold text-indigo-600">Log in instead</button></p>

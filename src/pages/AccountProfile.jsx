@@ -5,6 +5,7 @@ import { getMyOrders } from '../api/orderApi';
 import { isLocalDemoSession } from '../utils/localSession';
 import { dashboardForRole } from '../utils/authRedirect';
 import CourierShiftToggle from '../components/CourierShiftToggle';
+import { resolveUserMeta } from '../utils/profileStorage';
 
 export default function AccountProfile() {
   const { user, logout } = useAuth();
@@ -26,13 +27,8 @@ export default function AccountProfile() {
     return <Navigate to="/login" replace />;
   }
 
-  const initials = user.name
-    ?.split(' ')
-    .map((part) => part[0])
-    .join('')
-    .slice(0, 2)
-    .toUpperCase() || 'U';
-
+  const profileMeta = resolveUserMeta(user);
+  const initials = profileMeta.initials || 'U';
   const location = user.location || user.address || 'Lusaka, Zambia';
 
   return (
@@ -40,8 +36,12 @@ export default function AccountProfile() {
       <div className="overflow-hidden rounded-2xl bg-white shadow-xl ring-1 ring-slate-200">
         <div className="bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-8 text-white sm:px-8">
           <div className="flex items-center gap-4">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white/20 text-xl font-bold text-white shadow-lg">
-              {initials}
+            <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full bg-white/20 text-xl font-bold text-white shadow-lg">
+              {profileMeta.profilePhoto ? (
+                <img src={profileMeta.profilePhoto} alt={user.name || 'Profile'} className="h-full w-full object-cover" />
+              ) : (
+                <span>{initials}</span>
+              )}
             </div>
             <div>
               <p className="text-xs uppercase tracking-[0.2em] text-indigo-100">Account profile</p>
