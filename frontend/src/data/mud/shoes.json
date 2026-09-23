@@ -1,0 +1,4 @@
+[
+  { "id": 433, "name": "Mud Leather Shoes", "price": 620, "stock": 5, "category": "shoes", "image_url": "/images/products/mud-shoes.jpg", "store_name": "Mud" },
+  { "id": 434, "name": "Mud Canvas Shoes", "price": 480, "stock": 3, "category": "shoes", "image_url": "/images/products/mud-shoes.jpg", "store_name": "Mud" }
+]

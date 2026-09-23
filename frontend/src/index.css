@@ -1,0 +1,78 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
+
+:root {
+  font-family: 'Manrope', 'Segoe UI', 'Arial', sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  color: #1f2937;
+  background: #f8fafc;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  font-family: 'Manrope', 'Segoe UI', 'Arial', sans-serif;
+  letter-spacing: -0.01em;
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+  color: #1f2937;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+button, a { transition: all 180ms ease; }
+
+.zamglam-button {
+  box-shadow: 0 2px 0 rgb(28 25 23 / 12%), 0 7px 16px rgb(28 25 23 / 10%);
+}
+
+.zamglam-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 0 rgb(28 25 23 / 14%), 0 10px 20px rgb(28 25 23 / 14%);
+}
+
+.zamglam-button:active:not(:disabled) {
+  transform: translateY(1px);
+  box-shadow: 0 1px 0 rgb(28 25 23 / 12%), 0 3px 8px rgb(28 25 23 / 10%);
+}
+
+.zamglam-button:focus-visible {
+  outline: 2px solid #64748b;
+  outline-offset: 2px;
+}
+
+.zamglam-bag {
+  transform-origin: 82% 8%;
+  animation: zamglam-bag-swing 3.2s ease-in-out infinite;
+}
+
+@keyframes zamglam-bag-swing {
+  0%, 100% { transform: rotate(0deg) translateY(0); }
+  25% { transform: rotate(-6deg) translateY(1px); }
+  50% { transform: rotate(-1deg) translateY(0); }
+  75% { transform: rotate(4deg) translateY(1px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .zamglam-bag { animation: none; }
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+input,
+select,
+button,
+textarea {
+  font: inherit;
+}
