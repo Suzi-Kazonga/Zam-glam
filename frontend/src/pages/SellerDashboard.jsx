@@ -31,9 +31,8 @@ export default function SellerDashboard() {
   const [products, setProducts] = useState([]);
   const [orders, setOrders] = useState([]);
   const [reviews, setReviews] = useState([]);
-  const [message, setMessage] = useState('');
+  const [, setMessage] = useState('');
   const [confirmDelete, setConfirmDelete] = useState(null);
-  const [savedProduct, setSavedProduct] = useState(null);
   const [orderFilter, setOrderFilter] = useState('action');
   const [replyDrafts, setReplyDrafts] = useState({});
   const [storefront, setStorefront] = useState('/products');
@@ -235,19 +234,6 @@ export default function SellerDashboard() {
               <div className="mt-4 flex justify-end">
                 <button type="button" onClick={editor.openCreate} className="rounded-lg bg-purple-700 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-800">Add product</button>
               </div>
-              {savedProduct && (
-                <div className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 p-4">
-                  <p className="text-sm font-semibold text-emerald-800">Listed as customers will see it</p>
-                  <div className="mt-3 flex items-center gap-3">
-                    <img src={savedProduct.image_url} alt="" className="h-16 w-14 rounded object-cover" />
-                    <div>
-                      <p className="font-semibold">{savedProduct.name}</p>
-                      <p className="text-sm text-slate-600">K{Number(savedProduct.price).toFixed(2)} · {savedProduct.stock} in stock</p>
-                      <Link to={storefront} className="text-sm font-semibold text-purple-700">View on storefront</Link>
-                    </div>
-                  </div>
-                </div>
-              )}
               <div className="mt-4 overflow-x-auto">
                 <table className="w-full min-w-[680px] text-left text-sm">
                   <thead className="border-b border-slate-100 text-slate-400">

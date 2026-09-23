@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import apiClient from '../api/axios';
 import DashboardCard from '../components/DashboardCard';
 import ProductCard from '../components/ProductCard';
-import TrackingTimeline from '../components/TrackingTimeline';
 
 import Sidebar from '../components/Sidebar';
 import Topbar from '../components/Topbar';
@@ -17,21 +16,31 @@ import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { getMyOrders } from '../api/orderApi';
 
-import { mergeShopProducts } from '../utils/shopCatalog';
 
 const sections = ['Overview', 'Orders', 'Cart', 'Profile', 'Wishlist'];
 const fallbackStores = [{ name: 'Mud', file: 'mud' }, { name: 'Jets', file: 'jets' }, { name: 'Bata', file: 'bata' }, { name: 'Pep', file: 'pep' }, { name: 'Mr Price Zambia', file: 'mrprice' }, { name: 'Fashions Galore', file: 'fashionsgalore' }].map((store, id) => ({ id: id + 1, name: store.name, logo_url: `/images/logos/${store.file}.png` }));
 
 export default function CustomerDashboard() {
   const { user } = useAuth();
-  const { getTotalItems, getTotalPrice } = useCart();
-  const navigate = useNavigate();
+  const { cart, getTotalItems, getTotalPrice } = useCart();
+  const listingStorageKey = `zamglam_customer_listings_${user?.id || user?.email || 'guest'}`;
   const [active, setActive] = useState('Overview');
   const [query, setQuery] = useState('');
   const [orders, setOrders] = useState([]);
   const [products, setProducts] = useState([]);
   const [stores, setStores] = useState(fallbackStores);
   const [storeSearch, setStoreSearch] = useState('');
+  const [showPostForm, setShowPostForm] = useState(false);
+  const [listingError, setListingError] = useState('');
+  const [listing, setListing] = useState({ name: '', description: '', price: '', category: '', image: '' });
+  const [customerListings, setCustomerListings] = useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(listingStorageKey) || '[]');
+      return Array.isArray(saved) ? saved : [];
+    } catch {
+      return [];
+    }
+  });
   const [profile, setProfile] = useState({ name: user?.name || '', email: user?.email || '', address: '', phone: user?.phone || '' });
   const [wishlist] = useState(() => {
     try {
@@ -65,8 +74,35 @@ export default function CustomerDashboard() {
   const filteredProducts = useMemo(() => products.filter((product) => `${product.name} ${product.description || ''}`.toLowerCase().includes(storeSearch.toLowerCase())).slice(0, 8), [products, storeSearch]);
   const filteredStores = useMemo(() => stores.filter((store) => `${store.name}`.toLowerCase().includes(storeSearch.toLowerCase())), [stores, storeSearch]);
 
+  const updateListing = (event) => setListing({ ...listing, [event.target.name]: event.target.value });
+  const handleListingImage = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => setListing((current) => ({ ...current, image: reader.result }));
+    reader.readAsDataURL(file);
+  };
+  const handleListingSubmit = (event) => {
+    event.preventDefault();
+    if (!listing.image) {
+      setListingError('Please choose an image for your item.');
+      return;
+    }
+    const nextListing = { ...listing, id: `customer-${Date.now()}`, price: Number(listing.price), owner: user?.name || 'You' };
+    const nextListings = [nextListing, ...customerListings];
+    setCustomerListings(nextListings);
+    localStorage.setItem(listingStorageKey, JSON.stringify(nextListings));
+    setListing({ name: '', description: '', price: '', category: '', image: '' });
+    setListingError('');
+    setShowPostForm(false);
+  };
+
   return <div className="flex min-h-screen bg-gray-50"><Sidebar items={sections} active={active} onSelect={setActive} role="customer" /><div className="min-w-0 flex-1"><Topbar onSearch={setQuery} /><SuspendedNotice /><main className="mx-auto max-w-7xl space-y-6 p-4 pb-28 sm:p-6 sm:pb-28 lg:p-8 lg:pb-8">
-    <div><p className="text-sm font-semibold uppercase tracking-widest text-indigo-600">Customer space</p><h1 className="mt-2 text-3xl font-bold text-slate-900">Good to see you, {user?.name?.split(' ')[0] || 'there'}</h1><p className="mt-1 text-slate-500">Keep an eye on your orders and your next favorite find.</p></div>
+    <div className="flex flex-wrap items-end justify-between gap-4"><div><p className="text-sm font-semibold uppercase tracking-widest text-indigo-600">Customer space</p><h1 className="mt-2 text-3xl font-bold text-slate-900">Good to see you, {user?.name?.split(' ')[0] || 'there'}</h1><p className="mt-1 text-slate-500">Keep an eye on your orders and your next favorite find.</p></div><button type="button" onClick={() => setShowPostForm((visible) => !visible)} className="rounded-lg bg-indigo-600 px-5 py-3 font-semibold text-white shadow-sm transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2">{showPostForm ? 'Close form' : 'Post item'}</button></div>
+
+    {showPostForm && <section className="rounded-xl border border-indigo-100 bg-white p-5 shadow-sm" aria-labelledby="post-item-heading"><h2 id="post-item-heading" className="text-xl font-bold text-slate-900">Post clothes for sale</h2><p className="mt-1 text-sm text-slate-500">Your listing is saved to this account and appears below.</p><form onSubmit={handleListingSubmit} className="mt-5 grid gap-4 sm:grid-cols-2"><label className="text-sm font-medium text-slate-700">Item name<input required name="name" value={listing.name} onChange={updateListing} className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2" /></label><label className="text-sm font-medium text-slate-700">Price (K)<input required min="0" step="0.01" type="number" name="price" value={listing.price} onChange={updateListing} className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2" /></label><label className="text-sm font-medium text-slate-700">Category<input required name="category" value={listing.category} onChange={updateListing} placeholder="Dresses, shoes..." className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2" /></label><label className="text-sm font-medium text-slate-700">Image<input required accept="image/*" type="file" onChange={handleListingImage} className="mt-1 block w-full text-sm" /></label><label className="text-sm font-medium text-slate-700 sm:col-span-2">Description<textarea required name="description" value={listing.description} onChange={updateListing} rows="3" className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2" /></label>{listingError && <p className="text-sm font-semibold text-red-600 sm:col-span-2" role="alert">{listingError}</p>}<button type="submit" className="rounded-lg bg-slate-900 px-5 py-3 font-semibold text-white hover:bg-slate-700 sm:col-span-2">Publish item</button></form></section>}
+
+    {customerListings.length > 0 && <section><h2 className="text-2xl font-bold text-slate-900">Your posted items</h2><div className="mt-4 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">{customerListings.map((item) => <article key={item.id} className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm"><img src={item.image} alt={item.name} className="h-48 w-full object-cover" /><div className="p-4"><p className="text-xs font-semibold uppercase tracking-wide text-indigo-600">{item.category}</p><h3 className="mt-1 font-bold text-slate-900">{item.name}</h3><p className="mt-2 line-clamp-2 text-sm text-slate-500">{item.description}</p><p className="mt-3 font-bold text-indigo-700">K{Number(item.price).toFixed(2)}</p></div></article>)}</div></section>}
 
     {active === 'Overview' && (
       <div className="space-y-6">

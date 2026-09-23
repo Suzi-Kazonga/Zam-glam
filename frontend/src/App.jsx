@@ -27,6 +27,7 @@ import Contact from './pages/Contact';
 import Policies from './pages/Policies';
 import AccountProfile from './pages/AccountProfile';
 import OrderTrack from './pages/OrderTrack';
+import BackButton from './components/BackButton';
 
 function MainLayout() {
   return <div className="min-h-screen flex flex-col bg-slate-50"><Header /><SuspendedNotice /><main className="flex-1"><Outlet /></main><Footer /></div>;
@@ -77,6 +78,7 @@ function App() {
     <AppErrorBoundary><Router>
       <AuthProvider>
         <CartProvider>
+          <BackButton />
           <Routes>
             <Route element={<MainLayout />}>
               <Route path="/" element={<Home />} />

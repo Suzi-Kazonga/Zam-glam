@@ -35,7 +35,7 @@ function SellerProducts({ products, onAdd, onEdit, storefront }) {
         <div>
           <p className="text-sm font-semibold uppercase tracking-widest text-purple-700">Your catalogue</p>
           <h2 className="mt-2 text-3xl font-bold text-slate-900">Your products</h2>
-          <p className="mt-1 text-slate-500">Only your shop's items appear here.</p>
+          <p className="mt-1 text-slate-500">Only your shop&apos;s items appear here.</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <button type="button" onClick={onAdd} className="rounded-lg bg-purple-700 px-4 py-2 font-semibold text-white hover:bg-purple-800">Add product</button>

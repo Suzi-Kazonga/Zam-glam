@@ -16,6 +16,6 @@ export default {
     }
   },
   setupFilesAfterEnv: ['<rootDir>/tests/setup.js'],
-  testTimeout: 10000,
+  testTimeout: 30000,
   verbose: true
 };

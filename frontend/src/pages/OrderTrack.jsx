@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import CourierInfo from '../components/CourierInfo';
 import TrackingTimeline from '../components/TrackingTimeline';
 import { useAuth } from '../context/AuthContext';
-import { getOrder, updateOrderStatus } from '../api/orderApi';
+import { getOrder } from '../api/orderApi';
 import { isLocalDemoSession, LOCAL_DEMO_ORDER_MESSAGE } from '../utils/localSession';
 import SellerRatingForm from '../components/SellerRatingForm';
 import ReportPartyForm from '../components/ReportPartyForm';

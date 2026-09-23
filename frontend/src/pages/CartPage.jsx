@@ -128,7 +128,7 @@ export default function CartPage() {
   if (!canShop(user)) {
     return (
       <section className="mx-auto max-w-3xl px-6 py-20 text-center">
-        <h1 className="text-3xl font-bold text-slate-900">Couriers don't shop here</h1>
+        <h1 className="text-3xl font-bold text-slate-900">Couriers don&apos;t shop here</h1>
         <p className="mt-3 text-slate-500">{NO_SHOPPING_MESSAGE}</p>
         <div className="mt-6 flex flex-wrap justify-center gap-3">
           <Link to="/products" className="rounded-lg bg-emerald-700 px-6 py-3 font-semibold text-white hover:bg-emerald-800">Browse the catalogue</Link>
