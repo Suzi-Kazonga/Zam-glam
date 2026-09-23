@@ -1,0 +1,4 @@
+[
+  { "id": 401, "name": "Pep Graphic Tee", "price": 180, "stock": 12, "category": "clothes", "image_url": "/images/products/pep-graphictee.jpg", "store_name": "Pep" },
+  { "id": 402, "name": "Pep Everyday Chinos", "price": 320, "stock": 8, "category": "clothes", "image_url": "/images/products/pep-kidspants.jpg", "store_name": "Pep" }
+]

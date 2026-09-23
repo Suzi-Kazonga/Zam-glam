@@ -1,0 +1,4 @@
+[
+  { "id": 431, "name": "Mud Denim Shirt", "price": 380, "stock": 8, "category": "clothes", "image_url": "/images/products/mud-shirt.jpg", "store_name": "Mud" },
+  { "id": 432, "name": "Mud Denim Jeans", "price": 550, "stock": 4, "category": "clothes", "image_url": "/images/products/mud-denim.jpg", "store_name": "Mud" }
+]

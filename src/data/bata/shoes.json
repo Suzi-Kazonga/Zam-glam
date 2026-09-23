@@ -1,0 +1,4 @@
+[
+  { "id": 423, "name": "Bata School Shoes", "price": 450, "stock": 6, "category": "shoes", "image_url": "/images/products/bata-schoolshoes.jpg", "store_name": "Bata" },
+  { "id": 424, "name": "Bata Weekend Trainers", "price": 520, "stock": 2, "category": "shoes", "image_url": "/images/products/bata-schoolshoes.jpg", "store_name": "Bata" }
+]

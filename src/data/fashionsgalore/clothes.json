@@ -1,0 +1,4 @@
+[
+  { "id": 451, "name": "Fashions Galore Silk Shirt", "price": 620, "stock": 5, "category": "clothes", "image_url": "/images/products/fg-silkshirt.jpg", "store_name": "Fashions Galore" },
+  { "id": 452, "name": "Fashions Galore Designer Pants", "price": 780, "stock": 4, "category": "clothes", "image_url": "/images/products/fg-designerpants.jpg", "store_name": "Fashions Galore" }
+]
