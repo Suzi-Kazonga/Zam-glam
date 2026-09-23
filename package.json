@@ -1,0 +1,18 @@
+{
+  "name": "zamglam",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Zamglam - multi-vendor e-commerce platform for Zambian clothing and footwear retailers, with an integrated courier service. This root package exists so the whole stack can be started from the project root; the real packages are backend/ and frontend/.",
+  "scripts": {
+    "dev": "concurrently -n backend,frontend -c blue,magenta \"cd backend && npm run dev\" \"cd frontend && npm run dev\"",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install",
+    "seed": "cd backend && npm run seed",
+    "build": "cd frontend && npm run build",
+    "test": "cd backend && npm test"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  }
+}
