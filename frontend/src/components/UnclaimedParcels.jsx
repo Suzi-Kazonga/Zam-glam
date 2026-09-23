@@ -1,3 +1,6 @@
+// Parcels shops have released that no courier has collected, and how long they have been
+// waiting — a long wait means a shop releasing too early, or nobody on duty.
+
 import { useEffect, useState } from 'react';
 import { getUnclaimedParcels } from '../api/orderApi';
 import { isLocalDemoSession } from '../utils/localSession';

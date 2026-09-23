@@ -1,3 +1,7 @@
+// Waits until typing stops before acting on it.
+//
+// Used by search, so a list is not refiltered on every single keystroke.
+
 import { useState, useEffect } from 'react';
 
 // Debounce hook for search and filtering

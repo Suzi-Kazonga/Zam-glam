@@ -1,3 +1,5 @@
+// The rider’s header badge: how many parcels are waiting to be collected.
+
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getAvailableParcels } from '../api/orderApi';

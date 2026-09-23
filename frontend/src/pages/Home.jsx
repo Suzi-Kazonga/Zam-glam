@@ -1,3 +1,6 @@
+// The front page. What it shows depends on who is looking: shops see their own storefront
+// and stock, riders see the parcels waiting, and everybody else sees the catalogue.
+
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import HeroBanner from '../components/HeroBanner';

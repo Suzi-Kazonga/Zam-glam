@@ -75,7 +75,8 @@ export async function profileIdFor(role, email) {
 }
 
 async function registerAndSignIn(payload) {
-  const registered = await api().post('/api/auth/register').send(payload);
+  // accepted_terms is sent unless a test sets it, as the sign-up forms always do.
+  const registered = await api().post('/api/auth/register').send({ accepted_terms: true, ...payload });
   if (registered.status !== 201) {
     throw new Error(`Could not register ${payload.role}: ${registered.status} ${JSON.stringify(registered.body)}`);
   }

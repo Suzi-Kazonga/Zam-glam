@@ -1,3 +1,5 @@
+// A rider’s on-duty switch. Only riders on duty are shown parcels to collect.
+
 import { useEffect, useState } from 'react';
 import { getShift, setShift } from '../api/orderApi';
 import { isLocalDemoSession } from '../utils/localSession';

@@ -1,3 +1,5 @@
+// The administrator’s verification queue: each shop’s paperwork, and the decision.
+
 import { useEffect, useState } from 'react';
 import { getSellersForReview, reviewSeller } from '../api/storeApi';
 import { isLocalDemoSession } from '../utils/localSession';

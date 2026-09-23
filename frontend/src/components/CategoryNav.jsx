@@ -1,3 +1,5 @@
+// The row of category links across the top of the catalogue.
+
 import { Link } from 'react-router-dom';
 
 export default function CategoryNav() {

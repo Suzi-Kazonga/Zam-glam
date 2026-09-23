@@ -1,3 +1,11 @@
+// Fills an empty database with something to look at: six shops with their storefronts
+// and stock, three couriers, an administrator and a customer.
+//
+// Safe to run more than once. Every step checks whether the thing already exists, so
+// seeding again never duplicates a shop or overwrites an account somebody has been using.
+//
+// Run with: npm run seed
+
 import { pool, initializeDatabase } from './config/db.js';
 import User from './models/User.js';
 import Store from './models/Store.js';

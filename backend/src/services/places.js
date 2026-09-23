@@ -37,6 +37,11 @@ const PLACES = [
 // Default when nothing matches: central Lusaka, where most of the marketplace operates.
 export const DEFAULT_PLACE = { lat: -15.3875, lng: 28.3228, name: 'Lusaka' };
 
+// Find a typed address on the map.
+//
+// Matched on any part of the text, so "Plot 42, Kabulonga, Lusaka" finds Kabulonga. The
+// answer says whether anything actually matched, so a caller can tell a real position
+// from the fallback.
 export function locate(text) {
   const normalized = String(text || '').toLowerCase();
   if (!normalized.trim()) return { ...DEFAULT_PLACE, matched: false };

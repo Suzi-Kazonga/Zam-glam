@@ -1,3 +1,5 @@
+// The whole catalogue, with filters and search.
+
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import ProductCard from '../components/ProductCard';

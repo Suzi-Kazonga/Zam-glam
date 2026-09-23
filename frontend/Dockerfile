@@ -1,3 +1,8 @@
+# Builds the React bundle, then serves the static files with nginx.
+#
+# The API is reached through a relative /api, proxied by nginx (see nginx.conf) — never
+# an absolute http://localhost:5000, which on a phone would mean the phone itself.
+
 # Build stage
 FROM node:18-alpine AS builder
 
@@ -17,8 +22,6 @@ COPY frontend/vite.config.js ./
 COPY frontend/tailwind.config.js ./
 COPY frontend/postcss.config.js ./
 COPY frontend/.babelrc ./
-COPY frontend/cypress ./cypress
-COPY frontend/cypress.config.js ./
 
 # Build application
 RUN npm run build

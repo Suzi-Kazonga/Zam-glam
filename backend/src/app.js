@@ -1,3 +1,9 @@
+// Builds the Express application: middleware, then routes, then error handling.
+//
+// Deliberately contains nothing that starts anything. server.js listens with this app,
+// and the tests drive the very same object, so what they check is the real application
+// rather than a copy of its rules.
+
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -30,7 +36,11 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // limiter would count every visitor as the proxy and lock everyone out together.
 app.set('trust proxy', 1);
 app.use(helmet());
-app.use(cors());
+// Any origin by default, which is what the phone-on-the-same-Wi-Fi setup needs. A
+// deployment can pin it: CORS_ORIGIN accepts one origin or a comma-separated list.
+// docker-compose.yml sets this, and it used to have no effect at all.
+const allowedOrigins = (process.env.CORS_ORIGIN || '').split(',').map((o) => o.trim()).filter(Boolean);
+app.use(cors(allowedOrigins.length ? { origin: allowedOrigins, credentials: true } : undefined));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 if (process.env.NODE_ENV !== 'test') app.use(morgan('dev'));

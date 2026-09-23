@@ -1,3 +1,9 @@
+// The basket, and checkout.
+//
+// Before anything is ordered the basket is priced by the server, which splits it into one
+// parcel per shop and charges delivery for each — so the shopper sees the real total, and
+// why it is made up that way, before committing to it.
+
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';

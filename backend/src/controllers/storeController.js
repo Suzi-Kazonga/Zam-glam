@@ -1,3 +1,8 @@
+// Storefronts, and the verification that decides whether a shop carries a badge.
+//
+// A shop is two things: the SELLER account that signs in, and the STORE page shoppers
+// visit. Most of these handlers turn the signed-in seller into their one store.
+
 import Store from '../models/Store.js';
 import Document from '../models/Document.js';
 import Seller, { VERIFICATION_STATUSES } from '../models/Seller.js';
@@ -20,7 +25,10 @@ export const getMyStore = async (req, res) => {
   }
 };
 
-// Create store
+// A shop opens its storefront.
+//
+// The location is not decoration: it is where a courier collects from, and every delivery
+// from this shop is priced on the distance between it and the customer.
 export const createStore = async (req, res) => {
   try {
     const { name, description, logo_url, location, open_hours } = req.body;
@@ -52,7 +60,7 @@ export const createStore = async (req, res) => {
   }
 };
 
-// Get store by ID
+// One storefront, for its public page.
 export const getStore = async (req, res) => {
   try {
     const { id } = req.params;
@@ -68,7 +76,7 @@ export const getStore = async (req, res) => {
   }
 };
 
-// Get all stores
+// Every open storefront, for the shops listing.
 export const getAllStores = async (req, res) => {
   try {
     const stores = await Store.getAll();
@@ -78,7 +86,7 @@ export const getAllStores = async (req, res) => {
   }
 };
 
-// Get store products with filters
+// What one storefront is selling.
 export const getStoreProducts = async (req, res) => {
   try {
     const { id } = req.params;
@@ -95,7 +103,7 @@ export const getStoreProducts = async (req, res) => {
   }
 };
 
-// Update store
+// A shop edits its own storefront.
 export const updateStore = async (req, res) => {
   try {
     const { id } = req.params;

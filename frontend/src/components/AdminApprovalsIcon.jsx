@@ -1,3 +1,6 @@
+// The administrator’s header badge: sign-ups waiting for a decision, and parties with
+// enough complaints to need looking at.
+
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getPendingRegistrations } from '../api/adminApi';

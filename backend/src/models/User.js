@@ -1,7 +1,21 @@
 import { pool } from '../config/db.js';
 import bcrypt from 'bcrypt';
 
+// Accounts: creating them, finding them, and checking a password.
+//
+// There is no single "users" table in a current database. A shopper lives in `customers`,
+// a shop in `sellers`, a rider in `couriers`, an administrator in `admins`, and each row
+// holds its own email and password. This class is what hides that spread from the rest of
+// the code, which only ever asks "find me the account with this email".
+//
+// Databases built by earlier versions did have one central `users` table that the others
+// linked to, and those still work: every method below checks which shape it is looking at
+// before it queries.
 class User {
+  // Does this table have this column?
+  //
+  // Used to tell the two database shapes apart. A `user_id` column on `customers` means
+  // the older layout, where logins live in a central table.
   static async columnExists(tableName, columnName) {
     const [rows] = await pool.query(
       `SELECT COUNT(*) AS count
@@ -15,6 +29,13 @@ class User {
     return Number(rows[0]?.count || 0) > 0;
   }
 
+  // Create an account of whichever kind was asked for.
+  //
+  // Wrapped in a transaction because the older layout writes two rows — the login and the
+  // profile — and an account with one but not the other could never sign in.
+  //
+  // The password is hashed with bcrypt before it goes anywhere near the database, so a
+  // stolen copy of the data does not hand over anybody’s password.
   static async create({ name, email, password, phone, role, address, shop_name, location }) {
     const hashedPassword = await bcrypt.hash(password, 10);
     const connection = await pool.getConnection();
@@ -30,17 +51,18 @@ class User {
           [email, hashedPassword, accountRole],
         );
 
+        // The email is copied onto the shop and shopper rows as well, so the admin console
+        // can show who they are (see config/db.js). Signing in still goes through `users`.
         if (accountRole === 'seller') {
           await connection.query(
-            'INSERT INTO sellers (user_id, shop_name, phone) VALUES (?, ?, ?)',
-            [result.insertId, shop_name || `${name}'s store`, phone || ''],
+            'INSERT INTO sellers (user_id, shop_name, phone, email) VALUES (?, ?, ?, ?)',
+            [result.insertId, shop_name || `${name}'s store`, phone || '', email],
           );
         } else if (accountRole === 'courier') {
           await connection.query(
-            // As on the other account shape: a new rider waits for an admin to approve
-            // them, and is inactive until then.
-            // The email is copied across so the admin console can show who a rider is;
-            // the sign-in itself still goes through the users table.
+            // A new rider waits for an admin to approve them, and is inactive until then —
+            // the same rule as on the other layout. The email is copied across so the admin
+            // console can show who a rider is; signing in still goes through `users`.
             "INSERT INTO couriers (user_id, name, email, phone, approval_status, is_active) VALUES (?, ?, ?, ?, 'pending', 0)",
             [result.insertId, name, email, phone || ''],
           );
@@ -61,8 +83,8 @@ class User {
           }
         } else {
           await connection.query(
-            'INSERT INTO customers (user_id, name, address, phone, location) VALUES (?, ?, ?, ?, ?)',
-            [result.insertId, name, address || '', phone || '', location || ''],
+            'INSERT INTO customers (user_id, name, email, address, phone, location) VALUES (?, ?, ?, ?, ?, ?)',
+            [result.insertId, name, email, address || '', phone || '', location || ''],
           );
         }
 
@@ -113,6 +135,10 @@ class User {
     }
   }
 
+  // Find whoever owns this email, whatever kind of account they have.
+  //
+  // Each table is tried in turn and the answer is normalised to the same shape — id, name,
+  // email, role, password_hash — so sign-in does not care which table it came from.
   static async findByEmail(email) {
     const normalizedEmail = String(email || '').trim().toLowerCase();
     const hasLegacyUserId = await User.columnExists('customers', 'user_id');
@@ -196,6 +222,7 @@ class User {
     return rows[0];
   }
 
+  // Fetch an account by id, without its password.
   static async findById(id) {
     const hasLegacyUserId = await User.columnExists('customers', 'user_id');
 
@@ -263,12 +290,15 @@ class User {
     return rows[0];
   }
 
-  // Verify password
+  // Is this the right password?
+  //
+  // bcrypt re-hashes the attempt with the same salt and compares. The stored hash can
+  // never be turned back into the password, which is the point.
   static async verifyPassword(plainPassword, hashedPassword) {
     return await bcrypt.compare(plainPassword, hashedPassword);
   }
 
-  // Update user
+  // Change an account’s own details.
   static async update(id, data) {
     const fields = [];
     const values = [];

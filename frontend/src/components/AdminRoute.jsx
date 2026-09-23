@@ -1,3 +1,8 @@
+// Wraps the admin pages: anybody who is not an administrator is sent away.
+//
+// This is convenience, not security — the real check is on the server, which refuses the
+// request whatever the browser decides to render.
+
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 

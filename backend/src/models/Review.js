@@ -4,6 +4,7 @@ import { resolveCustomerId, resolveSellerId } from '../utils/accounts.js';
 // Seller ratings. A rating is tied to a delivered order, so only someone who actually
 // bought from a shop — and received it — can score that shop.
 class Review {
+  // Every rating left about one shop, newest first, with the shop’s replies.
   static async findBySeller(seller_id) {
     const [rows] = await pool.query(
       `SELECT r.*, c.name AS customer_name
@@ -14,6 +15,7 @@ class Review {
     return rows;
   }
 
+  // A shop’s average score and how many ratings it is based on.
   static async scoreForSeller(seller_id) {
     const [rows] = await pool.query(
       'SELECT ROUND(AVG(rating), 1) AS average, COUNT(*) AS count FROM reviews WHERE seller_id = ?',
@@ -22,6 +24,7 @@ class Review {
     return { average: Number(rows[0]?.average || 0), count: Number(rows[0]?.count || 0) };
   }
 
+  // What one shopper has already rated, so the app knows which orders still need one.
   static async findByCustomer(customer_id) {
     const [rows] = await pool.query(
       `SELECT r.*, s.shop_name FROM reviews r JOIN sellers s ON s.id = r.seller_id
@@ -33,6 +36,10 @@ class Review {
 
   // The customer must have bought from this shop on this order, and the parcel must have
   // been delivered — you cannot rate a shop you never used, or one still mid-delivery.
+  // May this person rate this shop at all?
+  //
+  // Only somebody who bought from the shop on this order, and had it delivered. Without
+  // this, anybody could score any shop without ever buying from it.
   static async assertCanReview({ user_id, seller_id, order_id }) {
     const customerId = await resolveCustomerId(user_id);
     if (!customerId) throw Object.assign(new Error('Customer profile not found'), { status: 404 });
@@ -50,6 +57,10 @@ class Review {
     return customerId;
   }
 
+  // Save a rating, replacing this customer’s earlier one for the same shop and order.
+  //
+  // The unique key on (customer, order, seller) is what makes that work: a second insert
+  // hits it and updates instead, so one person cannot pile up scores against a shop.
   static async upsert({ user_id, seller_id, order_id, rating, comment }) {
     const numericRating = Number(rating);
     if (!Number.isInteger(numericRating) || numericRating < 1 || numericRating > 5) {
@@ -70,6 +81,7 @@ class Review {
   }
 
   // Only the shop being reviewed may reply.
+  // The shop answers a rating. Only the shop that rating is about may reply to it.
   static async reply({ user_id, review_id, reply }) {
     const sellerId = await resolveSellerId(user_id);
     if (!sellerId) throw Object.assign(new Error('Seller profile not found'), { status: 404 });

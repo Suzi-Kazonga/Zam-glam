@@ -47,6 +47,8 @@ class Admin {
     };
   }
 
+  // Every shopper, with how much they have ordered and spent — the figures the admin
+  // console shows beside each name.
   static async customers() {
     const [rows] = await pool.query(
       `SELECT c.id, c.name, c.email, c.phone, c.address, c.location, c.created_at,
@@ -58,6 +60,8 @@ class Admin {
     return rows;
   }
 
+  // Every shop, with its verification state, stock, parcels and rating. Shops waiting for
+  // a decision are listed first, since those are the ones needing attention.
   static async sellers() {
     const [rows] = await pool.query(
       `SELECT s.id, s.shop_name AS name, s.email, s.phone, s.verification_status, s.verified_at, s.created_at,
@@ -73,6 +77,8 @@ class Admin {
     return rows;
   }
 
+  // Every rider, with whether they are approved, on duty, and how many parcels they have
+  // carried and delivered. Sign-ups awaiting approval come first.
   static async couriers() {
     const [rows] = await pool.query(
       `SELECT c.id, c.name, c.email, c.phone, c.on_shift, c.is_active, c.account_status, c.deleted_at,
@@ -100,6 +106,10 @@ class Admin {
     return { shops, couriers, total: shops.length + couriers.length };
   }
 
+  // Record the decision on a courier sign-up.
+  //
+  // Anything other than approval also deactivates the account and takes them off duty, so
+  // a rejected rider cannot keep working through a page they already had open.
   static async setCourierApproval(id, status) {
     const [result] = await pool.query(
       `UPDATE couriers
@@ -117,6 +127,10 @@ class Admin {
   // Only after GRACE_DAYS with nobody restoring it is the account actually removed.
   static get GRACE_DAYS() { return Number(process.env.ACCOUNT_DELETE_GRACE_DAYS) || 30; }
 
+  // Turn a role name into its table, refusing anything unexpected.
+  //
+  // These table names are put straight into SQL, so this is also what stops a made-up role
+  // in the URL reaching the database.
   static tableFor(role) {
     const map = { seller: 'sellers', customer: 'customers', courier: 'couriers' };
     const table = map[role];
@@ -124,6 +138,11 @@ class Admin {
     return table;
   }
 
+  // Delete an account — reversibly.
+  //
+  // Nothing is actually removed: the row is stamped with the time, which is enough to stop
+  // it signing in, take its products out of the catalogue, and grey it out in the console.
+  // A mistake can be undone until the grace period runs out.
   static async softDelete(role, id) {
     const table = Admin.tableFor(role);
     const [result] = await pool.query(
@@ -138,6 +157,7 @@ class Admin {
     return { role, id: Number(id), deleted: true, grace_days: Admin.GRACE_DAYS };
   }
 
+  // Undo a deletion inside the grace period.
   static async restore(role, id) {
     const table = Admin.tableFor(role);
     const [result] = await pool.query(
@@ -172,6 +192,10 @@ class Admin {
   }
 
   // Editing an account's own details from the console.
+  // Correct an account’s details from the console.
+  //
+  // Only the columns listed per role may be written. Anything else in the request is
+  // ignored, so a password can never be set through this endpoint.
   static async updateAccount(role, id, fields) {
     const table = Admin.tableFor(role);
     const allowed = {
@@ -192,6 +216,19 @@ class Admin {
     values.push(id);
     const [result] = await pool.query(`UPDATE ${table} SET ${sets.join(', ')} WHERE id = ?`, values);
     if (result.affectedRows === 0) throw Object.assign(new Error('Account not found'), { status: 404 });
+
+    // On the older layout the email on this row is only a copy; the one used to sign in
+    // lives in `users`. Change both, or the account would sign in with the old address.
+    if (fields?.email !== undefined) {
+      const [link] = await pool.query(
+        `SELECT 1 FROM information_schema.columns
+         WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = 'user_id'`,
+        [table],
+      );
+      if (link.length) {
+        await pool.query(`UPDATE users u JOIN ${table} t ON t.user_id = u.id SET u.email = ? WHERE t.id = ?`, [fields.email, id]);
+      }
+    }
     return { role, id: Number(id), updated: sets.length };
   }
 }

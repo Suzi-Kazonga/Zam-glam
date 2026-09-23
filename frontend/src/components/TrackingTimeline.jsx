@@ -1,3 +1,9 @@
+// The progress of one parcel, stage by stage.
+//
+// The stages come from utils/orderStore.js, which is the single list of what a parcel goes
+// through. Where the shop or courier left a note — "the rider never arrived" — that note
+// replaces the standard wording, so the customer reads what actually happened.
+
 import { STATUS_META, TRACK_STEPS } from '../utils/orderStore';
 
 export default function TrackingTimeline({ order }) {

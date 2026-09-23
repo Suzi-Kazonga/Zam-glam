@@ -1,0 +1,658 @@
+<mxfile host="65bd71144e">
+    <diagram name="Database schema" id="Database-schema">
+        <mxGraphModel dx="3390" dy="1130" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2100" pageHeight="1629" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="diagramTitle" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=20;fontStyle=1;fontColor=#0f172a;" value="Zamglam — database schema" vertex="1">
+                    <mxGeometry height="32" width="1300" x="60" y="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="diagramSubtitle" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=12;fontColor=#475569;" value="Every table the application creates, with its columns, types and keys. Read from the running database, so it cannot drift from what is really there." vertex="1">
+                    <mxGeometry height="18" width="1300" x="60" y="64" as="geometry"/>
+                </mxCell>
+                <mxCell id="colTitle0" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=14;fontStyle=1;fontColor=#0f172a;" value="Accounts" vertex="1">
+                    <mxGeometry height="24" width="290" x="60" y="110" as="geometry"/>
+                </mxCell>
+                <mxCell id="customers" parent="1" style="swimlane;fontStyle=1;childLayout=stackLayout;horizontal=1;startSize=28;horizontalStack=0;resizeParent=0;resizeParentMax=0;html=1;fillColor=#4f46e5;strokeColor=#4f46e5;swimlaneFillColor=#ffffff;fontSize=13;fontColor=#ffffff;" value="customers" vertex="1">
+                    <mxGeometry height="275" width="290" x="60" y="144" as="geometry"/>
+                </mxCell>
+                <mxCell id="customers__id" parent="customers" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontStyle=1;fontColor=#0f172a;" value="PK id int" vertex="1">
+                    <mxGeometry height="19" width="290" y="28" as="geometry"/>
+                </mxCell>
+                <mxCell id="customers__name" parent="customers" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   name varchar" vertex="1">
+                    <mxGeometry height="19" width="290" y="47" as="geometry"/>
+                </mxCell>
+                <mxCell id="customers__email" parent="customers" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="UQ email varchar" vertex="1">
+                    <mxGeometry height="19" width="290" y="66" as="geometry"/>
+                </mxCell>
+                <mxCell id="customers__password" parent="customers" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   password varchar" vertex="1">
+                    <mxGeometry height="19" width="290" y="85" as="geometry"/>
+                </mxCell>
+                <mxCell id="customers__address" parent="customers" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   address varchar  ?" vertex="1">
+                    <mxGeometry height="19" width="290" y="104" as="geometry"/>
+                </mxCell>
+                <mxCell id="customers__phone" parent="customers" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   phone varchar  ?" vertex="1">
+                    <mxGeometry height="19" width="290" y="123" as="geometry"/>
+                </mxCell>
+                <mxCell id="customers__city" parent="customers" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   city varchar  ?" vertex="1">
+                    <mxGeometry height="19" width="290" y="142" as="geometry"/>
+                </mxCell>
+                <mxCell id="customers__location" parent="customers" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   location varchar  ?" vertex="1">
+                    <mxGeometry height="19" width="290" y="161" as="geometry"/>
+                </mxCell>
+                <mxCell id="customers__created_at" parent="customers" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   created_at timestamp" vertex="1">
+                    <mxGeometry height="19" width="290" y="180" as="geometry"/>
+                </mxCell>
+                <mxCell id="customers__account_status" parent="customers" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   account_status varchar" vertex="1">
+                    <mxGeometry height="19" width="290" y="199" as="geometry"/>
+                </mxCell>
+                <mxCell id="customers__suspended_at" parent="customers" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   suspended_at timestamp  ?" vertex="1">
+                    <mxGeometry height="19" width="290" y="218" as="geometry"/>
+                </mxCell>
+                <mxCell id="customers__suspension_reason" parent="customers" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   suspension_reason varchar  ?" vertex="1">
+                    <mxGeometry height="19" width="290" y="237" as="geometry"/>
+                </mxCell>
+                <mxCell id="customers__deleted_at" parent="customers" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   deleted_at timestamp  ?" vertex="1">
+                    <mxGeometry height="19" width="290" y="256" as="geometry"/>
+                </mxCell>
+                <mxCell id="sellers" parent="1" style="swimlane;fontStyle=1;childLayout=stackLayout;horizontal=1;startSize=28;horizontalStack=0;resizeParent=0;resizeParentMax=0;html=1;fillColor=#7e22ce;strokeColor=#7e22ce;swimlaneFillColor=#ffffff;fontSize=13;fontColor=#ffffff;" value="sellers" vertex="1">
+                    <mxGeometry height="275" width="290" x="60" y="464" as="geometry"/>
+                </mxCell>
+                <mxCell id="sellers__id" parent="sellers" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontStyle=1;fontColor=#0f172a;" value="PK id int" vertex="1">
+                    <mxGeometry height="19" width="290" y="28" as="geometry"/>
+                </mxCell>
+                <mxCell id="sellers__name" parent="sellers" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   name varchar" vertex="1">
+                    <mxGeometry height="19" width="290" y="47" as="geometry"/>
+                </mxCell>
+                <mxCell id="sellers__email" parent="sellers" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="UQ email varchar" vertex="1">
+                    <mxGeometry height="19" width="290" y="66" as="geometry"/>
+                </mxCell>
+                <mxCell id="sellers__password" parent="sellers" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   password varchar" vertex="1">
+                    <mxGeometry height="19" width="290" y="85" as="geometry"/>
+                </mxCell>
+                <mxCell id="sellers__shop_name" parent="sellers" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   shop_name varchar" vertex="1">
+                    <mxGeometry height="19" width="290" y="104" as="geometry"/>
+                </mxCell>
+                <mxCell id="sellers__phone" parent="sellers" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   phone varchar  ?" vertex="1">
+                    <mxGeometry height="19" width="290" y="123" as="geometry"/>
+                </mxCell>
+                <mxCell id="sellers__created_at" parent="sellers" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   created_at timestamp" vertex="1">
+                    <mxGeometry height="19" width="290" y="142" as="geometry"/>
+                </mxCell>
+                <mxCell id="sellers__account_status" parent="sellers" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   account_status varchar" vertex="1">
+                    <mxGeometry height="19" width="290" y="161" as="geometry"/>
+                </mxCell>
+                <mxCell id="sellers__suspended_at" parent="sellers" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   suspended_at timestamp  ?" vertex="1">
+                    <mxGeometry height="19" width="290" y="180" as="geometry"/>
+                </mxCell>
+                <mxCell id="sellers__suspension_reason" parent="sellers" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   suspension_reason varchar  ?" vertex="1">
+                    <mxGeometry height="19" width="290" y="199" as="geometry"/>
+                </mxCell>
+                <mxCell id="sellers__deleted_at" parent="sellers" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   deleted_at timestamp  ?" vertex="1">
+                    <mxGeometry height="19" width="290" y="218" as="geometry"/>
+                </mxCell>
+                <mxCell id="sellers__verification_status" parent="sellers" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   verification_status varchar" vertex="1">
+                    <mxGeometry height="19" width="290" y="237" as="geometry"/>
+                </mxCell>
+                <mxCell id="sellers__verified_at" parent="sellers" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   verified_at timestamp  ?" vertex="1">
+                    <mxGeometry height="19" width="290" y="256" as="geometry"/>
+                </mxCell>
+                <mxCell id="couriers" parent="1" style="swimlane;fontStyle=1;childLayout=stackLayout;horizontal=1;startSize=28;horizontalStack=0;resizeParent=0;resizeParentMax=0;html=1;fillColor=#047857;strokeColor=#047857;swimlaneFillColor=#ffffff;fontSize=13;fontColor=#ffffff;" value="couriers" vertex="1">
+                    <mxGeometry height="351" width="290" x="60" y="784" as="geometry"/>
+                </mxCell>
+                <mxCell id="couriers__id" parent="couriers" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontStyle=1;fontColor=#0f172a;" value="PK id int" vertex="1">
+                    <mxGeometry height="19" width="290" y="28" as="geometry"/>
+                </mxCell>
+                <mxCell id="couriers__user_id" parent="couriers" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="UQ user_id int  ?" vertex="1">
+                    <mxGeometry height="19" width="290" y="47" as="geometry"/>
+                </mxCell>
+                <mxCell id="couriers__name" parent="couriers" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   name varchar" vertex="1">
+                    <mxGeometry height="19" width="290" y="66" as="geometry"/>
+                </mxCell>
+                <mxCell id="couriers__email" parent="couriers" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="UQ email varchar  ?" vertex="1">
+                    <mxGeometry height="19" width="290" y="85" as="geometry"/>
+                </mxCell>
+                <mxCell id="couriers__password" parent="couriers" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   password varchar  ?" vertex="1">
+                    <mxGeometry height="19" width="290" y="104" as="geometry"/>
+                </mxCell>
+                <mxCell id="couriers__phone" parent="couriers" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   phone varchar  ?" vertex="1">
+                    <mxGeometry height="19" width="290" y="123" as="geometry"/>
+                </mxCell>
+                <mxCell id="couriers__vehicle" parent="couriers" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   vehicle varchar  ?" vertex="1">
+                    <mxGeometry height="19" width="290" y="142" as="geometry"/>
+                </mxCell>
+                <mxCell id="couriers__is_active" parent="couriers" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   is_active tinyint" vertex="1">
+                    <mxGeometry height="19" width="290" y="161" as="geometry"/>
+                </mxCell>
+                <mxCell id="couriers__created_at" parent="couriers" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   created_at timestamp" vertex="1">
+                    <mxGeometry height="19" width="290" y="180" as="geometry"/>
+                </mxCell>
+                <mxCell id="couriers__on_shift" parent="couriers" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   on_shift tinyint" vertex="1">
+                    <mxGeometry height="19" width="290" y="199" as="geometry"/>
+                </mxCell>
+                <mxCell id="couriers__shift_changed_at" parent="couriers" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   shift_changed_at timestamp  ?" vertex="1">
+                    <mxGeometry height="19" width="290" y="218" as="geometry"/>
+                </mxCell>
+                <mxCell id="couriers__approval_status" parent="couriers" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   approval_status varchar" vertex="1">
+                    <mxGeometry height="19" width="290" y="237" as="geometry"/>
+                </mxCell>
+                <mxCell id="couriers__approved_at" parent="couriers" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   approved_at timestamp  ?" vertex="1">
+                    <mxGeometry height="19" width="290" y="256" as="geometry"/>
+                </mxCell>
+                <mxCell id="couriers__account_status" parent="couriers" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   account_status varchar" vertex="1">
+                    <mxGeometry height="19" width="290" y="275" as="geometry"/>
+                </mxCell>
+                <mxCell id="couriers__suspended_at" parent="couriers" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   suspended_at timestamp  ?" vertex="1">
+                    <mxGeometry height="19" width="290" y="294" as="geometry"/>
+                </mxCell>
+                <mxCell id="couriers__suspension_reason" parent="couriers" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   suspension_reason varchar  ?" vertex="1">
+                    <mxGeometry height="19" width="290" y="313" as="geometry"/>
+                </mxCell>
+                <mxCell id="couriers__deleted_at" parent="couriers" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   deleted_at timestamp  ?" vertex="1">
+                    <mxGeometry height="19" width="290" y="332" as="geometry"/>
+                </mxCell>
+                <mxCell id="admins" parent="1" style="swimlane;fontStyle=1;childLayout=stackLayout;horizontal=1;startSize=28;horizontalStack=0;resizeParent=0;resizeParentMax=0;html=1;fillColor=#0f172a;strokeColor=#0f172a;swimlaneFillColor=#ffffff;fontSize=13;fontColor=#ffffff;" value="admins" vertex="1">
+                    <mxGeometry height="161" width="290" x="60" y="1180" as="geometry"/>
+                </mxCell>
+                <mxCell id="admins__id" parent="admins" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontStyle=1;fontColor=#0f172a;" value="PK id int" vertex="1">
+                    <mxGeometry height="19" width="290" y="28" as="geometry"/>
+                </mxCell>
+                <mxCell id="admins__user_id" parent="admins" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="UQ user_id int  ?" vertex="1">
+                    <mxGeometry height="19" width="290" y="47" as="geometry"/>
+                </mxCell>
+                <mxCell id="admins__name" parent="admins" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   name varchar" vertex="1">
+                    <mxGeometry height="19" width="290" y="66" as="geometry"/>
+                </mxCell>
+                <mxCell id="admins__email" parent="admins" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="UQ email varchar  ?" vertex="1">
+                    <mxGeometry height="19" width="290" y="85" as="geometry"/>
+                </mxCell>
+                <mxCell id="admins__password" parent="admins" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   password varchar  ?" vertex="1">
+                    <mxGeometry height="19" width="290" y="104" as="geometry"/>
+                </mxCell>
+                <mxCell id="admins__role_level" parent="admins" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   role_level varchar" vertex="1">
+                    <mxGeometry height="19" width="290" y="123" as="geometry"/>
+                </mxCell>
+                <mxCell id="admins__created_at" parent="admins" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   created_at timestamp" vertex="1">
+                    <mxGeometry height="19" width="290" y="142" as="geometry"/>
+                </mxCell>
+                <mxCell id="users" parent="1" style="swimlane;fontStyle=3;childLayout=stackLayout;horizontal=1;startSize=28;horizontalStack=0;resizeParent=0;resizeParentMax=0;html=1;fillColor=#e2e8f0;strokeColor=#94a3b8;swimlaneFillColor=#f8fafc;fontSize=12;fontColor=#475569;opacity=70;" value="users  —  legacy" vertex="1">
+                    <mxGeometry height="123" width="290" x="60" y="1386" as="geometry"/>
+                </mxCell>
+                <mxCell id="users__id" parent="users" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontStyle=1;fontColor=#0f172a;" value="PK id int" vertex="1">
+                    <mxGeometry height="19" width="290" y="28" as="geometry"/>
+                </mxCell>
+                <mxCell id="users__email" parent="users" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="UQ email varchar" vertex="1">
+                    <mxGeometry height="19" width="290" y="47" as="geometry"/>
+                </mxCell>
+                <mxCell id="users__password" parent="users" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   password varchar" vertex="1">
+                    <mxGeometry height="19" width="290" y="66" as="geometry"/>
+                </mxCell>
+                <mxCell id="users__role" parent="users" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   role enum(&#39;admin&#39;,&#39;customer&#39;,&#39;seller&#39;,&#39;courier&#39;)" vertex="1">
+                    <mxGeometry height="19" width="290" y="85" as="geometry"/>
+                </mxCell>
+                <mxCell id="users__created_at" parent="users" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   created_at timestamp" vertex="1">
+                    <mxGeometry height="19" width="290" y="104" as="geometry"/>
+                </mxCell>
+                <mxCell id="colTitle1" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=14;fontStyle=1;fontColor=#0f172a;" value="The catalogue" vertex="1">
+                    <mxGeometry height="24" width="290" x="480" y="110" as="geometry"/>
+                </mxCell>
+                <mxCell id="stores" parent="1" style="swimlane;fontStyle=1;childLayout=stackLayout;horizontal=1;startSize=28;horizontalStack=0;resizeParent=0;resizeParentMax=0;html=1;fillColor=#ffffff;strokeColor=#334155;swimlaneFillColor=#ffffff;fontSize=13;fontColor=#0f172a;" value="stores" vertex="1">
+                    <mxGeometry height="199" width="290" x="480" y="144" as="geometry"/>
+                </mxCell>
+                <mxCell id="stores__id" parent="stores" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontStyle=1;fontColor=#0f172a;" value="PK id int" vertex="1">
+                    <mxGeometry height="19" width="290" y="28" as="geometry"/>
+                </mxCell>
+                <mxCell id="stores__seller_id" parent="stores" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="UQ seller_id int" vertex="1">
+                    <mxGeometry height="19" width="290" y="47" as="geometry"/>
+                </mxCell>
+                <mxCell id="stores__name" parent="stores" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   name varchar" vertex="1">
+                    <mxGeometry height="19" width="290" y="66" as="geometry"/>
+                </mxCell>
+                <mxCell id="stores__description" parent="stores" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   description text  ?" vertex="1">
+                    <mxGeometry height="19" width="290" y="85" as="geometry"/>
+                </mxCell>
+                <mxCell id="stores__logo_url" parent="stores" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   logo_url varchar  ?" vertex="1">
+                    <mxGeometry height="19" width="290" y="104" as="geometry"/>
+                </mxCell>
+                <mxCell id="stores__location" parent="stores" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   location varchar  ?" vertex="1">
+                    <mxGeometry height="19" width="290" y="123" as="geometry"/>
+                </mxCell>
+                <mxCell id="stores__open_hours" parent="stores" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   open_hours longtext  ?" vertex="1">
+                    <mxGeometry height="19" width="290" y="142" as="geometry"/>
+                </mxCell>
+                <mxCell id="stores__status" parent="stores" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   status varchar  ?" vertex="1">
+                    <mxGeometry height="19" width="290" y="161" as="geometry"/>
+                </mxCell>
+                <mxCell id="stores__created_at" parent="stores" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   created_at timestamp" vertex="1">
+                    <mxGeometry height="19" width="290" y="180" as="geometry"/>
+                </mxCell>
+                <mxCell id="products" parent="1" style="swimlane;fontStyle=1;childLayout=stackLayout;horizontal=1;startSize=28;horizontalStack=0;resizeParent=0;resizeParentMax=0;html=1;fillColor=#ffffff;strokeColor=#334155;swimlaneFillColor=#ffffff;fontSize=13;fontColor=#0f172a;" value="products" vertex="1">
+                    <mxGeometry height="275" width="290" x="480" y="388" as="geometry"/>
+                </mxCell>
+                <mxCell id="products__id" parent="products" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontStyle=1;fontColor=#0f172a;" value="PK id int" vertex="1">
+                    <mxGeometry height="19" width="290" y="28" as="geometry"/>
+                </mxCell>
+                <mxCell id="products__seller_id" parent="products" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#4338ca;" value="FK seller_id int" vertex="1">
+                    <mxGeometry height="19" width="290" y="47" as="geometry"/>
+                </mxCell>
+                <mxCell id="products__store_id" parent="products" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   store_id int  ?" vertex="1">
+                    <mxGeometry height="19" width="290" y="66" as="geometry"/>
+                </mxCell>
+                <mxCell id="products__category_id" parent="products" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   category_id int  ?" vertex="1">
+                    <mxGeometry height="19" width="290" y="85" as="geometry"/>
+                </mxCell>
+                <mxCell id="products__name" parent="products" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   name varchar" vertex="1">
+                    <mxGeometry height="19" width="290" y="104" as="geometry"/>
+                </mxCell>
+                <mxCell id="products__description" parent="products" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   description text  ?" vertex="1">
+                    <mxGeometry height="19" width="290" y="123" as="geometry"/>
+                </mxCell>
+                <mxCell id="products__price" parent="products" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   price decimal" vertex="1">
+                    <mxGeometry height="19" width="290" y="142" as="geometry"/>
+                </mxCell>
+                <mxCell id="products__stock" parent="products" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   stock int  ?" vertex="1">
+                    <mxGeometry height="19" width="290" y="161" as="geometry"/>
+                </mxCell>
+                <mxCell id="products__image_url" parent="products" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   image_url varchar  ?" vertex="1">
+                    <mxGeometry height="19" width="290" y="180" as="geometry"/>
+                </mxCell>
+                <mxCell id="products__audience" parent="products" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   audience varchar  ?" vertex="1">
+                    <mxGeometry height="19" width="290" y="199" as="geometry"/>
+                </mxCell>
+                <mxCell id="products__sizes" parent="products" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   sizes longtext  ?" vertex="1">
+                    <mxGeometry height="19" width="290" y="218" as="geometry"/>
+                </mxCell>
+                <mxCell id="products__created_at" parent="products" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   created_at timestamp" vertex="1">
+                    <mxGeometry height="19" width="290" y="237" as="geometry"/>
+                </mxCell>
+                <mxCell id="products__images" parent="products" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   images longtext  ?" vertex="1">
+                    <mxGeometry height="19" width="290" y="256" as="geometry"/>
+                </mxCell>
+                <mxCell id="categories" parent="1" style="swimlane;fontStyle=1;childLayout=stackLayout;horizontal=1;startSize=28;horizontalStack=0;resizeParent=0;resizeParentMax=0;html=1;fillColor=#ffffff;strokeColor=#334155;swimlaneFillColor=#ffffff;fontSize=13;fontColor=#0f172a;" value="categories" vertex="1">
+                    <mxGeometry height="104" width="290" x="480" y="708" as="geometry"/>
+                </mxCell>
+                <mxCell id="categories__id" parent="categories" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontStyle=1;fontColor=#0f172a;" value="PK id int" vertex="1">
+                    <mxGeometry height="19" width="290" y="28" as="geometry"/>
+                </mxCell>
+                <mxCell id="categories__name" parent="categories" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="UQ name varchar" vertex="1">
+                    <mxGeometry height="19" width="290" y="47" as="geometry"/>
+                </mxCell>
+                <mxCell id="categories__description" parent="categories" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   description text  ?" vertex="1">
+                    <mxGeometry height="19" width="290" y="66" as="geometry"/>
+                </mxCell>
+                <mxCell id="categories__created_at" parent="categories" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   created_at timestamp" vertex="1">
+                    <mxGeometry height="19" width="290" y="85" as="geometry"/>
+                </mxCell>
+                <mxCell id="documents" parent="1" style="swimlane;fontStyle=1;childLayout=stackLayout;horizontal=1;startSize=28;horizontalStack=0;resizeParent=0;resizeParentMax=0;html=1;fillColor=#ffffff;strokeColor=#334155;swimlaneFillColor=#ffffff;fontSize=13;fontColor=#0f172a;" value="documents" vertex="1">
+                    <mxGeometry height="199" width="290" x="480" y="857" as="geometry"/>
+                </mxCell>
+                <mxCell id="documents__id" parent="documents" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontStyle=1;fontColor=#0f172a;" value="PK id int" vertex="1">
+                    <mxGeometry height="19" width="290" y="28" as="geometry"/>
+                </mxCell>
+                <mxCell id="documents__user_id" parent="documents" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#4338ca;" value="FK user_id int  ?" vertex="1">
+                    <mxGeometry height="19" width="290" y="47" as="geometry"/>
+                </mxCell>
+                <mxCell id="documents__type" parent="documents" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   type varchar" vertex="1">
+                    <mxGeometry height="19" width="290" y="66" as="geometry"/>
+                </mxCell>
+                <mxCell id="documents__url" parent="documents" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   url varchar" vertex="1">
+                    <mxGeometry height="19" width="290" y="85" as="geometry"/>
+                </mxCell>
+                <mxCell id="documents__status" parent="documents" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   status varchar  ?" vertex="1">
+                    <mxGeometry height="19" width="290" y="104" as="geometry"/>
+                </mxCell>
+                <mxCell id="documents__created_at" parent="documents" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   created_at timestamp" vertex="1">
+                    <mxGeometry height="19" width="290" y="123" as="geometry"/>
+                </mxCell>
+                <mxCell id="documents__seller_id" parent="documents" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   seller_id int  ?" vertex="1">
+                    <mxGeometry height="19" width="290" y="142" as="geometry"/>
+                </mxCell>
+                <mxCell id="documents__doc_number" parent="documents" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   doc_number varchar  ?" vertex="1">
+                    <mxGeometry height="19" width="290" y="161" as="geometry"/>
+                </mxCell>
+                <mxCell id="documents__review_note" parent="documents" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   review_note varchar  ?" vertex="1">
+                    <mxGeometry height="19" width="290" y="180" as="geometry"/>
+                </mxCell>
+                <mxCell id="colTitle2" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=14;fontStyle=1;fontColor=#0f172a;" value="Orders and parcels" vertex="1">
+                    <mxGeometry height="24" width="290" x="900" y="110" as="geometry"/>
+                </mxCell>
+                <mxCell id="orders" parent="1" style="swimlane;fontStyle=1;childLayout=stackLayout;horizontal=1;startSize=28;horizontalStack=0;resizeParent=0;resizeParentMax=0;html=1;fillColor=#4f46e5;strokeColor=#4338ca;swimlaneFillColor=#ffffff;fontSize=13;fontColor=#ffffff;" value="orders" vertex="1">
+                    <mxGeometry height="237" width="290" x="900" y="144" as="geometry"/>
+                </mxCell>
+                <mxCell id="orders__id" parent="orders" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontStyle=1;fontColor=#0f172a;" value="PK id int" vertex="1">
+                    <mxGeometry height="19" width="290" y="28" as="geometry"/>
+                </mxCell>
+                <mxCell id="orders__customer_id" parent="orders" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#4338ca;" value="FK customer_id int" vertex="1">
+                    <mxGeometry height="19" width="290" y="47" as="geometry"/>
+                </mxCell>
+                <mxCell id="orders__total_price" parent="orders" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   total_price decimal" vertex="1">
+                    <mxGeometry height="19" width="290" y="66" as="geometry"/>
+                </mxCell>
+                <mxCell id="orders__status" parent="orders" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   status varchar  ?" vertex="1">
+                    <mxGeometry height="19" width="290" y="85" as="geometry"/>
+                </mxCell>
+                <mxCell id="orders__address" parent="orders" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   address varchar  ?" vertex="1">
+                    <mxGeometry height="19" width="290" y="104" as="geometry"/>
+                </mxCell>
+                <mxCell id="orders__location" parent="orders" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   location varchar  ?" vertex="1">
+                    <mxGeometry height="19" width="290" y="123" as="geometry"/>
+                </mxCell>
+                <mxCell id="orders__phone" parent="orders" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   phone varchar  ?" vertex="1">
+                    <mxGeometry height="19" width="290" y="142" as="geometry"/>
+                </mxCell>
+                <mxCell id="orders__payment_method" parent="orders" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   payment_method varchar  ?" vertex="1">
+                    <mxGeometry height="19" width="290" y="161" as="geometry"/>
+                </mxCell>
+                <mxCell id="orders__created_at" parent="orders" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   created_at timestamp" vertex="1">
+                    <mxGeometry height="19" width="290" y="180" as="geometry"/>
+                </mxCell>
+                <mxCell id="orders__items_total" parent="orders" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   items_total decimal" vertex="1">
+                    <mxGeometry height="19" width="290" y="199" as="geometry"/>
+                </mxCell>
+                <mxCell id="orders__delivery_total" parent="orders" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   delivery_total decimal" vertex="1">
+                    <mxGeometry height="19" width="290" y="218" as="geometry"/>
+                </mxCell>
+                <mxCell id="order_items" parent="1" style="swimlane;fontStyle=1;childLayout=stackLayout;horizontal=1;startSize=28;horizontalStack=0;resizeParent=0;resizeParentMax=0;html=1;fillColor=#ffffff;strokeColor=#334155;swimlaneFillColor=#ffffff;fontSize=13;fontColor=#0f172a;" value="order_items" vertex="1">
+                    <mxGeometry height="142" width="290" x="900" y="426" as="geometry"/>
+                </mxCell>
+                <mxCell id="order_items__id" parent="order_items" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontStyle=1;fontColor=#0f172a;" value="PK id int" vertex="1">
+                    <mxGeometry height="19" width="290" y="28" as="geometry"/>
+                </mxCell>
+                <mxCell id="order_items__order_id" parent="order_items" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#4338ca;" value="FK order_id int" vertex="1">
+                    <mxGeometry height="19" width="290" y="47" as="geometry"/>
+                </mxCell>
+                <mxCell id="order_items__product_id" parent="order_items" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#4338ca;" value="FK product_id int" vertex="1">
+                    <mxGeometry height="19" width="290" y="66" as="geometry"/>
+                </mxCell>
+                <mxCell id="order_items__quantity" parent="order_items" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   quantity int" vertex="1">
+                    <mxGeometry height="19" width="290" y="85" as="geometry"/>
+                </mxCell>
+                <mxCell id="order_items__price" parent="order_items" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   price decimal" vertex="1">
+                    <mxGeometry height="19" width="290" y="104" as="geometry"/>
+                </mxCell>
+                <mxCell id="order_items__created_at" parent="order_items" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   created_at timestamp" vertex="1">
+                    <mxGeometry height="19" width="290" y="123" as="geometry"/>
+                </mxCell>
+                <mxCell id="shipments" parent="1" style="swimlane;fontStyle=1;childLayout=stackLayout;horizontal=1;startSize=28;horizontalStack=0;resizeParent=0;resizeParentMax=0;html=1;fillColor=#4f46e5;strokeColor=#4338ca;swimlaneFillColor=#ffffff;fontSize=13;fontColor=#ffffff;" value="shipments" vertex="1">
+                    <mxGeometry height="275" width="290" x="900" y="613" as="geometry"/>
+                </mxCell>
+                <mxCell id="shipments__id" parent="shipments" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontStyle=1;fontColor=#0f172a;" value="PK id int" vertex="1">
+                    <mxGeometry height="19" width="290" y="28" as="geometry"/>
+                </mxCell>
+                <mxCell id="shipments__order_id" parent="shipments" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#4338ca;" value="FK order_id int" vertex="1">
+                    <mxGeometry height="19" width="290" y="47" as="geometry"/>
+                </mxCell>
+                <mxCell id="shipments__seller_id" parent="shipments" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   seller_id int" vertex="1">
+                    <mxGeometry height="19" width="290" y="66" as="geometry"/>
+                </mxCell>
+                <mxCell id="shipments__status" parent="shipments" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   status varchar" vertex="1">
+                    <mxGeometry height="19" width="290" y="85" as="geometry"/>
+                </mxCell>
+                <mxCell id="shipments__courier_id" parent="shipments" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   courier_id int  ?" vertex="1">
+                    <mxGeometry height="19" width="290" y="104" as="geometry"/>
+                </mxCell>
+                <mxCell id="shipments__driver_name" parent="shipments" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   driver_name varchar  ?" vertex="1">
+                    <mxGeometry height="19" width="290" y="123" as="geometry"/>
+                </mxCell>
+                <mxCell id="shipments__driver_phone" parent="shipments" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   driver_phone varchar  ?" vertex="1">
+                    <mxGeometry height="19" width="290" y="142" as="geometry"/>
+                </mxCell>
+                <mxCell id="shipments__price" parent="shipments" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   price decimal" vertex="1">
+                    <mxGeometry height="19" width="290" y="161" as="geometry"/>
+                </mxCell>
+                <mxCell id="shipments__distance" parent="shipments" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   distance varchar  ?" vertex="1">
+                    <mxGeometry height="19" width="290" y="180" as="geometry"/>
+                </mxCell>
+                <mxCell id="shipments__direction" parent="shipments" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   direction varchar  ?" vertex="1">
+                    <mxGeometry height="19" width="290" y="199" as="geometry"/>
+                </mxCell>
+                <mxCell id="shipments__created_at" parent="shipments" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   created_at timestamp" vertex="1">
+                    <mxGeometry height="19" width="290" y="218" as="geometry"/>
+                </mxCell>
+                <mxCell id="shipments__released_at" parent="shipments" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   released_at timestamp  ?" vertex="1">
+                    <mxGeometry height="19" width="290" y="237" as="geometry"/>
+                </mxCell>
+                <mxCell id="shipments__escalated_at" parent="shipments" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   escalated_at timestamp  ?" vertex="1">
+                    <mxGeometry height="19" width="290" y="256" as="geometry"/>
+                </mxCell>
+                <mxCell id="order_status_history" parent="1" style="swimlane;fontStyle=1;childLayout=stackLayout;horizontal=1;startSize=28;horizontalStack=0;resizeParent=0;resizeParentMax=0;html=1;fillColor=#ffffff;strokeColor=#334155;swimlaneFillColor=#ffffff;fontSize=13;fontColor=#0f172a;" value="order_status_history" vertex="1">
+                    <mxGeometry height="142" width="290" x="900" y="933" as="geometry"/>
+                </mxCell>
+                <mxCell id="order_status_history__id" parent="order_status_history" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontStyle=1;fontColor=#0f172a;" value="PK id int" vertex="1">
+                    <mxGeometry height="19" width="290" y="28" as="geometry"/>
+                </mxCell>
+                <mxCell id="order_status_history__order_id" parent="order_status_history" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#4338ca;" value="FK order_id int" vertex="1">
+                    <mxGeometry height="19" width="290" y="47" as="geometry"/>
+                </mxCell>
+                <mxCell id="order_status_history__status" parent="order_status_history" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   status varchar" vertex="1">
+                    <mxGeometry height="19" width="290" y="66" as="geometry"/>
+                </mxCell>
+                <mxCell id="order_status_history__note" parent="order_status_history" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   note varchar  ?" vertex="1">
+                    <mxGeometry height="19" width="290" y="85" as="geometry"/>
+                </mxCell>
+                <mxCell id="order_status_history__created_at" parent="order_status_history" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   created_at timestamp" vertex="1">
+                    <mxGeometry height="19" width="290" y="104" as="geometry"/>
+                </mxCell>
+                <mxCell id="order_status_history__shipment_id" parent="order_status_history" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   shipment_id int  ?" vertex="1">
+                    <mxGeometry height="19" width="290" y="123" as="geometry"/>
+                </mxCell>
+                <mxCell id="colTitle3" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=14;fontStyle=1;fontColor=#0f172a;" value="Baskets, money and trust" vertex="1">
+                    <mxGeometry height="24" width="290" x="1320" y="110" as="geometry"/>
+                </mxCell>
+                <mxCell id="cart" parent="1" style="swimlane;fontStyle=1;childLayout=stackLayout;horizontal=1;startSize=28;horizontalStack=0;resizeParent=0;resizeParentMax=0;html=1;fillColor=#ffffff;strokeColor=#334155;swimlaneFillColor=#ffffff;fontSize=13;fontColor=#0f172a;" value="cart" vertex="1">
+                    <mxGeometry height="123" width="290" x="1320" y="144" as="geometry"/>
+                </mxCell>
+                <mxCell id="cart__id" parent="cart" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontStyle=1;fontColor=#0f172a;" value="PK id int" vertex="1">
+                    <mxGeometry height="19" width="290" y="28" as="geometry"/>
+                </mxCell>
+                <mxCell id="cart__customer_id" parent="cart" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#4338ca;" value="FK customer_id int" vertex="1">
+                    <mxGeometry height="19" width="290" y="47" as="geometry"/>
+                </mxCell>
+                <mxCell id="cart__product_id" parent="cart" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#4338ca;" value="FK product_id int" vertex="1">
+                    <mxGeometry height="19" width="290" y="66" as="geometry"/>
+                </mxCell>
+                <mxCell id="cart__quantity" parent="cart" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   quantity int" vertex="1">
+                    <mxGeometry height="19" width="290" y="85" as="geometry"/>
+                </mxCell>
+                <mxCell id="cart__created_at" parent="cart" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   created_at timestamp" vertex="1">
+                    <mxGeometry height="19" width="290" y="104" as="geometry"/>
+                </mxCell>
+                <mxCell id="payments" parent="1" style="swimlane;fontStyle=1;childLayout=stackLayout;horizontal=1;startSize=28;horizontalStack=0;resizeParent=0;resizeParentMax=0;html=1;fillColor=#ffffff;strokeColor=#334155;swimlaneFillColor=#ffffff;fontSize=13;fontColor=#0f172a;" value="payments" vertex="1">
+                    <mxGeometry height="161" width="350" x="1320" y="312" as="geometry"/>
+                </mxCell>
+                <mxCell id="payments__id" parent="payments" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontStyle=1;fontColor=#0f172a;" value="PK id int" vertex="1">
+                    <mxGeometry height="19" width="350" y="28" as="geometry"/>
+                </mxCell>
+                <mxCell id="payments__order_id" parent="payments" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#4338ca;" value="FK order_id int" vertex="1">
+                    <mxGeometry height="19" width="350" y="47" as="geometry"/>
+                </mxCell>
+                <mxCell id="payments__method" parent="payments" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   method varchar" vertex="1">
+                    <mxGeometry height="19" width="350" y="66" as="geometry"/>
+                </mxCell>
+                <mxCell id="payments__amount" parent="payments" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   amount decimal" vertex="1">
+                    <mxGeometry height="19" width="350" y="85" as="geometry"/>
+                </mxCell>
+                <mxCell id="payments__status" parent="payments" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   status varchar  ?" vertex="1">
+                    <mxGeometry height="19" width="350" y="104" as="geometry"/>
+                </mxCell>
+                <mxCell id="payments__transaction_ref" parent="payments" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="UQ transaction_ref varchar  ?" vertex="1">
+                    <mxGeometry height="19" width="350" y="123" as="geometry"/>
+                </mxCell>
+                <mxCell id="payments__created_at" parent="payments" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   created_at timestamp" vertex="1">
+                    <mxGeometry height="19" width="350" y="142" as="geometry"/>
+                </mxCell>
+                <mxCell id="reviews" parent="1" style="swimlane;fontStyle=1;childLayout=stackLayout;horizontal=1;startSize=28;horizontalStack=0;resizeParent=0;resizeParentMax=0;html=1;fillColor=#ffffff;strokeColor=#334155;swimlaneFillColor=#ffffff;fontSize=13;fontColor=#0f172a;" value="reviews" vertex="1">
+                    <mxGeometry height="199" width="290" x="1320" y="518" as="geometry"/>
+                </mxCell>
+                <mxCell id="reviews__id" parent="reviews" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontStyle=1;fontColor=#0f172a;" value="PK id int" vertex="1">
+                    <mxGeometry height="19" width="290" y="28" as="geometry"/>
+                </mxCell>
+                <mxCell id="reviews__seller_id" parent="reviews" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   seller_id int" vertex="1">
+                    <mxGeometry height="19" width="290" y="47" as="geometry"/>
+                </mxCell>
+                <mxCell id="reviews__customer_id" parent="reviews" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#4338ca;" value="FK customer_id int" vertex="1">
+                    <mxGeometry height="19" width="290" y="66" as="geometry"/>
+                </mxCell>
+                <mxCell id="reviews__order_id" parent="reviews" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   order_id int  ?" vertex="1">
+                    <mxGeometry height="19" width="290" y="85" as="geometry"/>
+                </mxCell>
+                <mxCell id="reviews__rating" parent="reviews" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   rating tinyint" vertex="1">
+                    <mxGeometry height="19" width="290" y="104" as="geometry"/>
+                </mxCell>
+                <mxCell id="reviews__comment" parent="reviews" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   comment text  ?" vertex="1">
+                    <mxGeometry height="19" width="290" y="123" as="geometry"/>
+                </mxCell>
+                <mxCell id="reviews__reply" parent="reviews" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   reply text  ?" vertex="1">
+                    <mxGeometry height="19" width="290" y="142" as="geometry"/>
+                </mxCell>
+                <mxCell id="reviews__replied_at" parent="reviews" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   replied_at timestamp  ?" vertex="1">
+                    <mxGeometry height="19" width="290" y="161" as="geometry"/>
+                </mxCell>
+                <mxCell id="reviews__created_at" parent="reviews" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   created_at timestamp" vertex="1">
+                    <mxGeometry height="19" width="290" y="180" as="geometry"/>
+                </mxCell>
+                <mxCell id="reports" parent="1" style="swimlane;fontStyle=1;childLayout=stackLayout;horizontal=1;startSize=28;horizontalStack=0;resizeParent=0;resizeParentMax=0;html=1;fillColor=#ffffff;strokeColor=#334155;swimlaneFillColor=#ffffff;fontSize=13;fontColor=#0f172a;" value="reports" vertex="1">
+                    <mxGeometry height="218" width="290" x="1320" y="762" as="geometry"/>
+                </mxCell>
+                <mxCell id="reports__id" parent="reports" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontStyle=1;fontColor=#0f172a;" value="PK id int" vertex="1">
+                    <mxGeometry height="19" width="290" y="28" as="geometry"/>
+                </mxCell>
+                <mxCell id="reports__order_id" parent="reports" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#4338ca;" value="FK order_id int  ?" vertex="1">
+                    <mxGeometry height="19" width="290" y="47" as="geometry"/>
+                </mxCell>
+                <mxCell id="reports__reporter_role" parent="reports" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   reporter_role varchar" vertex="1">
+                    <mxGeometry height="19" width="290" y="66" as="geometry"/>
+                </mxCell>
+                <mxCell id="reports__reporter_id" parent="reports" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   reporter_id int" vertex="1">
+                    <mxGeometry height="19" width="290" y="85" as="geometry"/>
+                </mxCell>
+                <mxCell id="reports__reported_role" parent="reports" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   reported_role varchar" vertex="1">
+                    <mxGeometry height="19" width="290" y="104" as="geometry"/>
+                </mxCell>
+                <mxCell id="reports__reported_id" parent="reports" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   reported_id int" vertex="1">
+                    <mxGeometry height="19" width="290" y="123" as="geometry"/>
+                </mxCell>
+                <mxCell id="reports__reason" parent="reports" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   reason varchar" vertex="1">
+                    <mxGeometry height="19" width="290" y="142" as="geometry"/>
+                </mxCell>
+                <mxCell id="reports__details" parent="reports" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   details text  ?" vertex="1">
+                    <mxGeometry height="19" width="290" y="161" as="geometry"/>
+                </mxCell>
+                <mxCell id="reports__status" parent="reports" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   status varchar" vertex="1">
+                    <mxGeometry height="19" width="290" y="180" as="geometry"/>
+                </mxCell>
+                <mxCell id="reports__created_at" parent="reports" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   created_at timestamp" vertex="1">
+                    <mxGeometry height="19" width="290" y="199" as="geometry"/>
+                </mxCell>
+                <mxCell id="courier" parent="1" style="swimlane;fontStyle=3;childLayout=stackLayout;horizontal=1;startSize=28;horizontalStack=0;resizeParent=0;resizeParentMax=0;html=1;fillColor=#e2e8f0;strokeColor=#94a3b8;swimlaneFillColor=#f8fafc;fontSize=12;fontColor=#475569;opacity=70;" value="courier  —  legacy" vertex="1">
+                    <mxGeometry height="218" width="290" x="1320" y="1025" as="geometry"/>
+                </mxCell>
+                <mxCell id="courier__id" parent="courier" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontStyle=1;fontColor=#0f172a;" value="PK id int" vertex="1">
+                    <mxGeometry height="19" width="290" y="28" as="geometry"/>
+                </mxCell>
+                <mxCell id="courier__order_id" parent="courier" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="UQ order_id int" vertex="1">
+                    <mxGeometry height="19" width="290" y="47" as="geometry"/>
+                </mxCell>
+                <mxCell id="courier__driver_name" parent="courier" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   driver_name varchar  ?" vertex="1">
+                    <mxGeometry height="19" width="290" y="66" as="geometry"/>
+                </mxCell>
+                <mxCell id="courier__driver_phone" parent="courier" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   driver_phone varchar  ?" vertex="1">
+                    <mxGeometry height="19" width="290" y="85" as="geometry"/>
+                </mxCell>
+                <mxCell id="courier__price" parent="courier" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   price decimal  ?" vertex="1">
+                    <mxGeometry height="19" width="290" y="104" as="geometry"/>
+                </mxCell>
+                <mxCell id="courier__distance" parent="courier" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   distance varchar  ?" vertex="1">
+                    <mxGeometry height="19" width="290" y="123" as="geometry"/>
+                </mxCell>
+                <mxCell id="courier__direction" parent="courier" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   direction varchar  ?" vertex="1">
+                    <mxGeometry height="19" width="290" y="142" as="geometry"/>
+                </mxCell>
+                <mxCell id="courier__status" parent="courier" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   status varchar  ?" vertex="1">
+                    <mxGeometry height="19" width="290" y="161" as="geometry"/>
+                </mxCell>
+                <mxCell id="courier__created_at" parent="courier" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   created_at timestamp" vertex="1">
+                    <mxGeometry height="19" width="290" y="180" as="geometry"/>
+                </mxCell>
+                <mxCell id="courier__courier_id" parent="courier" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;" value="   courier_id int  ?" vertex="1">
+                    <mxGeometry height="19" width="290" y="199" as="geometry"/>
+                </mxCell>
+                <mxCell id="fk0" edge="1" parent="1" source="customers" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=ERoneToMany;endFill=0;strokeColor=#94a3b8;fontSize=10;fontColor=#475569;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=8;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="orders" value="places">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="fk1" edge="1" parent="1" source="customers" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=ERoneToMany;endFill=0;strokeColor=#94a3b8;fontSize=10;fontColor=#475569;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=8;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="cart" value="">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="fk2" edge="1" parent="1" source="customers" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=ERoneToMany;endFill=0;strokeColor=#94a3b8;fontSize=10;fontColor=#475569;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=8;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="reviews" value="">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="fk3" edge="1" parent="1" source="sellers" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=ERoneToMany;endFill=0;strokeColor=#94a3b8;fontSize=10;fontColor=#475569;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=8;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="stores" value="runs">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="fk4" edge="1" parent="1" source="sellers" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=ERoneToMany;endFill=0;strokeColor=#94a3b8;fontSize=10;fontColor=#475569;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=8;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="products" value="sells">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="fk5" edge="1" parent="1" source="sellers" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=ERoneToMany;endFill=0;strokeColor=#94a3b8;fontSize=10;fontColor=#475569;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=8;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="documents" value="">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="fk6" edge="1" parent="1" source="sellers" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=ERoneToMany;endFill=0;strokeColor=#94a3b8;fontSize=10;fontColor=#475569;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=8;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="shipments" value="packs">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="fk7" edge="1" parent="1" source="sellers" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=ERoneToMany;endFill=0;strokeColor=#94a3b8;fontSize=10;fontColor=#475569;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=8;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="reviews" value="">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="fk8" edge="1" parent="1" source="couriers" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=ERoneToMany;endFill=0;strokeColor=#94a3b8;fontSize=10;fontColor=#475569;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=8;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="shipments" value="carries">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="fk9" edge="1" parent="1" source="categories" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=ERoneToMany;endFill=0;strokeColor=#94a3b8;fontSize=10;fontColor=#475569;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=8;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="products" value="">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="fk10" edge="1" parent="1" source="stores" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=ERoneToMany;endFill=0;strokeColor=#94a3b8;fontSize=10;fontColor=#475569;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=8;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="products" value="">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="fk11" edge="1" parent="1" source="products" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=ERoneToMany;endFill=0;strokeColor=#94a3b8;fontSize=10;fontColor=#475569;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=8;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="order_items" value="">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="fk12" edge="1" parent="1" source="products" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=ERoneToMany;endFill=0;strokeColor=#94a3b8;fontSize=10;fontColor=#475569;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=8;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="cart" value="">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="fk13" edge="1" parent="1" source="orders" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=ERoneToMany;endFill=0;strokeColor=#94a3b8;fontSize=10;fontColor=#475569;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=8;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="order_items" value="contains">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="fk14" edge="1" parent="1" source="orders" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=block;endFill=1;strokeColor=#4f46e5;strokeWidth=2;fontSize=11;fontStyle=1;fontColor=#4338ca;labelBackgroundColor=#ffffff;spacing=4;jumpStyle=arc;jumpSize=8;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="shipments" value="splits into">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="fk15" edge="1" parent="1" source="orders" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=ERoneToMany;endFill=0;strokeColor=#94a3b8;fontSize=10;fontColor=#475569;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=8;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="order_status_history" value="tracked by">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="fk16" edge="1" parent="1" source="orders" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=ERoneToMany;endFill=0;strokeColor=#94a3b8;fontSize=10;fontColor=#475569;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=8;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="payments" value="">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="fk17" edge="1" parent="1" source="orders" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;endArrow=ERoneToMany;endFill=0;strokeColor=#94a3b8;fontSize=10;fontColor=#475569;labelBackgroundColor=#ffffff;jumpStyle=arc;jumpSize=8;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="reports" value="">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="legendTitle" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=14;fontStyle=1;fontColor=#0f172a;" value="How to read it" vertex="1">
+                    <mxGeometry height="24" width="320" x="1700" y="110" as="geometry"/>
+                </mxCell>
+                <mxCell id="legend0" parent="1" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontStyle=1;fontColor=#0f172a;align=left;" value="PK primary key" vertex="1">
+                    <mxGeometry height="22" width="320" x="1700" y="144" as="geometry"/>
+                </mxCell>
+                <mxCell id="legend1" parent="1" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#4338ca;align=left;" value="FK foreign key — points at another table" vertex="1">
+                    <mxGeometry height="22" width="320" x="1700" y="168" as="geometry"/>
+                </mxCell>
+                <mxCell id="legend2" parent="1" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;align=left;" value="UQ must be unique" vertex="1">
+                    <mxGeometry height="22" width="320" x="1700" y="192" as="geometry"/>
+                </mxCell>
+                <mxCell id="legend3" parent="1" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=8;html=1;fontSize=11;fontColor=#334155;align=left;" value="? may be empty" vertex="1">
+                    <mxGeometry height="22" width="320" x="1700" y="216" as="geometry"/>
+                </mxCell>
+                <mxCell id="legendBoxes" parent="1" style="shape=note;whiteSpace=wrap;html=1;size=16;fillColor=#eef2ff;strokeColor=#4f46e5;align=left;spacingLeft=10;spacingTop=4;fontSize=11;verticalAlign=top;fontColor=#4338ca;" value="Indigo tables are where the design lives: an ORDER is what somebody bought, and a SHIPMENT is one shop’s parcel within it.  Faded tables are kept only so databases built by earlier versions keep working. A current database does not use them — logins live on the account rows themselves, and parcels live in shipments." vertex="1">
+                    <mxGeometry height="150" width="320" x="1700" y="260" as="geometry"/>
+                </mxCell>
+                <mxCell id="noteGenerated" parent="1" style="shape=note;whiteSpace=wrap;html=1;size=16;fillColor=#fffbeb;strokeColor=#b45309;align=left;spacingLeft=10;spacingTop=4;fontSize=11;verticalAlign=top;fontColor=#78350f;" value="Generated from the live database.  If the schema changes, run the generator again rather than editing this file — a hand-drawn schema is wrong the moment somebody adds a column." vertex="1">
+                    <mxGeometry height="115" width="320" x="1700" y="430" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>

@@ -1,3 +1,8 @@
+// Ratings: reading them, leaving one, and a shop answering back.
+//
+// Controllers here do the HTTP part only — check who is asking, hand the work to the
+// model, and choose a status code. The rules about who may rate what live in the model.
+
 import Review from '../models/Review.js';
 import { resolveSellerId, resolveCustomerId } from '../utils/accounts.js';
 
@@ -41,6 +46,11 @@ export const getMyRatings = async (req, res) => {
   }
 };
 
+// A shopper rates a shop after a delivery.
+//
+// 'upsert' rather than insert: rating the same shop again for the same order replaces the
+// earlier rating instead of letting one person pile up scores. The answer carries the
+// shop's new average, so the page can show it without asking again.
 export const createReview = async (req, res) => {
   try {
     if (req.user.role !== 'customer') return res.status(403).json({ error: 'Only customers can rate shops' });
@@ -52,6 +62,10 @@ export const createReview = async (req, res) => {
   }
 };
 
+// The shop's public answer to a rating.
+//
+// Checked twice over: a seller account here, and inside the model that it is the seller
+// this particular rating is about — so one shop cannot answer on behalf of another.
 export const replyToReview = async (req, res) => {
   try {
     if (req.user.role !== 'seller') return res.status(403).json({ error: 'Only the shop can reply' });

@@ -1,3 +1,13 @@
+// Starts the server.
+//
+// The application itself is built in app.js. This file does the two things that only a
+// running server should do: listen on a port, and keep a timer going for the work that
+// has to happen on its own — chasing parcels nobody has collected, and clearing out
+// accounts whose restore window has passed.
+//
+// Keeping these apart is what lets the tests drive the real application without ever
+// opening a port or starting a timer.
+
 import dotenv from 'dotenv';
 import app from './app.js';
 import { initializeDatabase, testConnection } from './config/db.js';
@@ -33,6 +43,10 @@ function startPickupEscalation() {
   console.log(`⏱  Pickup escalation: unclaimed parcels are assigned after ${ESCALATION_MINUTES} minutes`);
 }
 
+// Connect to the database, make sure the schema is up to date, then start listening.
+//
+// The order matters: if the database is not reachable the server exits instead of coming
+// up and answering every request with an error.
 async function startServer() {
   try {
     await initializeDatabase();

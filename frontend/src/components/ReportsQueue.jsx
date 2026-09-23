@@ -1,3 +1,6 @@
+// The administrator’s complaints queue: who has complaints against them, worst first, and
+// the buttons to suspend or reinstate.
+
 import { useEffect, useState } from 'react';
 import { getReportSummary, getReportsAgainst, setAccountStatus } from '../api/reportApi';
 import { isLocalDemoSession } from '../utils/localSession';

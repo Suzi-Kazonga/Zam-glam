@@ -1,3 +1,9 @@
+// Shop logos and storefront links for the seeded demo shops.
+//
+// Only the picture is looked up by name. The link to a storefront comes from the real
+// store id (see api/storeApi.js getMyStore) — guessing it from the name sent every newly
+// registered shop to somebody else’s page.
+
 const storeLogos = [
   { match: ['mud'], src: '/logos/mud.png', background: 'bg-black', path: '/stores/1' },
   { match: ['jet'], src: '/logos/jet_logo.png', background: 'bg-black', path: '/stores/2' },

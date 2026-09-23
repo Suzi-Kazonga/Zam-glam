@@ -16,6 +16,7 @@ describe('Registration and sign-in', () => {
       password: 'CUSTOMER123456',
       role: 'customer',
       address: 'Kabulonga, Lusaka',
+      accepted_terms: true,
     });
 
     expect(response.status).toBe(201);
@@ -38,9 +39,33 @@ describe('Registration and sign-in', () => {
 
   test('the same email cannot register twice', async () => {
     const response = await api().post('/api/auth/register').send({
-      name: 'Someone Else', email: 'chanda@zamglam.test', password: 'OTHER123456', role: 'customer',
+      name: 'Someone Else', email: 'chanda@zamglam.test', password: 'OTHER123456', role: 'customer', accepted_terms: true,
     });
     expect(response.status).toBe(409);
+  });
+
+  test('an account is not created without agreeing to the terms', async () => {
+    const email = 'noterms@zamglam.test';
+    const response = await api().post('/api/auth/register').send({
+      name: 'No Terms', email, password: 'CUSTOMER123456', role: 'customer',
+    });
+    expect(response.status).toBe(400);
+    expect(await User.findByEmail(email)).toBeUndefined();
+  });
+
+  test('when the terms were agreed to is kept on the account', async () => {
+    const customerId = await profileIdFor('customer', 'chanda@zamglam.test');
+    const [rows] = await pool.query('SELECT terms_accepted_at FROM customers WHERE id = ?', [customerId]);
+    expect(rows[0].terms_accepted_at).toEqual(expect.any(Date));
+  });
+
+  test('nobody can sign themselves up as an administrator', async () => {
+    const email = 'selfmade-admin@zamglam.test';
+    const response = await api().post('/api/auth/register').send({
+      name: 'Self Made', email, password: 'ADMIN123456', role: 'admin', accepted_terms: true,
+    });
+    expect(response.status).toBe(400);
+    expect(await User.findByEmail(email)).toBeUndefined();
   });
 
   test('registration needs a name, an email and a password', async () => {

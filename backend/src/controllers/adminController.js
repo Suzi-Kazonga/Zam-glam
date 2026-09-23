@@ -1,7 +1,17 @@
+// The admin console. Every figure and every list here is read from the database, and
+// every action writes to it.
+//
+// The console used to be backed by a hardcoded list in the browser, so its counts were
+// invented and its Delete button changed nothing about the real account.
+
 import Admin from '../models/Admin.js';
 
+// Which groups of accounts may be listed. Anything else is a typo or somebody guessing at
+// URLs, and is refused rather than turned into SQL.
 const VALID_ROLES = ['customers', 'sellers', 'couriers'];
 
+// The dashboard figures: how many of each kind of account exist, how many registrations
+// are waiting for a decision, and how much has happened on the platform.
 export const getStats = async (req, res) => {
   try {
     res.json(await Admin.stats());
@@ -33,6 +43,10 @@ export const getPendingRegistrations = async (req, res) => {
   }
 };
 
+// Letting a new courier start work, or turning them away.
+//
+// Couriers carry other people’s parcels, so a sign-up waits here until somebody decides.
+// Rejecting one also takes them off duty immediately.
 export const reviewCourier = async (req, res) => {
   try {
     const { status } = req.body;

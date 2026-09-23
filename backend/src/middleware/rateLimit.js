@@ -1,3 +1,8 @@
+// Limits on how often something can be called, so one address cannot hammer the server.
+//
+// Every limit can be changed by environment variable — which is also how the tests set
+// small limits to prove the limiters work, without slowing everything else down.
+
 import rateLimit from 'express-rate-limit';
 
 // Without this, login is open to brute force: an attacker can try passwords as fast as the

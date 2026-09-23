@@ -1,3 +1,5 @@
+// Clothes grouped by who they are for.
+
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import StoreCard from '../components/StoreCard';

@@ -1,3 +1,8 @@
+// One shop’s storefront.
+//
+// A shop looking at its own storefront also gets the controls to add and edit listings
+// from here, rather than having to go back to the dashboard.
+
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import ProductCard from '../components/ProductCard';

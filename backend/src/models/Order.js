@@ -1,3 +1,16 @@
+// Orders, parcels and delivery — the heart of the system, and the largest file in it.
+//
+// The idea everything here turns on: an ORDER is what a shopper bought, and a PARCEL
+// (a "shipment" in the database) is one shop's items within that order. A basket holding
+// things from three shops becomes one order and three parcels, each collected from a
+// different place, priced on its own distance, and delivered separately.
+//
+// The order's own status is a rollup of its parcels — whichever is furthest behind — so an
+// order only reads "delivered" once every parcel has been.
+//
+// The rules live in this file rather than in the controllers, so they hold no matter which
+// route, test or script reaches them.
+
 import { pool } from '../config/db.js';
 import { hasColumn, resolveCustomerId, resolveSellerId, resolveCourierId } from '../utils/accounts.js';
 import { quoteDelivery } from '../services/courierProvider.js';
@@ -135,10 +148,12 @@ class Order {
     return hasColumn(table, column);
   }
 
+  // Shopper id from a signed-in user.
   static resolveCustomerId(user_id) {
     return resolveCustomerId(user_id);
   }
 
+  // Shop id from a signed-in user.
   static resolveSellerId(user_id) {
     return resolveSellerId(user_id);
   }
@@ -296,6 +311,7 @@ class Order {
     return Order._setOrderStatus(orderId, rollup);
   }
 
+  // Write the order’s rolled-up status.
   static async _setOrderStatus(orderId, status) {
     await pool.query('UPDATE orders SET status = ? WHERE id = ?', [status, orderId]);
     return status;
@@ -340,6 +356,7 @@ class Order {
     });
   }
 
+  // One parcel, with the shop it is from.
   static async findShipmentById(shipmentId) {
     const [rows] = await pool.query(
       `SELECT sh.*, s.shop_name AS store_name FROM shipments sh
@@ -396,6 +413,7 @@ class Order {
     return { shipment_id: shipmentId, order_id: shipment.order_id, status, order_status: orderStatus };
   }
 
+  // One order in full: its items, its parcels and its tracking.
   static async findDetailById(id) {
     const customerFields = await Order.customerFieldsSql();
     const [rows] = await pool.query(
@@ -410,6 +428,7 @@ class Order {
     return detailed;
   }
 
+  // A shopper’s own orders.
   static async findByCustomerUserId(user_id) {
     const customerId = await Order.resolveCustomerId(user_id);
     if (!customerId) return [];
@@ -417,6 +436,8 @@ class Order {
     return Order._attachItems(orders);
   }
 
+  // Orders containing this shop’s products — trimmed to their own parcel and items, so
+  // one shop never sees what another shop sold in the same basket.
   static async findBySellerUserId(user_id) {
     const sellerId = await Order.resolveSellerId(user_id);
     if (!sellerId) return [];
@@ -547,6 +568,7 @@ class Order {
       })));
   }
 
+  // Is this courier carrying any parcel in this order?
   static async courierOwnsOrder(orderId, courier_user_id) {
     const courierId = await Order.resolveCourierId(courier_user_id);
     if (!courierId) return false;
@@ -748,6 +770,8 @@ class Order {
     return { shipment_id: Number(shipmentId), status: 'shipped', returned_to_pool: true };
   }
 
+  // Write one line of tracking, and keep the order’s own status in step with its parcels.
+  // This is where the customer-facing history comes from.
   static async _recordEvent(orderId, shipmentId, status, note) {
     await pool.query(
       'INSERT INTO order_status_history (order_id, shipment_id, status, note) VALUES (?, ?, ?, ?)',
@@ -756,6 +780,7 @@ class Order {
   }
 
 
+  // Is this courier the one carrying this parcel? Guards marking it delivered.
   static async courierOwnsShipment(shipmentId, courier_user_id) {
     const courierId = await Order.resolveCourierId(courier_user_id);
     if (!courierId) return false;
@@ -763,6 +788,7 @@ class Order {
     return rows.length > 0;
   }
 
+  // Is this parcel from this shop? Guards confirming and denying a handover.
   static async sellerOwnsShipment(shipmentId, seller_user_id) {
     const sellerId = await Order.resolveSellerId(seller_user_id);
     if (!sellerId) return false;
@@ -770,6 +796,7 @@ class Order {
     return rows.length > 0;
   }
 
+  // Does this shop have anything in this order?
   static async sellerOwnsOrder(orderId, seller_user_id) {
     const sellerId = await Order.resolveSellerId(seller_user_id);
     if (!sellerId) return false;
@@ -781,6 +808,7 @@ class Order {
     return rows.length > 0;
   }
 
+  // Is this order this shopper’s own? Guards reading somebody else’s order.
   static async customerOwnsOrder(orderId, customer_user_id) {
     const customerId = await Order.resolveCustomerId(customer_user_id);
     if (!customerId) return false;
@@ -788,6 +816,8 @@ class Order {
     return rows.length > 0;
   }
 
+  // Move a whole order at once. Parcels normally move one at a time; this is for the
+  // cases that act on the order as a whole, such as an administrator cancelling it.
   static async updateStatus(id, status, note) {
     const [result] = await pool.query('UPDATE orders SET status = ? WHERE id = ?', [status, id]);
     if (result.affectedRows === 0) return false;

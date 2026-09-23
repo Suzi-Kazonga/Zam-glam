@@ -1,3 +1,5 @@
+// The catalogue’s filters: who the clothes are for, category, and price.
+
 import React from 'react';
 
 const FilterBar = ({ 

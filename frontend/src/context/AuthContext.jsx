@@ -52,10 +52,12 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const register = async (name, email, password, role = 'customer') => {
+  // profileData carries the rest of the form, including acceptedTerms — without it the
+  // server will not create the account.
+  const register = async (name, email, password, role = 'customer', profileData = {}) => {
     try {
       setError(null);
-      const data = await authApi.register(name, email, password, role);
+      const data = await authApi.register(name, email, password, role, profileData);
       return data;
     } catch (err) {
       setError(err.error || err.message);

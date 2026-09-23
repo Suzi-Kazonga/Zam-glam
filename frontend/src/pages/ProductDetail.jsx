@@ -1,3 +1,5 @@
+// One product: its photos, sizes, price and the shop selling it.
+
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
@@ -7,6 +9,7 @@ import { findShopProduct } from '../utils/shopCatalog';
 import { getSellerReviews } from '../api/reviewApi';
 import { useAuth } from '../context/AuthContext';
 import { canShop, NO_SHOPPING_MESSAGE } from '../utils/permissions';
+import { stockLimit } from '../utils/stock';
 
 const fallbackImage = '/images/products/mud-shirt.jpg';
 
@@ -36,13 +39,9 @@ export default function ProductDetail() {
     });
   }, [id]);
 
-  if (product === null) return <div className="mx-auto max-w-7xl px-4 py-20 text-center">Loading product...</div>;
-  if (!product) return <div className="mx-auto max-w-7xl px-4 py-20 text-center">Product not found.</div>;
-
-  const gallery = (product.images?.length ? product.images : [product.image_url || fallbackImage]).filter(Boolean);
-  const sellerName = product.store_name || product.sellerName;
-  // The shop's score rides along on the product; its reviews are fetched by seller id.
-  const score = { average: Number(product?.store_rating || 0), count: Number(product?.store_rating_count || 0) };
+  // The shop's reviews are fetched by seller id. This has to sit above the early returns
+  // below: React needs the same hooks on every render, and the first render of a real
+  // product is the loading message.
   const [reviews, setReviews] = useState([]);
 
   useEffect(() => {
@@ -50,6 +49,16 @@ export default function ProductDetail() {
     if (!sellerId) return;
     getSellerReviews(sellerId).then((data) => setReviews(data.reviews || [])).catch(() => setReviews([]));
   }, [product?.store_seller_id]);
+
+  if (product === null) return <div className="mx-auto max-w-7xl px-4 py-20 text-center">Loading product...</div>;
+  if (!product) return <div className="mx-auto max-w-7xl px-4 py-20 text-center">Product not found.</div>;
+
+  const gallery = (product.images?.length ? product.images : [product.image_url || fallbackImage]).filter(Boolean);
+  const sellerName = product.store_name || product.sellerName;
+  // The shop's score rides along on the product.
+  const score = { average: Number(product?.store_rating || 0), count: Number(product?.store_rating_count || 0) };
+  const stock = stockLimit(product.stock);
+  const soldOut = stock === 0;
 
   const handleAdd = () => {
     addToCart({ ...product, selectedSize: size, selectedColor: color, sellerName, store_name: sellerName }, quantity);
@@ -82,9 +91,11 @@ export default function ProductDetail() {
             </p>
           )}
           <p className="mt-4 text-2xl font-bold text-indigo-700">K{Number(product.price).toFixed(2)}</p>
-          <p className={`mt-2 text-sm font-semibold ${Number(product.stock) < 5 ? 'text-amber-700' : 'text-emerald-700'}`}>
-            {Number(product.stock) > 0 ? `${product.stock} in stock` : 'Sold out'}
-          </p>
+          {stock !== null && (
+            <p className={`mt-2 text-sm font-semibold ${stock < 5 ? 'text-amber-700' : 'text-emerald-700'}`}>
+              {stock > 0 ? `${stock} in stock` : 'Sold out'}
+            </p>
+          )}
           <p className="mt-6 leading-7 text-slate-600">{product.description || 'A versatile Zamglam piece made for everyday styling.'}</p>
           <div className="mt-8">
             <p className="mb-3 text-sm font-semibold text-slate-700">Size</p>
@@ -99,12 +110,12 @@ export default function ProductDetail() {
           </div>
           {shopping && (
             <label className="mt-6 block text-sm font-semibold text-slate-700">Quantity
-              <input type="number" min="1" max={product.stock} value={quantity} onChange={(event) => setQuantity(Math.min(Number(product.stock), Math.max(1, Number(event.target.value) || 1)))} className="mt-2 w-24 rounded-lg border border-slate-200 px-3 py-2" />
+              <input type="number" min="1" max={stock || undefined} value={quantity} onChange={(event) => { const wanted = Math.max(1, Number(event.target.value) || 1); setQuantity(stock ? Math.min(stock, wanted) : wanted); }} className="mt-2 w-24 rounded-lg border border-slate-200 px-3 py-2" />
             </label>
           )}
           {shopping ? (
-            <button onClick={handleAdd} disabled={product.stock === 0} className={`mt-10 w-full rounded-lg py-4 text-lg font-bold text-white ${added ? 'bg-emerald-600' : 'bg-indigo-600 hover:bg-indigo-700'} disabled:bg-slate-300`}>
-              {product.stock === 0 ? 'Sold out' : added ? 'Added to cart' : 'Add to cart'}
+            <button onClick={handleAdd} disabled={soldOut} className={`mt-10 w-full rounded-lg py-4 text-lg font-bold text-white ${added ? 'bg-emerald-600' : 'bg-indigo-600 hover:bg-indigo-700'} disabled:bg-slate-300`}>
+              {soldOut ? 'Sold out' : added ? 'Added to cart' : 'Add to cart'}
             </button>
           ) : (
             <p className="mt-10 rounded-lg bg-emerald-50 px-4 py-3 text-sm text-emerald-900">{NO_SHOPPING_MESSAGE}</p>

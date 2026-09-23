@@ -1,59 +1,48 @@
-# Build stage
+# Two stages: install dependencies in the first, and copy only what is needed to run into
+# the second, so the image does not ship a build toolchain.
+#
+# This used to copy backend/config, backend/controllers, backend/middleware, backend/models,
+# backend/routes and backend/services — none of which exist. They all live under
+# backend/src/, so the build failed on the first of them and no image was ever produced.
+
+# --- Build stage: install dependencies ---
 FROM node:18-alpine AS builder
 
 WORKDIR /app
 
-# Copy package files
+# Copy the manifests first, so a source change does not invalidate the dependency layer.
 COPY backend/package*.json ./
 
-# Install dependencies
-RUN npm ci
+RUN npm ci --omit=dev
 
-# Copy source code
-COPY backend/src ./src
-COPY backend/config ./config
-COPY backend/controllers ./controllers
-COPY backend/middleware ./middleware
-COPY backend/models ./models
-COPY backend/routes ./routes
-COPY backend/services ./services
-COPY backend/tests ./tests
-
-# Production stage
+# --- Production stage ---
 FROM node:18-alpine
 
 WORKDIR /app
 
-# Install dumb-init for proper signal handling
+# dumb-init forwards signals properly, so docker stop shuts the server down cleanly
+# instead of killing it. curl is for the health check.
 RUN apk add --no-cache dumb-init curl
 
-# Copy node_modules and app from builder
 COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/src ./src
-COPY --from=builder /app/config ./config
-COPY --from=builder /app/controllers ./controllers
-COPY --from=builder /app/middleware ./middleware
-COPY --from=builder /app/models ./models
-COPY --from=builder /app/routes ./routes
-COPY --from=builder /app/services ./services
-COPY --from=builder /app/tests ./tests
 COPY backend/package*.json ./
 
-# Create uploads directory
+# The whole application, and the entry point that starts it.
+COPY backend/src ./src
+COPY backend/server.js ./server.js
+
+# Uploaded product photos are written here. Mount a volume over it to keep them between
+# rebuilds — docker-compose.yml already does.
 RUN mkdir -p uploads
 
-# Set environment to production
 ENV NODE_ENV=production
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD node -e "require('http').get('http://localhost:${PORT:-5000}/health', (r) => {if (r.statusCode !== 200) throw new Error(r.statusCode)})"
+# The server answers /health as soon as the database is connected and the schema is ready.
+HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
+    CMD node -e "require('http').get('http://localhost:' + (process.env.PORT || 5000) + '/health', (r) => { if (r.statusCode !== 200) process.exit(1); }).on('error', () => process.exit(1))"
 
-# Expose port
 EXPOSE 5000
 
-# Use dumb-init to handle signals properly
 ENTRYPOINT ["dumb-init", "--"]
 
-# Start application
-CMD ["node", "src/server.js"]
+CMD ["node", "server.js"]

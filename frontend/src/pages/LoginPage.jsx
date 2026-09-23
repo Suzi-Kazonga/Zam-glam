@@ -1,3 +1,9 @@
+// The sign-in page.
+//
+// Picking a role only changes the colours and the hint shown; the server decides what kind
+// of account an email belongs to. The page also explains itself when a session has ended,
+// which is how somebody arrives here holding a token the server no longer accepts.
+
 import React, { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';

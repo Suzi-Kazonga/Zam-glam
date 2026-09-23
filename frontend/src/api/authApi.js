@@ -1,3 +1,8 @@
+// Signing up, signing in, and signing out.
+//
+// The token and the signed-in person are kept in the browser’s storage so a refresh does
+// not sign anybody out. axios.js attaches the token to every request after this.
+
 import apiClient from './axios';
 
 // Register user
@@ -12,6 +17,8 @@ export const register = async (name, email, password, role = 'customer', profile
       phone: profileData.phone || '',
       location: profileData.location || '',
       city: profileData.location || '',
+      // The server refuses to create an account without this.
+      accepted_terms: profileData.acceptedTerms === true,
     });
     return response.data;
   } catch (error) {

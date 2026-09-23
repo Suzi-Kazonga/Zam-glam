@@ -1,3 +1,5 @@
+// A shop on the shops listing.
+
 import { Link } from 'react-router-dom';
 import { getStoreLogoTheme } from '../utils/storeLogos';
 

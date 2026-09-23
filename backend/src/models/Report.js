@@ -4,15 +4,20 @@ import { resolveCustomerId, resolveSellerId, resolveCourierId } from '../utils/a
 // Three separate complaints against the same party raise it to an admin.
 export const REPORT_THRESHOLD = 3;
 
+// Which table each kind of party lives in, and which column holds their name. Written
+// once here so a role never has to be turned into a table name in half a dozen places.
 const TABLE_FOR = { seller: 'sellers', customer: 'customers', courier: 'couriers' };
 const NAME_COLUMN = { seller: 'shop_name', customer: 'name', courier: 'name' };
 
+// How to turn a signed-in user into their profile id, per role. See utils/accounts.js for
+// why that is not simply req.user.id.
 export const RESOLVER_FOR = {
   seller: resolveSellerId,
   customer: resolveCustomerId,
   courier: resolveCourierId,
 };
 
+// Complaints between the parties on an order, and the suspensions that can follow.
 class Report {
   // Who was actually involved in this order, so a complaint can only be filed against
   // someone the reporter genuinely dealt with — not an arbitrary account.
@@ -85,6 +90,7 @@ class Report {
     return { reported_role, reported_id, reports: count, flagged: count >= REPORT_THRESHOLD };
   }
 
+  // How many open complaints stand against one party. Three is the threshold.
   static async countAgainst(role, id) {
     const [rows] = await pool.query(
       "SELECT COUNT(*) n FROM reports WHERE reported_role = ? AND reported_id = ? AND status = 'open'",
@@ -129,6 +135,8 @@ class Report {
     return enriched;
   }
 
+  // Every complaint against one party, so an administrator can read what was actually said
+  // before deciding.
   static async listAgainst(role, id) {
     const [rows] = await pool.query(
       `SELECT id, order_id, reporter_role, reason, details, status, created_at
@@ -175,6 +183,8 @@ class Report {
   }
 
   // The banner a suspended user sees when they sign in.
+  // Is this account suspended, and why? Drives the notice a suspended user sees, and the
+  // check that stops them acting.
   static async statusFor(role, user_id) {
     const table = TABLE_FOR[role];
     if (!table) return null;

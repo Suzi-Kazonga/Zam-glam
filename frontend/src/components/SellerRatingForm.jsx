@@ -1,3 +1,5 @@
+// Where a shopper scores a shop after a delivery.
+
 import { useState } from 'react';
 import StarRating from './StarRating';
 import { rateSeller } from '../api/reviewApi';

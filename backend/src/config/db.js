@@ -1,3 +1,10 @@
+// The database connection, and the schema itself.
+//
+// There is no separate SQL file to run: initializeDatabase() below creates the database,
+// every table, and applies each change that has been made since — and it is safe to run
+// again, every time the server starts. An old copy of the database catches up simply by
+// being started.
+
 import mysql from 'mysql2/promise';
 import dotenv from 'dotenv';
 
@@ -16,8 +23,18 @@ const config = {
   connectTimeout: 5000,
 };
 
+// A pool rather than a single connection: several requests can be in the database at once,
+// and connections are handed back and reused instead of being opened each time.
+//
+// decimalNumbers makes prices come back as numbers rather than strings, so money can be
+// added up without converting it at every call site.
 const pool = mysql.createPool(config);
 
+// Build the database up to the current schema. Runs on every startup.
+//
+// Everything in here is written so that running it twice changes nothing the second time:
+// CREATE ... IF NOT EXISTS, columns added only when missing, and data repairs that match
+// nothing once they have been applied.
 export async function initializeDatabase() {
   try {
     let adminConnection;
@@ -44,6 +61,22 @@ export async function initializeDatabase() {
     await adminConnection.query(`CREATE DATABASE IF NOT EXISTS \`${config.database}\``);
     await adminConnection.end();
 
+  // The type of a table's id column, as a foreign key pointing at it has to be declared.
+  //
+  // A key and the id it points at must be exactly the same type, or MariaDB refuses to
+  // create the table (errno 150). Databases built by this file use INT; ones built from
+  // database/schema.sql or "Zamglam Database.sql" use INT UNSIGNED. Reading the type
+  // rather than assuming it lets a new table join onto either. A table that does not
+  // exist yet is about to be created by this file, as INT.
+  const idTypeOf = async (table) => {
+    const [rows] = await pool.query(
+      `SELECT COLUMN_TYPE FROM information_schema.columns
+       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = 'id'`,
+      [table],
+    );
+    return /unsigned/i.test(rows[0]?.COLUMN_TYPE || '') ? 'INT UNSIGNED' : 'INT';
+  };
+
   // The users table is kept for databases created by earlier versions, where it held the
   // login for every role and customers/sellers linked to it by user_id. New databases put
   // the login on the account itself (see below): every query written since — the admin
@@ -52,7 +85,7 @@ export async function initializeDatabase() {
   // both layouts working.
   await pool.query(`
     CREATE TABLE IF NOT EXISTS users (
-      id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+      id INT AUTO_INCREMENT PRIMARY KEY,
       email VARCHAR(255) NOT NULL UNIQUE,
       password VARCHAR(255) NOT NULL,
       role ENUM('admin','customer','seller','courier') NOT NULL DEFAULT 'customer',
@@ -62,7 +95,7 @@ export async function initializeDatabase() {
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS customers (
-      id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+      id INT AUTO_INCREMENT PRIMARY KEY,
       name VARCHAR(255) NOT NULL,
       email VARCHAR(255) NOT NULL UNIQUE,
       password VARCHAR(255) NOT NULL,
@@ -90,8 +123,8 @@ export async function initializeDatabase() {
   // previously 'admin' fell through User.create and created a customer row instead.
   await pool.query(`
     CREATE TABLE IF NOT EXISTS admins (
-      id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-      user_id INT UNSIGNED NULL UNIQUE,
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      user_id INT NULL UNIQUE,
       name VARCHAR(255) NOT NULL,
       email VARCHAR(255) NULL UNIQUE,
       password VARCHAR(255) NULL,
@@ -102,8 +135,8 @@ export async function initializeDatabase() {
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS couriers (
-      id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-      user_id INT UNSIGNED NULL UNIQUE,
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      user_id INT NULL UNIQUE,
       name VARCHAR(255) NOT NULL,
       email VARCHAR(255) NULL UNIQUE,
       password VARCHAR(255) NULL,
@@ -114,19 +147,22 @@ export async function initializeDatabase() {
     );
   `);
 
+  // Product categories. Created on demand when a shop types a new one.
   await pool.query(`
     CREATE TABLE IF NOT EXISTS categories (
-      id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+      id INT AUTO_INCREMENT PRIMARY KEY,
       name VARCHAR(100) NOT NULL UNIQUE,
       description TEXT,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
   `);
 
+  // A shop’s storefront. Its location is where couriers collect, and what delivery from
+  // this shop is priced against.
   await pool.query(`
     CREATE TABLE IF NOT EXISTS stores (
       id INT AUTO_INCREMENT PRIMARY KEY,
-      seller_id INT UNSIGNED NOT NULL,
+      seller_id ${await idTypeOf('sellers')} NOT NULL,
       name VARCHAR(255) NOT NULL,
       description TEXT,
       logo_url VARCHAR(500),
@@ -139,12 +175,14 @@ export async function initializeDatabase() {
     );
   `);
 
+  // What shops sell. sizes and images hold lists; MariaDB stores them as text, and the
+  // model turns them back into arrays on the way out.
   await pool.query(`
     CREATE TABLE IF NOT EXISTS products (
       id INT AUTO_INCREMENT PRIMARY KEY,
-      seller_id INT UNSIGNED NOT NULL,
-      store_id INT UNSIGNED,
-      category_id INT UNSIGNED,
+      seller_id ${await idTypeOf('sellers')} NOT NULL,
+      store_id INT,
+      category_id INT,
       name VARCHAR(255) NOT NULL,
       description TEXT,
       price DECIMAL(10,2) NOT NULL,
@@ -157,11 +195,13 @@ export async function initializeDatabase() {
     );
   `);
 
+  // A basket kept on the server, so it survives changing device. One row per product per
+  // shopper — adding the same thing again raises its quantity.
   await pool.query(`
     CREATE TABLE IF NOT EXISTS cart (
       id INT AUTO_INCREMENT PRIMARY KEY,
-      customer_id INT UNSIGNED NOT NULL,
-      product_id INT UNSIGNED NOT NULL,
+      customer_id ${await idTypeOf('customers')} NOT NULL,
+      product_id ${await idTypeOf('products')} NOT NULL,
       quantity INT NOT NULL DEFAULT 1,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       UNIQUE KEY uk_cart_customer_product (customer_id, product_id),
@@ -170,10 +210,12 @@ export async function initializeDatabase() {
     );
   `);
 
+  // What somebody bought. The totals are stored separately so a receipt can always show
+  // goods and delivery apart. Its status is a rollup of the parcels below.
   await pool.query(`
     CREATE TABLE IF NOT EXISTS orders (
       id INT AUTO_INCREMENT PRIMARY KEY,
-      customer_id INT UNSIGNED NOT NULL,
+      customer_id ${await idTypeOf('customers')} NOT NULL,
       total_price DECIMAL(12,2) NOT NULL DEFAULT 0,
       status VARCHAR(50) DEFAULT 'placed',
       address VARCHAR(255),
@@ -185,11 +227,13 @@ export async function initializeDatabase() {
     );
   `);
 
+  // The lines of an order. The price is copied in at the time of the order, so changing a
+  // product’s price later never rewrites what somebody paid.
   await pool.query(`
     CREATE TABLE IF NOT EXISTS order_items (
       id INT AUTO_INCREMENT PRIMARY KEY,
-      order_id INT UNSIGNED NOT NULL,
-      product_id INT UNSIGNED NOT NULL,
+      order_id ${await idTypeOf('orders')} NOT NULL,
+      product_id ${await idTypeOf('products')} NOT NULL,
       quantity INT NOT NULL DEFAULT 1,
       price DECIMAL(10,2) NOT NULL,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -203,10 +247,10 @@ export async function initializeDatabase() {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS shipments (
       id INT AUTO_INCREMENT PRIMARY KEY,
-      order_id INT UNSIGNED NOT NULL,
-      seller_id INT UNSIGNED NOT NULL,
+      order_id ${await idTypeOf('orders')} NOT NULL,
+      seller_id ${await idTypeOf('sellers')} NOT NULL,
       status VARCHAR(50) NOT NULL DEFAULT 'placed',
-      courier_id INT NULL,
+      courier_id ${await idTypeOf('couriers')} NULL,
       driver_name VARCHAR(255),
       driver_phone VARCHAR(50),
       price DECIMAL(10,2) NOT NULL DEFAULT 0,
@@ -260,7 +304,7 @@ export async function initializeDatabase() {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS order_status_history (
       id INT AUTO_INCREMENT PRIMARY KEY,
-      order_id INT UNSIGNED NOT NULL,
+      order_id ${await idTypeOf('orders')} NOT NULL,
       status VARCHAR(50) NOT NULL,
       note VARCHAR(255),
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -268,10 +312,12 @@ export async function initializeDatabase() {
     );
   `);
 
+  // Payment records. Written for every order, but no payment gateway is connected — see
+  // docs/08-PROJECT_STATUS.md. Nothing here moves money.
   await pool.query(`
     CREATE TABLE IF NOT EXISTS payments (
       id INT AUTO_INCREMENT PRIMARY KEY,
-      order_id INT UNSIGNED NOT NULL,
+      order_id ${await idTypeOf('orders')} NOT NULL,
       method VARCHAR(30) NOT NULL,
       amount DECIMAL(12,2) NOT NULL,
       status VARCHAR(30) DEFAULT 'pending',
@@ -284,7 +330,7 @@ export async function initializeDatabase() {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS courier (
       id INT AUTO_INCREMENT PRIMARY KEY,
-      order_id INT UNSIGNED NOT NULL UNIQUE,
+      order_id ${await idTypeOf('orders')} NOT NULL UNIQUE,
       driver_name VARCHAR(255) NOT NULL,
       driver_phone VARCHAR(50),
       price DECIMAL(10,2) NOT NULL,
@@ -296,10 +342,11 @@ export async function initializeDatabase() {
     );
   `);
 
+  // Registration paperwork a shop uploads for verification.
   await pool.query(`
     CREATE TABLE IF NOT EXISTS documents (
       id INT AUTO_INCREMENT PRIMARY KEY,
-      user_id INT UNSIGNED NOT NULL,
+      user_id ${await idTypeOf('users')} NOT NULL,
       type VARCHAR(50) NOT NULL,
       url VARCHAR(500) NOT NULL,
       status VARCHAR(20) DEFAULT 'pending',
@@ -320,6 +367,8 @@ export async function initializeDatabase() {
     return rows[0] || null;
   };
 
+  // Adds a column only if it is not already there, so a database built by an older version
+  // catches up simply by starting, and a current one is untouched.
   const addColumnIfMissing = async (table, column, definition) => {
     if (!(await columnInfo(table, column))) {
       await pool.query(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
@@ -409,6 +458,9 @@ export async function initializeDatabase() {
     // Deleting an account is reversible for 30 days: the row stays, greyed out in the
     // admin console, and is only removed for good once the grace period passes.
     await addColumnIfMissing(table, 'deleted_at', 'TIMESTAMP NULL DEFAULT NULL');
+    // When the account holder agreed to the terms at sign-up. Empty for accounts made
+    // before consent was asked for, and for the seeded demo accounts.
+    await addColumnIfMissing(table, 'terms_accepted_at', 'TIMESTAMP NULL DEFAULT NULL');
   }
   await addColumnIfMissing('sellers', 'verification_status', "VARCHAR(20) NOT NULL DEFAULT 'pending'");
   await addColumnIfMissing('sellers', 'verified_at', 'TIMESTAMP NULL DEFAULT NULL');
@@ -427,7 +479,7 @@ export async function initializeDatabase() {
   // Older review rows were linked only to a product/customer. Seller ratings now also
   // need the seller id, and product/store queries reference this column even when there
   // are no ratings yet.
-  await addColumnIfMissing('reviews', 'seller_id', 'INT UNSIGNED NULL');
+  await addColumnIfMissing('reviews', 'seller_id', 'INT NULL');
   // Some legacy review tables have no product_id at all, so only backfill when that
   // optional relationship exists.
   if (await columnInfo('reviews', 'product_id')) {
@@ -438,6 +490,37 @@ export async function initializeDatabase() {
       WHERE r.seller_id IS NULL
     `);
   }
+  // A review table built from database/schema.sql rates products, not shops: it has no
+  // order_id or reply columns, and product_id is required. A shop rating is tied to the
+  // order it came from and has no product, so without these a customer could not rate.
+  await addColumnIfMissing('reviews', 'order_id', 'INT NULL');
+  await addColumnIfMissing('reviews', 'reply', 'TEXT NULL');
+  await addColumnIfMissing('reviews', 'replied_at', 'TIMESTAMP NULL DEFAULT NULL');
+  const reviewProductColumn = await columnInfo('reviews', 'product_id');
+  if (reviewProductColumn && reviewProductColumn.IS_NULLABLE === 'NO') {
+    await pool.query(`ALTER TABLE reviews MODIFY COLUMN product_id ${reviewProductColumn.COLUMN_TYPE} NULL`);
+  }
+  // Rating the same order again replaces the score rather than adding a second one. That
+  // relies on this key, so a table without it would let one customer stack ratings.
+  const [reviewKey] = await pool.query(
+    `SELECT 1 FROM information_schema.statistics
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'reviews' AND INDEX_NAME = 'uk_review_customer_order_seller'`,
+  );
+  if (!reviewKey.length) {
+    await pool.query('ALTER TABLE reviews ADD UNIQUE KEY uk_review_customer_order_seller (customer_id, order_id, seller_id)');
+  }
+
+  // On the older layout, logins live in `users` and customers and sellers link to it by
+  // user_id. The admin console reads the email straight off the account, as it does for
+  // couriers and admins, so the address is copied across. Signing in still goes through
+  // `users`; User.create and Admin.updateAccount keep the copy in step.
+  for (const table of ['customers', 'sellers']) {
+    if (await columnInfo(table, 'user_id')) {
+      await addColumnIfMissing(table, 'email', 'VARCHAR(255) NULL');
+      await pool.query(`UPDATE ${table} t JOIN users u ON u.id = t.user_id SET t.email = u.email WHERE t.email IS NULL`);
+    }
+  }
+
   // Tracking events belong to a specific parcel; NULL means an order-wide event.
   await addColumnIfMissing('order_status_history', 'shipment_id', 'INT NULL');
 
@@ -498,6 +581,8 @@ export async function initializeDatabase() {
   }
 }
 
+// A quick check that the database is actually reachable, so a failure is reported at
+// startup rather than on somebody’s first request.
 export async function testConnection() {
   try {
     const [rows] = await pool.query('SELECT 1 AS ok');

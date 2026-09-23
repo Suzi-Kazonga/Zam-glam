@@ -1,3 +1,5 @@
+// A shop’s products, shown inside its storefront page.
+
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import ProductCard from '../components/ProductCard';

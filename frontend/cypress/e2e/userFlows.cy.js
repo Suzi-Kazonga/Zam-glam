@@ -1,203 +1,114 @@
 /**
- * E2E Test - User Login Flow
- * Tests customer login functionality
+ * End-to-end browser tests: the journeys a shopper takes, clicked through in a real browser
+ * against the real frontend and backend.
+ *
+ * Kept from the first version of this file: its four journeys — signing in, browsing,
+ * the basket and checkout, and tracking. Rewritten so every step uses what is actually on
+ * the page. The chat and notification-toast tests were dropped: Zamglam has no chat.
+ *
+ * They need the whole stack running with seeded data (see docs/06-TESTING.md). They place
+ * a real order and register a real account, so point them at a test database, never at
+ * data you care about.
  */
 
-describe('Customer Login Flow', () => {
-  beforeEach(() => {
-    cy.visit('/');
-  });
+const customer = { email: 'customer@zamglam.local', password: 'CUSTOMER123456' };
 
-  it('should display login form on login page', () => {
+// Sign in through the form, as a person would.
+const signIn = ({ email, password }) => {
+  cy.visit('/login');
+  cy.get('input[type="email"]').clear().type(email);
+  cy.get('input[type="password"]').clear().type(password);
+  cy.contains('button[type="submit"]', 'Sign in').click();
+};
+
+describe('Signing in', () => {
+  it('shows the sign-in form', () => {
     cy.visit('/login');
     cy.get('input[type="email"]').should('be.visible');
     cy.get('input[type="password"]').should('be.visible');
-    cy.get('button[type="submit"]').should('contain', 'Login');
+    cy.contains('button[type="submit"]', 'Sign in as customer').should('be.visible');
   });
 
-  it('should login successfully with valid credentials', () => {
-    cy.visit('/login');
-    cy.get('input[type="email"]').type('customer@zamglam.com');
-    cy.get('input[type="password"]').type('ValidPassword123');
-    cy.get('button[type="submit"]').click();
-    
-    // Should redirect to dashboard
-    cy.url().should('include', '/dashboard');
-    cy.get('[data-testid="welcome-message"]').should('contain', 'Welcome');
+  it('signs a seeded customer in and leaves the login page', () => {
+    signIn(customer);
+    cy.location('pathname').should('not.eq', '/login');
+    cy.window().then((win) => expect(win.localStorage.getItem('token')).to.be.a('string'));
   });
 
-  it('should show error message with invalid credentials', () => {
-    cy.visit('/login');
-    cy.get('input[type="email"]').type('invalid@email.com');
-    cy.get('input[type="password"]').type('WrongPassword');
-    cy.get('button[type="submit"]').click();
-    
-    cy.get('[data-testid="error-toast"]').should('contain', 'Invalid credentials');
-  });
-
-  it('should require email field', () => {
-    cy.visit('/login');
-    cy.get('input[type="password"]').type('SomePassword123');
-    cy.get('button[type="submit"]').click();
-    
-    cy.get('[data-testid="error-message"]').should('contain', 'Email is required');
+  it('refuses a wrong password and stays on the form', () => {
+    signIn({ email: customer.email, password: 'not-the-password' });
+    cy.location('pathname').should('eq', '/login');
+    cy.window().then((win) => expect(win.localStorage.getItem('token')).to.eq(null));
   });
 });
 
-/**
- * E2E Test - Browse Products Flow
- * Tests product browsing and filtering
- */
+describe('Signing up', () => {
+  it('will not create an account until the terms are agreed to', () => {
+    cy.visit('/signup/customer');
+    cy.get('input[aria-label="Name"]').type('Browser Tester');
+    cy.get('input[aria-label="Email"]').type(`browser${Date.now()}@example.com`);
+    cy.get('input[aria-label="Password"]').type('Browser123456');
+    cy.get('input[aria-label="Confirm password"]').type('Browser123456');
+    cy.contains('button', 'Sign Up').click();
+    cy.contains('You must agree to the terms and conditions').should('be.visible');
+    cy.location('pathname').should('eq', '/signup/customer');
 
-describe('Browse Products Flow', () => {
-  beforeEach(() => {
-    cy.visit('/');
-  });
-
-  it('should display product list on home page', () => {
-    cy.get('[data-testid="product-grid"]').should('be.visible');
-    cy.get('[data-testid="product-card"]').should('have.length.greaterThan', 0);
-  });
-
-  it('should filter products by category', () => {
-    cy.get('[data-testid="category-filter"]').select('accessories');
-    cy.get('[data-testid="product-card"]').each(($card) => {
-      cy.wrap($card).should('contain', 'accessories');
-    });
-  });
-
-  it('should search for products', () => {
-    cy.get('[data-testid="search-input"]').type('handbag');
-    cy.get('[data-testid="search-button"]').click();
-    
-    cy.get('[data-testid="product-card"]').should('contain', 'handbag');
-  });
-
-  it('should view product details', () => {
-    cy.get('[data-testid="product-card"]').first().click();
-    cy.url().should('include', '/products/');
-    cy.get('[data-testid="product-name"]').should('be.visible');
-    cy.get('[data-testid="product-description"]').should('be.visible');
-    cy.get('[data-testid="product-price"]').should('be.visible');
+    cy.get('input[type="checkbox"]').check();
+    cy.contains('button', 'Sign Up').click();
+    cy.location('pathname').should('eq', '/login');
   });
 });
 
-/**
- * E2E Test - Add to Cart and Checkout Flow
- * Tests complete shopping flow from browsing to checkout
- */
+describe('Browsing', () => {
+  it('lists real products from the catalogue', () => {
+    cy.visit('/products');
+    cy.get('article').should('have.length.greaterThan', 0);
+    cy.contains('article', 'in stock').should('exist');
+  });
 
-describe('Add to Cart and Checkout Flow', () => {
-  beforeEach(() => {
+  it('finds products by search', () => {
     cy.visit('/');
-    // Assume user is logged in or we can skip login for this test
+    cy.get('input[placeholder="Search all styles"]').first().type('Denim{enter}');
+    cy.location('search').should('include', 'search=Denim');
+    cy.contains('article', /denim/i).should('exist');
   });
 
-  it('should add product to cart', () => {
-    cy.get('[data-testid="product-card"]').first().within(() => {
-      cy.get('[data-testid="add-to-cart-btn"]').click();
-    });
-    
-    cy.get('[data-testid="success-toast"]').should('contain', 'Added to cart');
-    cy.get('[data-testid="cart-count"]').should('contain', '1');
-  });
-
-  it('should open cart and review items', () => {
-    cy.get('[data-testid="product-card"]').first().within(() => {
-      cy.get('[data-testid="add-to-cart-btn"]').click();
-    });
-    
-    cy.get('[data-testid="cart-icon"]').click();
-    cy.get('[data-testid="cart-item"]').should('have.length.greaterThan', 0);
-  });
-
-  it('should proceed to checkout', () => {
-    cy.get('[data-testid="product-card"]').first().within(() => {
-      cy.get('[data-testid="add-to-cart-btn"]').click();
-    });
-    
-    cy.get('[data-testid="cart-icon"]').click();
-    cy.get('[data-testid="checkout-btn"]').click();
-    
-    cy.url().should('include', '/checkout');
-    cy.get('[data-testid="delivery-form"]').should('be.visible');
-  });
-
-  it('should complete checkout successfully', () => {
-    // Add item to cart
-    cy.get('[data-testid="product-card"]').first().within(() => {
-      cy.get('[data-testid="add-to-cart-btn"]').click();
-    });
-    
-    // Go to checkout
-    cy.get('[data-testid="cart-icon"]').click();
-    cy.get('[data-testid="checkout-btn"]').click();
-    
-    // Fill delivery information
-    cy.get('[data-testid="delivery-address"]').type('123 Main Street, Lusaka');
-    cy.get('[data-testid="phone-number"]').type('0977123456');
-    
-    // Select delivery method
-    cy.get('[data-testid="delivery-method"]').select('standard');
-    
-    // Place order
-    cy.get('[data-testid="place-order-btn"]').click();
-    
-    // Verify order confirmation
-    cy.get('[data-testid="order-confirmation"]').should('be.visible');
-    cy.get('[data-testid="order-number"]').should('contain', 'Order #');
-  });
-
-  it('should track order after checkout', () => {
-    cy.get('[data-testid="order-confirmation"]').should('be.visible');
-    cy.get('[data-testid="track-order-btn"]').click();
-    
-    cy.url().should('include', '/orders/');
-    cy.get('[data-testid="order-status"]').should('contain', 'Processing');
+  it('opens a product with its price and stock', () => {
+    cy.visit('/products');
+    cy.get('article a[href^="/product/"]').first().click();
+    cy.get('h1').should('be.visible');
+    cy.contains(/in stock|Sold out/).should('be.visible');
   });
 });
 
-/**
- * E2E Test - Chat and Notifications
- * Tests chat functionality and toast notifications
- */
-
-describe('Chat and Notifications', () => {
+describe('Basket, checkout and tracking', () => {
   beforeEach(() => {
-    cy.visit('/');
+    signIn(customer);
+    cy.location('pathname').should('not.eq', '/login');
   });
 
-  it('should display notification toast on cart action', () => {
-    cy.get('[data-testid="product-card"]').first().within(() => {
-      cy.get('[data-testid="add-to-cart-btn"]').click();
+  it('adds a product, checks out, and tracks the order', () => {
+    cy.visit('/products');
+    cy.contains('article', 'in stock').within(() => {
+      cy.contains('button', 'Add to cart').click();
+      cy.contains('button', 'Added to cart').should('exist');
     });
-    
-    cy.get('[data-testid="success-toast"]').should('be.visible');
-    cy.get('[data-testid="success-toast"]').should('contain', 'Added to cart');
-  });
 
-  it('should display order confirmation notification', () => {
-    // Simulate order placement
-    cy.visit('/checkout');
-    cy.get('[data-testid="place-order-btn"]').click();
-    
-    cy.get('[data-testid="success-toast"]').should('contain', 'Order confirmed');
-  });
+    cy.visit('/cart');
+    cy.contains('h1', 'Shopping bag').should('be.visible');
+    cy.get('input[aria-label="Quantity"]').should('have.length.greaterThan', 0);
+    cy.contains('button', 'Continue to checkout').click();
 
-  it('should open chat with seller', () => {
-    cy.get('[data-testid="product-card"]').first().within(() => {
-      cy.get('[data-testid="chat-btn"]').click();
-    });
-    
-    cy.get('[data-testid="chat-modal"]').should('be.visible');
-    cy.get('[data-testid="message-input"]').should('be.visible');
-  });
+    cy.contains('h1', 'Delivery and payment').should('be.visible');
+    cy.get('input[placeholder="House number, street, city"]').clear().type('Plot 12, Kabulonga Road, Lusaka');
+    cy.get('input[placeholder="e.g., Lusaka, Kitwe, Ndola"]').clear().type('Lusaka');
+    cy.get('input[placeholder="+260 ..."]').clear().type('+260 97 000 0001');
+    cy.get('input[type="radio"][name="payment"]').first().check();
+    cy.contains('button', 'Place order').click();
 
-  it('should send chat message', () => {
-    cy.get('[data-testid="chat-btn"]').first().click();
-    cy.get('[data-testid="message-input"]').type('Is this product available?');
-    cy.get('[data-testid="send-message-btn"]').click();
-    
-    cy.get('[data-testid="sent-message"]').should('contain', 'Is this product available?');
+    cy.contains('h1', 'Your order is on its way', { timeout: 15000 }).should('be.visible');
+    cy.contains('a', 'Track order').click();
+    cy.location('pathname').should('match', /^\/orders\/\d+$/);
+    cy.contains('h1', /^Order #\d+$/).should('be.visible');
   });
 });

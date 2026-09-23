@@ -1,3 +1,9 @@
+// The add-and-edit-a-product logic, kept in one place.
+//
+// A shop can list something from three different pages — the dashboard, the home page and
+// its own storefront — and all three behave identically because they share this. It holds
+// the form, the photo handling, and whether saving creates or updates.
+
 import { useState } from 'react';
 import { createProduct, updateProduct } from '../api/productApi';
 import { filesToDataUrls } from '../utils/image';

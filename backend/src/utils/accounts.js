@@ -16,6 +16,10 @@ export async function hasColumn(table, column) {
   return Number(rows[0]?.count || 0) > 0;
 }
 
+// Turn a signed-in user into their profile id in one of the account tables.
+//
+// On the older layout the row is found by its link to the central users table; on the
+// current one the id already IS the profile id, and the second query confirms it exists.
 async function resolveProfileId(table, user_id) {
   if (await hasColumn(table, 'user_id')) {
     const [linked] = await pool.query(`SELECT id FROM ${table} WHERE user_id = ?`, [user_id]);
@@ -25,6 +29,7 @@ async function resolveProfileId(table, user_id) {
   return rows[0]?.id || null;
 }
 
+// The three the rest of the code actually calls.
 export const resolveSellerId = (user_id) => resolveProfileId('sellers', user_id);
 export const resolveCustomerId = (user_id) => resolveProfileId('customers', user_id);
 export const resolveCourierId = (user_id) => resolveProfileId('couriers', user_id);

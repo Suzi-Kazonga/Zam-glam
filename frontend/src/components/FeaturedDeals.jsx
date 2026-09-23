@@ -1,3 +1,5 @@
+// The home page’s offers strip.
+
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';

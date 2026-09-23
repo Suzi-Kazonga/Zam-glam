@@ -313,3 +313,61 @@ describe('Moving a parcel through its stages', () => {
     expect(parcel.released_at).not.toBeNull();
   });
 });
+
+// The browser keeps its own copy of the basket for speed; this is the one that outlives
+// the device. Both queries here used to join a column that exists only on the older
+// account layout, so every call answered 500.
+describe('The saved basket', () => {
+  let shop;
+  let customer;
+  let product;
+
+  beforeAll(async () => {
+    await prepareDatabase();
+    shop = await makeSeller({ shop_name: 'Mud', location: 'Lusaka' });
+    customer = await makeCustomer();
+    product = await listProduct(shop, { stock: 10 });
+  });
+
+  test('a new shopper has an empty basket', async () => {
+    const response = await api().get('/api/cart').set(auth(customer));
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual([]);
+  });
+
+  test('an item can be put in the basket and read back', async () => {
+    await api().post('/api/cart').set(auth(customer)).send({ product_id: product.id, quantity: 2 }).expect(201);
+
+    const response = await api().get('/api/cart').set(auth(customer));
+    expect(response.body).toHaveLength(1);
+    expect(response.body[0]).toMatchObject({ id: product.id, quantity: 2 });
+  });
+
+  test('adding the same item again adds to the quantity rather than duplicating it', async () => {
+    await api().post('/api/cart').set(auth(customer)).send({ product_id: product.id, quantity: 3 }).expect(201);
+
+    const response = await api().get('/api/cart').set(auth(customer));
+    expect(response.body).toHaveLength(1);
+    expect(response.body[0].quantity).toBe(5);
+  });
+
+  test('one shopper never sees another shopper\'s basket', async () => {
+    const other = await makeCustomer();
+    const response = await api().get('/api/cart').set(auth(other));
+    expect(response.body).toEqual([]);
+  });
+
+  test('more than the shop has is refused', async () => {
+    const response = await api().post('/api/cart').set(auth(customer)).send({ product_id: product.id, quantity: 999 });
+    expect(response.status).toBe(409);
+  });
+
+  test('a product that does not exist is refused', async () => {
+    const response = await api().post('/api/cart').set(auth(customer)).send({ product_id: 999999, quantity: 1 });
+    expect(response.status).toBe(404);
+  });
+
+  test('a basket needs a signed-in account', async () => {
+    expect((await api().get('/api/cart')).status).toBe(401);
+  });
+});

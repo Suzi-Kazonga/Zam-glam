@@ -1,6 +1,10 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
+// Where API calls are forwarded. The backend normally runs on 5000; the browser tests start
+// a second backend on a test database and point a second copy of the site at it.
+const apiTarget = process.env.ZAMGLAM_API_URL || 'http://localhost:5000';
+
 export default defineConfig({
   plugins: [react()],
   server: {
@@ -11,13 +15,13 @@ export default defineConfig({
     port: 3000,
     proxy: {
       '/api': {
-        target: 'http://localhost:5000',
+        target: apiTarget,
         changeOrigin: true,
       },
       // Seller-uploaded product photos are served by the backend, so they need the
       // same proxy - otherwise they 404 for anyone not on this machine.
       '/uploads': {
-        target: 'http://localhost:5000',
+        target: apiTarget,
         changeOrigin: true,
       },
     },

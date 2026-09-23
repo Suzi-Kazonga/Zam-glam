@@ -1,3 +1,6 @@
+// The section list beside every dashboard. On a phone it becomes a drawer opened by a
+// floating Menu button.
+
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getStorefrontPath, getStoreLogo } from '../utils/storeLogos';

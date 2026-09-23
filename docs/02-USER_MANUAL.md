@@ -30,7 +30,10 @@ computer; the menu collapses into the ☰ button at the top right.
 
 1. Click **Sign up**.
 2. Choose what you are signing up as — shopper, shop, or courier.
-3. Fill in the form and submit.
+3. Fill in the form. The password is typed twice, and you must tick **I agree to the Terms
+   and Conditions** — the link opens them in a new tab, so nothing you have typed is lost.
+   Anything missing or mistyped is pointed out beside the field.
+4. Submit.
 
 What happens next depends on the role:
 

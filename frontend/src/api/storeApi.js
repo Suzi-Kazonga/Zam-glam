@@ -1,3 +1,5 @@
+// Storefronts: reading them, a shop managing its own, and the verification paperwork.
+
 import apiClient from './axios';
 
 // Get all stores
