@@ -4,13 +4,17 @@ import StarRating from '../StarRating';
 
 function statusLabel(status) {
   if (status === 'delivered') return 'Delivered';
-  if (status === 'in_transit') return 'In transit';
+  if (status === 'picked_up' || status === 'in_transit') return 'In transit';
+  if (status === 'processing') return 'Packing';
+  if (status === 'shipped') return 'Ready for courier';
+  if (status === 'pickup_requested') return 'Courier at shop';
   return 'Pending';
 }
 
 function statusStyle(status) {
   if (status === 'delivered') return 'bg-emerald-50 text-emerald-800';
-  if (status === 'in_transit') return 'bg-sky-50 text-sky-800';
+  if (status === 'picked_up' || status === 'in_transit') return 'bg-sky-50 text-sky-800';
+  if (status === 'processing' || status === 'shipped' || status === 'pickup_requested') return 'bg-amber-50 text-amber-800';
   return 'bg-amber-50 text-amber-800';
 }
 
@@ -28,12 +32,16 @@ function BarList({ rows, label, value, format = (amount) => amount }) {
   </div>;
 }
 
-export function OrderTracker({ orders }) {
-  return <DashboardCard title="Shop orders" detail="Your items and delivery status only.">
+export function OrderTracker({ orders, onAdvance, busyId }) {
+  return <DashboardCard title="Shop orders" detail="Start packing each new parcel, then release it to the courier pool.">
     <div className="mt-3 divide-y divide-slate-100">
       {orders.map((order) => <article key={order.id} className="flex flex-wrap items-center justify-between gap-4 py-4">
-        <div className="min-w-0"><p className="font-semibold text-slate-900">Order #{order.id}</p><p className="mt-1 text-sm text-slate-600">{(order.items || []).map((item) => `${item.name} ×${item.quantity}`).join(', ')}</p><p className="mt-1 text-sm text-slate-500">Your items · K{Number(order.sellerTotal || 0).toFixed(2)}</p></div>
-        <span className={`shrink-0 rounded-full px-3 py-1 text-sm font-semibold ${statusStyle(order.status)}`}>{statusLabel(order.status)}</span>
+        <div className="min-w-0 flex-1"><p className="font-semibold text-slate-900">Order #{order.id}</p><p className="mt-1 text-sm text-slate-600">{(order.items || []).map((item) => `${item.name} ×${item.quantity}`).join(', ')}</p><p className="mt-1 text-sm text-slate-500">Your items · K{Number(order.sellerTotal || 0).toFixed(2)}</p></div>
+        <div className="flex flex-wrap items-center justify-end gap-3">
+          <span className={`shrink-0 rounded-full px-3 py-1 text-sm font-semibold ${statusStyle(order.fulfillmentStatus || order.status)}`}>{statusLabel(order.fulfillmentStatus || order.status)}</span>
+          {order.fulfillmentStatus === 'placed' && <button type="button" disabled={busyId === order.shipmentId} onClick={() => onAdvance(order, 'processing')} className="rounded-md bg-emerald-800 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-900 disabled:opacity-50">{busyId === order.shipmentId ? 'Saving...' : 'Start packing'}</button>}
+          {order.fulfillmentStatus === 'processing' && <button type="button" disabled={busyId === order.shipmentId} onClick={() => onAdvance(order, 'shipped')} className="rounded-md bg-sky-800 px-3 py-2 text-sm font-semibold text-white hover:bg-sky-900 disabled:opacity-50">{busyId === order.shipmentId ? 'Saving...' : 'Release to courier'}</button>}
+        </div>
       </article>)}
       {!orders.length && <p className="py-6 text-sm text-slate-500">New orders will appear here.</p>}
     </div>

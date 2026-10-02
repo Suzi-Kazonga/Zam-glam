@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { confirmPickup, denyPickup, getMyOrders } from '../api/orderApi';
+import { getMessageThreads } from '../api/messageApi';
 import { isLocalDemoSession } from '../utils/localSession';
 
 // The shop's notifications. Two things land here: parcels still waiting to be packed or
@@ -13,17 +14,33 @@ const NEEDS_PACKING = ['placed', 'processing'];
 
 export default function SellerOrderIcon() {
   const [orders, setOrders] = useState([]);
+  const [customerThreads, setCustomerThreads] = useState([]);
   const [open, setOpen] = useState(false);
   const [busyId, setBusyId] = useState(null);
   const [message, setMessage] = useState('');
   const announced = useRef(new Set());
+  const seenPackingOrders = useRef(null);
+  const seenCustomerThreads = useRef(null);
   const panel = useRef(null);
 
   const load = useCallback(() => {
     if (isLocalDemoSession()) return Promise.resolve();
+    getMessageThreads().then((threads) => {
+      const waiting = threads.filter((thread) => thread.last_sender_role === 'customer');
+      const ids = new Set(waiting.map((thread) => `${thread.store_id}:${thread.customer_id}`));
+      if (seenCustomerThreads.current && [...ids].some((id) => !seenCustomerThreads.current.has(id))) setOpen(true);
+      seenCustomerThreads.current = ids;
+      setCustomerThreads(waiting);
+    }).catch(() => {});
     return getMyOrders()
       .then((rows) => {
         setOrders(rows);
+
+        const packingIds = new Set(rows
+          .filter((order) => NEEDS_PACKING.includes(order.status))
+          .map((order) => order.shipmentId || order.id));
+        if (seenPackingOrders.current && [...packingIds].some((id) => !seenPackingOrders.current.has(id))) setOpen(true);
+        seenPackingOrders.current = packingIds;
 
         // Open on a request this browser has not shown yet, and never again for that one,
         // so the panel does not fight the shop every ten seconds.
@@ -42,7 +59,7 @@ export default function SellerOrderIcon() {
 
   useEffect(() => {
     load();
-    const poll = window.setInterval(load, 10000);
+    const poll = window.setInterval(load, 5000);
     return () => window.clearInterval(poll);
   }, [load]);
 
@@ -56,7 +73,7 @@ export default function SellerOrderIcon() {
 
   const pickupRequests = orders.filter((order) => order.status === 'pickup_requested');
   const toPack = orders.filter((order) => NEEDS_PACKING.includes(order.status));
-  const count = pickupRequests.length + toPack.length;
+  const count = pickupRequests.length + toPack.length + customerThreads.length;
 
   const answer = async (order, accept) => {
     setBusyId(order.shipmentId);
@@ -77,11 +94,12 @@ export default function SellerOrderIcon() {
     }
   };
 
-  const title = pickupRequests.length
-    ? `${pickupRequests.length} courier(s) waiting for you to confirm a handover`
-    : count
-      ? `${count} order(s) need your attention`
-      : 'Nothing waiting on you';
+  const attention = [
+    pickupRequests.length && `${pickupRequests.length} courier handover${pickupRequests.length === 1 ? '' : 's'} waiting`,
+    customerThreads.length && `${customerThreads.length} customer message${customerThreads.length === 1 ? '' : 's'} waiting`,
+    toPack.length && `${toPack.length} order${toPack.length === 1 ? '' : 's'} to pack or release`,
+  ].filter(Boolean);
+  const title = attention.length ? attention.join(', ') : 'Nothing waiting on you';
 
   return (
     <div className="relative" ref={panel}>
@@ -136,7 +154,7 @@ export default function SellerOrderIcon() {
 
           {toPack.length > 0 && (
             <Link
-              to="/seller/dashboard"
+              to="/seller/dashboard?section=Orders"
               onClick={() => setOpen(false)}
               className="block rounded-lg border border-slate-200 p-3 hover:bg-slate-50"
             >
@@ -146,6 +164,19 @@ export default function SellerOrderIcon() {
               <p className="mt-1 text-xs text-slate-500">Open the dashboard →</p>
             </Link>
           )}
+
+          {customerThreads.map((thread) => (
+            <Link
+              key={`${thread.store_id}:${thread.customer_id}`}
+              to="/seller/dashboard?section=Messages"
+              onClick={() => setOpen(false)}
+              className="mb-2 block rounded-lg border border-sky-200 bg-sky-50 p-3"
+            >
+              <p className="text-sm font-semibold text-sky-950">New customer message · {thread.customer_name || 'Customer'}</p>
+              <p className="mt-1 truncate text-xs text-sky-800">{thread.last_message}</p>
+              <p className="mt-1 text-xs font-semibold text-sky-900">Reply in Messages</p>
+            </Link>
+          ))}
 
           {count === 0 && <p className="px-1 py-3 text-sm text-slate-500">Nothing waiting on you.</p>}
         </div>

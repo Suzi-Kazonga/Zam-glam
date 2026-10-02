@@ -1,7 +1,7 @@
 // The rider’s dashboard: parcels to collect, parcels in hand, and their duty switch.
 
 import { useEffect, useMemo, useState } from 'react';
-import { Link, Navigate } from 'react-router-dom';
+import { Link, Navigate, useLocation } from 'react-router-dom';
 import DashboardCard from '../components/DashboardCard';
 import Sidebar from '../components/Sidebar';
 import Topbar from '../components/Topbar';
@@ -21,7 +21,8 @@ const isOutForDelivery = (order) => order.status === 'picked_up' || order.status
 
 export default function CourierDashboard() {
   const { user } = useAuth();
-  const [active, setActive] = useState('Available');
+  const location = useLocation();
+  const [active, setActive] = useState(() => new URLSearchParams(location.search).get('section') || 'Available');
   const [query, setQuery] = useState('');
   const [orders, setOrders] = useState([]);
   const [available, setAvailable] = useState([]);
@@ -56,6 +57,11 @@ export default function CourierDashboard() {
     const poll = window.setInterval(load, 5000);
     return () => window.clearInterval(poll);
   }, []);
+
+  useEffect(() => {
+    const requested = new URLSearchParams(location.search).get('section');
+    if (sections.includes(requested)) setActive(requested);
+  }, [location.search]);
 
   const matchesQuery = (order) => `${order.id} ${order.address} ${order.customerName || ''}`
     .toLowerCase()

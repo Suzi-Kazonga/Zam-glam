@@ -232,6 +232,29 @@ describe('Moving a parcel through its stages', () => {
     expect(parcel.status).toBe('processing');
   });
 
+  test('Mud can pack and release an order for a courier to collect and deliver', async () => {
+    const courier = await makeCourier();
+
+    await api().patch(`/api/orders/shipments/${parcelId}/status`).set(auth(shop)).send({ status: 'processing' }).expect(200);
+    await api().patch(`/api/orders/shipments/${parcelId}/status`).set(auth(shop)).send({ status: 'shipped' }).expect(200);
+
+    const pool = await api().get('/api/orders/shipments/available').set(auth(courier));
+    expect(pool.status).toBe(200);
+    expect(pool.body.some((parcel) => parcel.shipment_id === parcelId)).toBe(true);
+
+    await api().patch(`/api/orders/shipments/${parcelId}/pickup-request`).set(auth(courier)).expect(200);
+    const shopOrders = await api().get('/api/orders').set(auth(shop));
+    expect(shopOrders.body.find((order) => order.id === orderId).status).toBe('pickup_requested');
+
+    await api().patch(`/api/orders/shipments/${parcelId}/pickup-confirm`).set(auth(shop)).expect(200);
+    const courierOrders = await api().get('/api/orders').set(auth(courier));
+    expect(courierOrders.body.find((order) => order.shipment_id === parcelId).status).toBe('picked_up');
+
+    await api().patch(`/api/orders/shipments/${parcelId}/status`).set(auth(courier)).send({ status: 'delivered' }).expect(200);
+    const customerOrder = await api().get(`/api/orders/${orderId}`).set(auth(customer));
+    expect(customerOrder.body.shipments[0].status).toBe('delivered');
+  });
+
   test('the order follows its least advanced parcel', async () => {
     await api().patch(`/api/orders/shipments/${parcelId}/status`).set(auth(shop)).send({ status: 'processing' });
     const order = await api().get(`/api/orders/${orderId}`).set(auth(customer));

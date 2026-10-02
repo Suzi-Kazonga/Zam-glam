@@ -177,6 +177,21 @@ export async function initializeDatabase() {
     );
   `);
 
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS store_messages (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      store_id ${await idTypeOf('stores')} NOT NULL,
+      customer_id ${await idTypeOf('customers')} NOT NULL,
+      sender_role ENUM('customer','seller') NOT NULL,
+      sender_id INT NOT NULL,
+      body TEXT NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_store_messages_thread (store_id, customer_id, created_at),
+      FOREIGN KEY (store_id) REFERENCES stores(id) ON DELETE CASCADE,
+      FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE
+    );
+  `);
+
   // What shops sell. sizes and images hold lists; MariaDB stores them as text, and the
   // model turns them back into arrays on the way out.
   await pool.query(`

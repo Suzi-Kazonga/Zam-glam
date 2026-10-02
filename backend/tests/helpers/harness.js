@@ -26,7 +26,7 @@ export async function prepareDatabase() {
 // Emptied in dependency order, with the foreign keys switched off so the order of this
 // list can never become the reason a suite fails.
 const TABLES = [
-  'reports', 'order_status_history', 'payments', 'courier', 'shipments', 'order_items', 'seller_promotions',
+  'reports', 'order_status_history', 'payments', 'courier', 'shipments', 'order_items', 'store_messages', 'seller_promotions',
   'orders', 'cart', 'reviews', 'documents', 'products', 'stores', 'categories',
   'couriers', 'sellers', 'customers', 'admins', 'users',
 ];

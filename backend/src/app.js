@@ -20,6 +20,7 @@ import dealRoutes from './routes/dealRoutes.js';
 import reviewRoutes from './routes/reviewRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import reportRoutes from './routes/reportRoutes.js';
+import messageRoutes from './routes/messageRoutes.js';
 import { apiLimiter } from './middleware/rateLimit.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -62,6 +63,7 @@ app.use('/api/deals', dealRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/reports', reportRoutes);
+app.use('/api/messages', messageRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ message: 'Route not found.' });

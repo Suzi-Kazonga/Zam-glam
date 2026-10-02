@@ -10,6 +10,7 @@ from a phone on the same network).
 - [Authentication](#authentication)
 - [Catalogue](#catalogue)
 - [Stores and verification](#stores-and-verification)
+- [Customer and shop messages](#customer-and-shop-messages)
 - [Basket](#basket)
 - [Orders and parcels](#orders-and-parcels)
 - [The pickup pool and the handover](#the-pickup-pool-and-the-handover)
@@ -240,6 +241,42 @@ no type
 `admin`. `{ status: "verified" | "rejected" | "pending", note }`.
 
 **200** · **400** an unknown status · **403** not an admin
+
+---
+
+## Customer and shop messages
+
+Authenticated customers and sellers can exchange private messages within a store thread.
+Customers identify only the store; their customer profile is derived from the token. Sellers
+can reply only to an existing thread for one of their own stores. Message bodies are limited
+to 2,000 characters. The dashboards refresh message activity every five seconds.
+
+### `GET /messages/threads`
+
+`customer` or `seller`. Lists the signed-in customer's threads or the signed-in seller's
+store threads, with the latest message preview.
+
+### `GET /messages/threads/:storeId`
+
+`customer`. Reads their own thread for a store. An open store may return an empty list before
+the first message; existing conversations remain readable if the shop later closes.
+
+### `POST /messages/threads/:storeId`
+
+`customer`. `{ "body": "Is this available in medium?" }`. Starts a thread with an open store
+or adds a customer message to an existing thread.
+
+### `GET /messages/threads/:storeId/:customerId`
+
+`seller`. Reads an existing conversation only when the store belongs to the signed-in seller.
+
+### `POST /messages/threads/:storeId/:customerId`
+
+`seller`. `{ "body": "Yes, medium is available." }`. Replies within an existing customer
+thread for the seller's own store.
+
+**201** a created message · **400** invalid or oversized message · **403** role/ownership
+mismatch · **404** store or thread not found
 
 ---
 

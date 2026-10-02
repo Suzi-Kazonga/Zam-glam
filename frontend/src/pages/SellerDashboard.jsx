@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import DashboardCard from '../components/DashboardCard';
 import ProductForm from '../components/ProductForm';
+import StoreMessages from '../components/StoreMessages';
 import Sidebar from '../components/Sidebar';
 import StarRating from '../components/StarRating';
 import PromotionManager from '../components/seller/PromotionManager';
@@ -10,14 +11,14 @@ import SuspendedNotice from '../components/SuspendedNotice';
 import Topbar from '../components/Topbar';
 import VerificationPanel from '../components/VerificationPanel';
 import { useProductEditor } from '../hooks/useProductEditor';
-import { getMyOrders } from '../api/orderApi';
+import { getMyOrders, updateShipmentStatus } from '../api/orderApi';
 import { deleteProduct, getSellerProducts } from '../api/productApi';
 import { getMyReviews, replyToReview } from '../api/reviewApi';
 import { getMyStore, updateStore } from '../api/storeApi';
 import { useAuth } from '../context/AuthContext';
 import { isLocalDemoSession } from '../utils/localSession';
 
-const sections = ['Overview', 'Products', 'Orders', 'Analytics', 'Promotions', 'Store profile', 'Notifications', 'Reviews', 'Verification'];
+const sections = ['Overview', 'Products', 'Orders', 'Messages', 'Analytics', 'Promotions', 'Store profile', 'Notifications', 'Reviews', 'Verification'];
 
 function deliveryLabel(status) {
   if (status === 'delivered') return 'Delivered';
@@ -27,6 +28,7 @@ function deliveryLabel(status) {
 
 export default function SellerDashboard() {
   const { user } = useAuth();
+  const location = useLocation();
   const [active, setActive] = useState('Overview');
   const [query, setQuery] = useState('');
   const [products, setProducts] = useState([]);
@@ -40,16 +42,25 @@ export default function SellerDashboard() {
   const [storefront, setStorefront] = useState('/products');
   const [profile, setProfile] = useState({ name: '', description: '', logo_url: '', contact_email: '', contact_phone: '', location: '' });
   const [savingProfile, setSavingProfile] = useState(false);
+  const [updatingOrderId, setUpdatingOrderId] = useState(null);
   const sellerName = user?.shop_name || user?.name || 'My Shop';
+
+  useEffect(() => {
+    const requested = new URLSearchParams(location.search).get('section');
+    if (sections.includes(requested)) setActive(requested);
+  }, [location.search]);
 
   const loadProducts = () => getSellerProducts()
     .then((rows) => setProducts(Array.isArray(rows) ? rows : []))
     .catch(() => setMessage('Could not load your products.'));
 
   const loadOrders = () => {
-    if (!isLocalDemoSession()) getMyOrders().then((rows) => setOrders(rows.map((order) => ({
+    if (isLocalDemoSession()) return Promise.resolve();
+    return getMyOrders().then((rows) => setOrders(rows.map((order) => ({
       id: order.id,
-      status: order.status === 'delivered' ? 'delivered' : ['shipped', 'picked_up', 'in_transit'].includes(order.status) ? 'in_transit' : 'pending',
+      shipmentId: order.shipmentId,
+      fulfillmentStatus: order.status,
+      status: order.status === 'delivered' ? 'delivered' : order.status === 'picked_up' ? 'in_transit' : 'pending',
       createdAt: order.createdAt,
       sellerTotal: order.sellerTotal,
       items: (order.items || []).map((item) => ({
@@ -59,6 +70,24 @@ export default function SellerDashboard() {
         image_url: item.image_url,
       })),
     })))).catch(() => {});
+  };
+
+  const advanceOrder = async (order, nextStatus) => {
+    if (!order.shipmentId) {
+      setMessage('This order parcel is missing its tracking ID. Refresh and try again.');
+      return;
+    }
+    setUpdatingOrderId(order.shipmentId);
+    setMessage('');
+    try {
+      await updateShipmentStatus(order.shipmentId, nextStatus);
+      setMessage(nextStatus === 'processing' ? `Packing started for order #${order.id}.` : `Order #${order.id} released to the courier pool.`);
+      await loadOrders();
+    } catch (error) {
+      setMessage(error?.response?.data?.error || error?.error || 'Could not update this order. Refresh and try again.');
+    } finally {
+      setUpdatingOrderId(null);
+    }
   };
 
   const loadReviews = () => {
@@ -160,14 +189,14 @@ export default function SellerDashboard() {
   return <div className="flex min-h-screen bg-[#f4f6f2]">
     <Sidebar items={sections} active={active} onSelect={setActive} role="seller" shopName={sellerName} storefrontPath={storefront} />
     <div className="min-w-0 flex-1">
-      <Topbar onSearch={setQuery} hideSellerNotifications />
+      <Topbar onSearch={setQuery} />
       <SuspendedNotice />
       <main className="mx-auto max-w-screen-2xl space-y-6 p-4 pb-28 sm:p-6 sm:pb-28 lg:p-8 lg:pb-8">
         <header className="flex flex-wrap items-end justify-between gap-4 border-b border-slate-200 pb-5">
           <div>
             <p className="text-xs font-bold uppercase tracking-widest text-emerald-800">Seller workspace / {sellerName}</p>
             <h1 className="mt-2 text-3xl font-bold text-slate-950">{active === 'Overview' ? 'Shop overview' : active}</h1>
-            <p className="mt-1 text-sm text-slate-600">{active === 'Overview' ? 'A clear view of your products, orders, and sales.' : active === 'Products' ? 'Manage your product listings.' : active === 'Orders' ? 'Follow order progress through delivery.' : active === 'Analytics' ? 'Revenue, best sellers, and customer engagement.' : active === 'Promotions' ? 'Schedule discounts on your products.' : active === 'Store profile' ? 'Keep your storefront details up to date.' : active === 'Notifications' ? 'New orders, low stock, and customer feedback.' : ''}</p>
+            <p className="mt-1 text-sm text-slate-600">{active === 'Overview' ? 'A clear view of your products, orders, and sales.' : active === 'Products' ? 'Manage your product listings.' : active === 'Orders' ? 'Follow order progress through delivery.' : active === 'Messages' ? 'Reply to customer questions about your shop.' : active === 'Analytics' ? 'Revenue, best sellers, and customer engagement.' : active === 'Promotions' ? 'Schedule discounts on your products.' : active === 'Store profile' ? 'Keep your storefront details up to date.' : active === 'Notifications' ? 'New orders, low stock, and customer feedback.' : ''}</p>
           </div>
           <Link to={storefront} className="inline-flex min-h-10 items-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 hover:border-emerald-700 hover:text-emerald-900">View storefront</Link>
         </header>
@@ -194,7 +223,9 @@ export default function SellerDashboard() {
           </tbody></table></div>
         </DashboardCard>}
 
-        {active === 'Orders' && <OrderTracker orders={visibleOrders} />}
+        {active === 'Orders' && <OrderTracker orders={visibleOrders} onAdvance={advanceOrder} busyId={updatingOrderId} />}
+
+        {active === 'Messages' && <StoreMessages role="seller" />}
 
         {active === 'Analytics' && <AnalyticsViewer revenue={revenue} orders={orders} inTransit={inTransit} delivered={delivered} revenueByDay={revenueByDay} topProducts={topProducts} reviews={reviews} unansweredReviews={unansweredReviews} score={score} />}
 
