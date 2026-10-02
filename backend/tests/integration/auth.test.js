@@ -79,6 +79,25 @@ describe('Registration and sign-in', () => {
     expect(response.body.user.role).toBe('customer');
   });
 
+  test('selected login role must match the authenticated account role', async () => {
+    const seller = await makeSeller();
+    const refused = await api().post('/api/auth/login').send({
+      email: seller.email,
+      password: seller.password,
+      role: 'admin',
+    });
+    expect(refused.status).toBe(403);
+    expect(refused.body.token).toBeUndefined();
+
+    const accepted = await api().post('/api/auth/login').send({
+      email: seller.email,
+      password: seller.password,
+      role: 'seller',
+    });
+    expect(accepted.status).toBe(200);
+    expect(accepted.body.user.role).toBe('seller');
+  });
+
   test('a wrong password is refused', async () => {
     const response = await api().post('/api/auth/login').send({ email: 'chanda@zamglam.test', password: 'not-the-password' });
     expect(response.status).toBe(401);

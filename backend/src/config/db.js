@@ -166,6 +166,8 @@ export async function initializeDatabase() {
       name VARCHAR(255) NOT NULL,
       description TEXT,
       logo_url VARCHAR(500),
+      contact_email VARCHAR(255),
+      contact_phone VARCHAR(50),
       location VARCHAR(255),
       open_hours JSON,
       status VARCHAR(20) DEFAULT 'open',
@@ -192,6 +194,23 @@ export async function initializeDatabase() {
       sizes JSON,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (seller_id) REFERENCES sellers(id) ON DELETE CASCADE
+    );
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS seller_promotions (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      seller_id ${await idTypeOf('sellers')} NOT NULL,
+      product_id ${await idTypeOf('products')} NOT NULL,
+      discount_percent TINYINT UNSIGNED NOT NULL,
+      featured TINYINT(1) NOT NULL DEFAULT 0,
+      starts_at DATETIME NOT NULL,
+      ends_at DATETIME NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_seller_promotions_product_dates (product_id, starts_at, ends_at),
+      INDEX idx_seller_promotions_seller (seller_id),
+      FOREIGN KEY (seller_id) REFERENCES sellers(id) ON DELETE CASCADE,
+      FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
     );
   `);
 
@@ -375,6 +394,8 @@ export async function initializeDatabase() {
     }
   };
 
+  await addColumnIfMissing('stores', 'contact_email', 'VARCHAR(255) NULL');
+  await addColumnIfMissing('stores', 'contact_phone', 'VARCHAR(50) NULL');
   await addColumnIfMissing('orders', 'total_price', 'DECIMAL(12,2) NOT NULL DEFAULT 0');
   // total_price is the grand total; these break it down for the receipt.
   await addColumnIfMissing('orders', 'items_total', 'DECIMAL(12,2) NOT NULL DEFAULT 0');

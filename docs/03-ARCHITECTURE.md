@@ -51,6 +51,29 @@ and middleware the server does rather than a copy of the rules.
 | `src/context/` | Auth and cart, via React Context |
 | `src/utils/` | Currency formatting, order status labels, role themes |
 
+### Admin console and role login
+
+`src/hooks/useAdminConsoleController.js` is the admin hub controller: it loads marketplace
+figures and account groups, owns search/filter state, and dispatches sidebar destinations.
+`AdminDashboard.jsx` renders that state; account editing stays in `AdminUsers.jsx`, while
+verification, reports, and delivery panels own their own API actions. The header attention
+link targets the `Attention` section, which groups pending approvals with flagged reports.
+Account-page sidebar items route back to the hub or to the selected account group.
+
+The login form selects one entry from `src/utils/loginStrategies.js`. Each strategy uses the
+same `authenticate(credentials, login)` contract and passes its selected role to the API.
+`POST /api/auth/login` checks that role after verifying credentials and refuses a mismatch
+before issuing a token. Clients that omit the role remain compatible. `AuthContext` acts as
+the session observer: setting or clearing its user state notifies mounted navigation and
+dashboard consumers. `dashboardForRole()` in `src/utils/authRedirect.js` is the destination
+factory; the corresponding protected routes in `App.jsx` and `AdminRoute.jsx` enforce the
+client-side boundary, while API role middleware remains the security boundary.
+
+To add a role, register its strategy and dashboard path, then add the protected route and
+server-side role policy. Existing role handlers keep the shared login contract. The current
+admin API exposes the restore grace period as read-only statistics; there is no settings
+write endpoint, so the console intentionally does not present editable settings controls.
+
 `src/api/axios.js` adds the stored token to every request and handles the response nobody
 should have to think about: a **401 on a stored token** means the session is over, so it
 clears the session, tells the app, and sends the user to sign in with an explanation. The

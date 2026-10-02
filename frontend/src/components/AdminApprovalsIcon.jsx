@@ -41,7 +41,7 @@ export default function AdminApprovalsIcon() {
 
   return (
     <Link
-      to="/admin/dashboard?tab=approvals"
+      to="/admin/dashboard?section=Attention"
       aria-label={title}
       title={title}
       className="relative inline-flex h-10 w-10 items-center justify-center rounded-lg text-xl hover:bg-white/10"

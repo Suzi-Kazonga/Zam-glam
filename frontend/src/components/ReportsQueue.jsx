@@ -33,8 +33,9 @@ export default function ReportsQueue() {
     setExpanded(key);
     try {
       setDetail(await getReportsAgainst(row.reported_role, row.reported_id));
-    } catch {
+    } catch (error) {
       setDetail([]);
+      setMessage(error?.error || 'Could not load these reports.');
     }
   };
 

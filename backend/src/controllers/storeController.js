@@ -31,7 +31,7 @@ export const getMyStore = async (req, res) => {
 // from this shop is priced on the distance between it and the customer.
 export const createStore = async (req, res) => {
   try {
-    const { name, description, logo_url, location, open_hours } = req.body;
+    const { name, description, logo_url, contact_email, contact_phone, location, open_hours } = req.body;
     const seller_id = await resolveSellerId(req.user.id);
 
     if (!seller_id) {
@@ -47,6 +47,8 @@ export const createStore = async (req, res) => {
       name,
       description,
       logo_url,
+      contact_email,
+      contact_phone,
       location,
       open_hours,
     });

@@ -1,20 +1,16 @@
 // The administrator’s dashboard: subscriber figures, approvals, complaints, and the
 // parcels nobody has collected.
 
-import { useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import DashboardCard from '../components/DashboardCard';
 import Sidebar from '../components/Sidebar';
 import Topbar from '../components/Topbar';
 import SellerVerificationQueue from '../components/SellerVerificationQueue';
 import UnclaimedParcels from '../components/UnclaimedParcels';
 import ReportsQueue from '../components/ReportsQueue';
-import { getAdminStats, getAdminUsers } from '../api/adminApi';
-import { isLocalDemoSession } from '../utils/localSession';
+import useAdminConsoleController from '../hooks/useAdminConsoleController';
 
-const EMPTY_STATS = { subscribers: { customers: 0, sellers: 0, couriers: 0, admins: 0, total: 0 }, pending: { shops: 0, couriers: 0, total: 0 }, activity: { orders: 0, products: 0, stores: 0, reviews: 0 }, grace_days: 30 };
-
-const sections = ['Overview', 'Sellers', 'Customers', 'Couriers', 'Verification', 'Reports', 'Deliveries'];
+const sections = ['Overview', 'Sellers', 'Customers', 'Couriers', 'Attention', 'Verification', 'Reports', 'Deliveries'];
 
 // "All" means all three kinds of account together, not just one of them.
 const ROLE_FILTERS = [
@@ -25,13 +21,6 @@ const ROLE_FILTERS = [
 ];
 
 const GROUP_PATH = { seller: 'sellers', customer: 'customers', courier: 'couriers' };
-
-// The people pages are where accounts are actually managed; the sidebar just sends you there.
-const SECTION_ROUTES = {
-  Sellers: '/admin/users/sellers',
-  Customers: '/admin/users/customers',
-  Couriers: '/admin/users/couriers',
-};
 
 function StatusBadge({ account }) {
   const pill = (text, tone) => <span className={`rounded-full px-3 py-1 text-xs font-semibold ${tone}`}>{text}</span>;
@@ -45,52 +34,7 @@ function StatusBadge({ account }) {
 }
 
 export default function AdminDashboard() {
-  const navigate = useNavigate();
-  // Real figures and real accounts from the database. These used to come from a
-  // hardcoded list in localStorage, so both the counts and the "accounts" were invented
-  // and nothing the admin did here changed anything.
-  const [live, setLive] = useState(EMPTY_STATS);
-  const [recent, setRecent] = useState([]);
-  const [active, setActive] = useState('Overview');
-  const [query, setQuery] = useState('');
-  const [roleFilter, setRoleFilter] = useState('all');
-
-  useEffect(() => {
-    if (isLocalDemoSession()) return undefined;
-    const load = () => getAdminStats().then(setLive).catch(() => {});
-    load();
-    const poll = window.setInterval(load, 15000);
-    return () => window.clearInterval(poll);
-  }, []);
-
-  useEffect(() => {
-    if (isLocalDemoSession()) return;
-    Promise.all([getAdminUsers('sellers'), getAdminUsers('customers'), getAdminUsers('couriers')])
-      .then(([sellers, customers, couriers]) => {
-        const merged = [
-          ...sellers.map((s) => ({ ...s, role: 'seller', detail: [s.store_name, s.location].filter(Boolean).join(' · ') })),
-          ...customers.map((c) => ({ ...c, role: 'customer', detail: c.address || c.location || '' })),
-          ...couriers.map((c) => ({ ...c, role: 'courier', detail: Number(c.on_shift) === 1 ? 'On duty' : 'Off duty' })),
-        ];
-        setRecent(merged);
-      })
-      .catch(() => {});
-  }, []);
-
-  // Newest sign-ups first, whichever kind of account they are, so the three groups read
-  // as one timeline rather than three lists stacked on top of each other.
-  const visible = useMemo(() => {
-    const needle = query.toLowerCase();
-    return recent
-      .filter((account) => roleFilter === 'all' || account.role === roleFilter)
-      .filter((a) => `${a.name || ''} ${a.email || ''} ${a.phone || ''} ${a.detail || ''}`.toLowerCase().includes(needle))
-      .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
-  }, [recent, query, roleFilter]);
-
-  const openSection = (section) => {
-    if (SECTION_ROUTES[section]) navigate(SECTION_ROUTES[section]);
-    else setActive(section);
-  };
+  const { active, error, live, openSection, roleFilter, setQuery, setRoleFilter, visible } = useAdminConsoleController();
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -100,9 +44,11 @@ export default function AdminDashboard() {
         <main className="mx-auto max-w-7xl space-y-6 p-4 pb-28 sm:p-6 sm:pb-28 lg:p-8 lg:pb-8">
           <div>
             <p className="text-sm font-semibold uppercase tracking-widest text-slate-800">Admin console</p>
-            <h1 className="mt-2 text-3xl font-bold text-slate-900">Manage marketplace accounts</h1>
-            <p className="mt-1 text-slate-500">Review, edit, suspend or remove shops, customers and couriers from one place.</p>
+            <h1 className="mt-2 text-3xl font-bold text-slate-900">{active === 'Overview' ? 'Manage marketplace accounts' : active}</h1>
+            <p className="mt-1 text-slate-500">{active === 'Attention' ? 'Pending approvals and flagged reports that need a decision.' : 'Review, edit, suspend or remove shops, customers and couriers from one place.'}</p>
           </div>
+
+          {error && <p role="alert" className="rounded-md border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">{error}</p>}
 
           {active === 'Overview' && (
             <>
@@ -115,7 +61,7 @@ export default function AdminDashboard() {
                 <Link to="/admin/users/sellers" className="block"><DashboardCard title="Shops" value={live.subscribers.sellers} detail="Registered vendors →" /></Link>
                 <Link to="/admin/users/customers" className="block"><DashboardCard title="Customers" value={live.subscribers.customers} detail="Shopper accounts →" /></Link>
                 <Link to="/admin/users/couriers" className="block"><DashboardCard title="Couriers" value={live.subscribers.couriers} detail="Delivery riders →" /></Link>
-                <button type="button" onClick={() => setActive('Verification')} className="text-left"><DashboardCard title="Awaiting approval" value={live.pending.total} detail={live.pending.shops + ' shop(s) · ' + live.pending.couriers + ' courier(s)'} /></button>
+                <button type="button" onClick={() => openSection('Verification')} className="text-left"><DashboardCard title="Awaiting approval" value={live.pending.total} detail={live.pending.shops + ' shop(s) · ' + live.pending.couriers + ' courier(s)'} /></button>
               </div>
 
               <div><h2 className="text-xl font-bold text-slate-900">Activity</h2></div>
@@ -201,6 +147,19 @@ export default function AdminDashboard() {
               <p className="mt-1 text-sm text-slate-500">Check each shop&apos;s paperwork before approving it. Verified shops carry a badge shoppers can see.</p>
               <div className="mt-4"><SellerVerificationQueue /></div>
             </DashboardCard>
+          )}
+
+          {active === 'Attention' && (
+            <div className="grid gap-6 xl:grid-cols-2">
+              <DashboardCard title="Pending approvals">
+                <p className="mt-1 text-sm text-slate-500">Review seller verification and courier registrations.</p>
+                <div className="mt-4"><SellerVerificationQueue /></div>
+              </DashboardCard>
+              <DashboardCard title="Flagged reports">
+                <p className="mt-1 text-sm text-slate-500">Review parties with repeated complaints.</p>
+                <div className="mt-4"><ReportsQueue /></div>
+              </DashboardCard>
+            </div>
           )}
 
           {active === 'Reports' && (

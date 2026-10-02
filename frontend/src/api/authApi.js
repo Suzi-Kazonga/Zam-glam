@@ -27,9 +27,9 @@ export const register = async (name, email, password, role = 'customer', profile
 };
 
 // Login user
-export const login = async (email, password) => {
+export const login = async (email, password, role) => {
   try {
-    const response = await apiClient.post('/auth/login', { email, password });
+    const response = await apiClient.post('/auth/login', { email, password, ...(role ? { role } : {}) });
     if (response.data.token) {
       localStorage.setItem('token', response.data.token);
       localStorage.setItem('user', JSON.stringify(response.data.user));

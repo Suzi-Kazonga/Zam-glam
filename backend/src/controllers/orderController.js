@@ -61,6 +61,9 @@ export const getMyOrders = async (req, res) => {
 
     // The courier always sees their own assignment; everyone else only after pickup.
     if (req.user.role !== 'courier') orders = orders.map((order) => Order.withCourierContactVisibility(order, req.user.role));
+    if (req.user.role === 'seller') {
+      orders = orders.map(({ address, location, phone, customer_name, customer_email, ...order }) => order);
+    }
     res.json(orders);
   } catch (error) {
     res.status(500).json({ error: error.message });

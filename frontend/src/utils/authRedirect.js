@@ -4,11 +4,15 @@
 // with something in their basket goes to the basket, because that is almost certainly why
 // they signed in.
 
+export const DASHBOARD_PATHS = Object.freeze({
+  admin: '/admin/dashboard',
+  seller: '/seller/dashboard',
+  courier: '/courier/dashboard',
+  customer: '/',
+});
+
 export function dashboardForRole(role) {
-  if (role === 'seller') return '/seller/dashboard';
-  if (role === 'admin') return '/admin/dashboard';
-  if (role === 'courier') return '/courier/dashboard';
-  return '/customer/dashboard';
+  return DASHBOARD_PATHS[role] || '/';
 }
 
 function pathFromLocationState(from) {
@@ -19,11 +23,15 @@ function pathFromLocationState(from) {
 
 export function isSafeReturnPath(path, role) {
   if (!path || path === '/login' || path.startsWith('/login') || path.startsWith('/signup')) return false;
-  if (path.startsWith('/admin') && role !== 'admin') return false;
-  if (path.startsWith('/seller') && role !== 'seller') return false;
-  if (path.startsWith('/customer') && role !== 'customer') return false;
-  if (path.startsWith('/courier') && role !== 'courier') return false;
-  return path.startsWith('/');
+  const pathname = path.split(/[?#]/, 1)[0];
+  const allowedRoots = {
+    admin: ['/admin'],
+    seller: ['/seller'],
+    courier: ['/courier'],
+    customer: ['/', '/collections', '/products', '/stores', '/cart', '/orders', '/product', '/customer'],
+  }[role] || [];
+
+  return allowedRoots.some((root) => (root === '/' ? pathname === '/' : pathname === root || pathname.startsWith(`${root}/`)));
 }
 
 export function getPostLoginPath(user, from, cartCount = 0) {

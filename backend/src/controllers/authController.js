@@ -117,7 +117,7 @@ export const register = async (req, res) => {
 // Sign in with an email and password.
 export const login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, role: expectedRole } = req.body;
 
     // Validate input
     if (!email || !password) {
@@ -134,6 +134,13 @@ export const login = async (req, res) => {
     const isPasswordValid = await User.verifyPassword(password, user.password_hash);
     if (!isPasswordValid) {
       return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
+    if (expectedRole && !['admin', 'seller', 'courier', 'customer'].includes(expectedRole)) {
+      return res.status(400).json({ error: 'Choose a valid account type' });
+    }
+    if (expectedRole && user.role !== expectedRole) {
+      return res.status(403).json({ error: `This account is registered as a ${user.role}. Select that role to sign in.` });
     }
 
     // A removed account cannot sign in, even while it is still restorable.

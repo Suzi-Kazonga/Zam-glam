@@ -6,15 +6,17 @@ import Product from './Product.js';
 class Store {
   // Create a new store
   // Open a storefront for a shop.
-  static async create({ seller_id, name, description, logo_url, location, open_hours }) {
+  static async create({ seller_id, name, description, logo_url, contact_email, contact_phone, location, open_hours }) {
     const query =
-      'INSERT INTO stores (seller_id, name, description, logo_url, location, open_hours) VALUES (?, ?, ?, ?, ?, ?)';
+      'INSERT INTO stores (seller_id, name, description, logo_url, contact_email, contact_phone, location, open_hours) VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
 
     const [result] = await pool.query(query, [
       seller_id,
       name,
       description,
       logo_url,
+      contact_email,
+      contact_phone,
       location,
       JSON.stringify(open_hours || {}),
     ]);
@@ -30,7 +32,9 @@ class Store {
   // verified, whether it is suspended, and what people have scored it. Written once here
   // so those can never drift apart between queries.
   static get selectWithSeller() {
-    return `SELECT st.*, s.verification_status, s.shop_name, s.account_status, s.deleted_at,
+    return `SELECT st.id, st.seller_id, st.name, st.description, st.logo_url, st.location,
+                   st.open_hours, st.status, st.created_at,
+                   s.verification_status, s.shop_name, s.account_status, s.deleted_at,
                    COALESCE(ROUND((SELECT AVG(r.rating) FROM reviews r WHERE r.seller_id = s.id), 1), 0) AS rating_average,
                    (SELECT COUNT(*) FROM reviews r WHERE r.seller_id = s.id) AS rating_count
             FROM stores st JOIN sellers s ON s.id = st.seller_id`;
@@ -82,9 +86,10 @@ class Store {
   static async update(id, data) {
     const fields = [];
     const values = [];
+    const allowedFields = new Set(['name', 'description', 'logo_url', 'contact_email', 'contact_phone', 'location', 'open_hours']);
 
     Object.entries(data).forEach(([key, value]) => {
-      if (key !== 'id' && key !== 'seller_id') {
+      if (allowedFields.has(key)) {
         if (key === 'open_hours') {
           fields.push(`${key} = ?`);
           values.push(JSON.stringify(value));

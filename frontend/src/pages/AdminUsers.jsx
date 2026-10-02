@@ -2,7 +2,7 @@
 // edits, suspends, deletes and restores them.
 
 import { useEffect, useMemo, useState } from 'react';
-import { Link, Navigate, useParams } from 'react-router-dom';
+import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import Topbar from '../components/Topbar';
 import DashboardCard from '../components/DashboardCard';
@@ -61,7 +61,7 @@ const GROUPS = {
 // The API addresses one account at a time in the singular.
 const SINGULAR = { customers: 'customer', sellers: 'seller', couriers: 'courier' };
 
-const sections = ['Overview', 'Sellers', 'Customers', 'Verification', 'Deliveries'];
+const sections = ['Overview', 'Sellers', 'Customers', 'Couriers', 'Attention', 'Verification', 'Reports', 'Deliveries'];
 
 const badge = (text, tone) => (
   <span className={`rounded-full px-3 py-1 text-xs font-semibold ${tone}`}>{text}</span>
@@ -141,6 +141,7 @@ function ConfirmDelete({ account, graceDays, onClose, onConfirm }) {
 
 export default function AdminUsers() {
   const { role } = useParams();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [rows, setRows] = useState([]);
   const [query, setQuery] = useState('');
@@ -228,10 +229,18 @@ export default function AdminUsers() {
   };
 
   const deletedCount = rows.filter((r) => r.deleted_at).length;
+  const openAdminSection = (section) => {
+    const groupPath = { Sellers: 'sellers', Customers: 'customers', Couriers: 'couriers' }[section];
+    if (groupPath) {
+      navigate(`/admin/users/${groupPath}`);
+      return;
+    }
+    navigate(section === 'Overview' ? '/admin/dashboard' : `/admin/dashboard?section=${encodeURIComponent(section)}`);
+  };
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <Sidebar items={sections} active={group.title === 'Shops' ? 'Sellers' : group.title} onSelect={() => {}} role="admin" />
+      <Sidebar items={sections} active={group.title === 'Shops' ? 'Sellers' : group.title} onSelect={openAdminSection} role="admin" />
       <div className="min-w-0 flex-1">
         <Topbar onSearch={setQuery} />
         <main className="mx-auto max-w-7xl space-y-6 p-4 pb-28 sm:p-6 sm:pb-28 lg:p-8 lg:pb-8">

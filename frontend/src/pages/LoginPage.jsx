@@ -9,6 +9,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { dashboardForRole, getPostLoginPath } from '../utils/authRedirect';
+import { LOGIN_STRATEGIES } from '../utils/loginStrategies';
 import { ROLE_THEMES } from '../utils/roleTheme';
 
 // Colours come from the shared role theme so login, header, topbar and sidebar always match.
@@ -30,6 +31,7 @@ function LoginPage() {
   const { getTotalItems } = useCart();
   const navigate = useNavigate();
   const from = location.state?.from;
+  const strategy = LOGIN_STRATEGIES[role];
 
   const handleRoleChange = (nextRole) => {
     setRole(nextRole);
@@ -60,7 +62,7 @@ function LoginPage() {
     setError('');
 
     try {
-      const result = await login(email, password);
+      const result = await strategy.authenticate({ email, password }, login);
       continueAfterLogin(result?.user);
     } catch (err) {
       setError(err?.error || err?.message || 'Login failed. Please try again.');
@@ -72,32 +74,36 @@ function LoginPage() {
   if (user) return null;
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-500 via-purple-600 to-indigo-800 p-4">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden">
-        <div className={`px-8 py-6 text-center ${roleStyles[role].header}`}>
-          <h1 className="text-2xl font-bold text-white">{role === 'admin' ? 'Admin portal' : 'Welcome back'}</h1>
-          <p className="text-indigo-100 mt-2">
-            {role === 'admin' ? 'Sign in to manage Zamglam accounts' : 'Sign in to continue where you left off'}
-          </p>
+    <div className="flex min-h-screen items-center justify-center bg-[#f2f5f0] p-4">
+      <div className="w-full max-w-lg overflow-hidden rounded-lg border border-slate-200 bg-white shadow-lg">
+        <div className={`px-6 py-6 text-center sm:px-8 ${roleStyles[role].header}`}>
+          <p className="text-xs font-bold uppercase tracking-widest text-white/75">Zamglam account access</p>
+          <h1 className="mt-2 text-2xl font-bold text-white">{strategy.label} sign in</h1>
+          <p className="mt-2 text-sm text-white/85">{strategy.description}</p>
         </div>
 
         <div className="p-5 sm:p-8">
-          <div className="grid grid-cols-2 gap-2 mb-6 sm:grid-cols-4">
-            {['customer', 'seller', 'courier', 'admin'].map((option) => (
+          <fieldset className="mb-6">
+            <legend className="mb-2 text-sm font-semibold text-slate-700">Choose account type</legend>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            {Object.values(LOGIN_STRATEGIES).map((option) => (
               <button
-                key={option}
+                key={option.role}
                 type="button"
-                className={`py-2 px-2 rounded-lg text-sm font-semibold border capitalize transition ${
-                  role === option
-                    ? `${option === 'seller' ? 'bg-purple-700 border-purple-700' : option === 'courier' ? 'bg-emerald-700 border-emerald-700' : option === 'admin' ? 'bg-slate-900 border-slate-900' : 'bg-indigo-600 border-indigo-600'} text-white`
-                    : 'bg-white text-gray-700 border-gray-300'
+                aria-pressed={role === option.role}
+                onClick={() => handleRoleChange(option.role)}
+                className={`flex min-h-16 flex-col items-center justify-center gap-1 rounded-md border px-2 py-2 text-xs font-semibold transition sm:text-sm ${
+                  role === option.role
+                    ? `${roleStyles[option.role].button} border-transparent text-white`
+                    : 'border-slate-300 bg-white text-slate-700 hover:border-slate-500'
                 }`}
-                onClick={() => handleRoleChange(option)}
               >
-                {option}
+                <span aria-hidden="true" className="text-xl leading-none">{option.symbol}</span>
+                {option.label}
               </button>
             ))}
-          </div>
+            </div>
+          </fieldset>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
@@ -136,8 +142,9 @@ function LoginPage() {
             )}
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+              <label htmlFor="login-email" className="block text-sm font-medium text-gray-700 mb-1">Email</label>
               <input
+                id="login-email"
                 type="email"
                 required
                 value={email}
@@ -148,8 +155,9 @@ function LoginPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+              <label htmlFor="login-password" className="block text-sm font-medium text-gray-700 mb-1">Password</label>
               <input
+                id="login-password"
                 type="password"
                 required
                 value={password}

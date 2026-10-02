@@ -40,10 +40,10 @@ export const AuthProvider = ({ children }) => {
     return () => window.removeEventListener('zamglam:session-ended', onSessionEnded);
   }, []);
 
-  const login = async (email, password) => {
+  const login = async (email, password, role) => {
     try {
       setError(null);
-      const data = await authApi.login(email, password);
+      const data = await authApi.login(email, password, role);
       setUser(data.user);
       return data;
     } catch (err) {

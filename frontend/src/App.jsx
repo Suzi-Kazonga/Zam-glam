@@ -28,9 +28,19 @@ import Policies from './pages/Policies';
 import AccountProfile from './pages/AccountProfile';
 import OrderTrack from './pages/OrderTrack';
 import BackButton from './components/BackButton';
+import { useAuth } from './context/AuthContext';
+import { dashboardForRole } from './utils/authRedirect';
 
 function MainLayout() {
   return <div className="min-h-screen flex flex-col bg-slate-50"><Header /><SuspendedNotice /><main className="flex-1"><Outlet /></main><Footer /></div>;
+}
+
+function CustomerCommerceRoute() {
+  const { user, loading } = useAuth();
+  if (loading) return <div className="p-10 text-center">Loading your account...</div>;
+  return user && user.role !== 'customer'
+    ? <Navigate to={dashboardForRole(user.role)} replace />
+    : <Outlet />;
 }
 
 class AppErrorBoundary extends React.Component {
@@ -81,13 +91,15 @@ function App() {
           <BackButton />
           <Routes>
             <Route element={<MainLayout />}>
-              <Route path="/" element={<Home />} />
-              <Route path="/collections" element={<Collections />} />
-              <Route path="/products" element={<Products />} />
-              <Route path="/stores/:id" element={<StoreCatalog />} />
-              <Route path="/cart" element={<CartPage />} />
-              <Route path="/orders/:id" element={<OrderTrack />} />
-              <Route path="/product/:id" element={<ProductDetail />} />
+              <Route element={<CustomerCommerceRoute />}>
+                <Route path="/" element={<Home />} />
+                <Route path="/collections" element={<Collections />} />
+                <Route path="/products" element={<Products />} />
+                <Route path="/stores/:id" element={<StoreCatalog />} />
+                <Route path="/cart" element={<CartPage />} />
+                <Route path="/orders/:id" element={<OrderTrack />} />
+                <Route path="/product/:id" element={<ProductDetail />} />
+              </Route>
               <Route path="/about" element={<About />} />
               <Route path="/contact" element={<Contact />} />
               <Route path="/policies" element={<Policies />} />
@@ -98,10 +110,14 @@ function App() {
             <Route path="/signup/customer" element={<SignupCustomer />} />
             <Route path="/signup/seller" element={<SignupSeller />} />
             <Route path="/signup/courier" element={<SignupCourier />} />
-            <Route element={<ProtectedRoute />}>
+            <Route element={<ProtectedRoute role="customer" />}>
               <Route path="/customer/dashboard" element={<CustomerDashboard />} />
-              <Route path="/seller/dashboard" element={<SellerDashboard />} />
+            </Route>
+            <Route element={<ProtectedRoute role="courier" />}>
               <Route path="/courier/dashboard" element={<CourierDashboard />} />
+            </Route>
+            <Route element={<ProtectedRoute role="seller" />}>
+              <Route path="/seller/dashboard" element={<SellerDashboard />} />
             </Route>
             <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
             <Route element={<AdminRoute />}>

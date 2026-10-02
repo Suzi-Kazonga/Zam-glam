@@ -1,33 +1,29 @@
-// The shop’s dashboard: stock, orders, verification, ratings and figures.
-//
-// The Orders section is where the handover happens — packing a parcel, releasing it for
-// collection, and confirming or denying that a courier actually took it.
-
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import DashboardCard from '../components/DashboardCard';
+import ProductForm from '../components/ProductForm';
 import Sidebar from '../components/Sidebar';
 import StarRating from '../components/StarRating';
-import Topbar from '../components/Topbar';
+import PromotionManager from '../components/seller/PromotionManager';
+import { AnalyticsViewer, NotificationCenter, OrderTracker, StoreProfileManager } from '../components/seller/SellerSections';
 import SuspendedNotice from '../components/SuspendedNotice';
-import { useAuth } from '../context/AuthContext';
-import ProductForm from '../components/ProductForm';
+import Topbar from '../components/Topbar';
 import VerificationPanel from '../components/VerificationPanel';
-import { formatWaiting, isOverdue } from '../utils/waiting';
 import { useProductEditor } from '../hooks/useProductEditor';
-import { confirmPickup, denyPickup, getMyOrders, updateShipmentStatus } from '../api/orderApi';
-import { isLocalDemoSession } from '../utils/localSession';
-import { getMyReviews, replyToReview } from '../api/reviewApi';
+import { getMyOrders } from '../api/orderApi';
 import { deleteProduct, getSellerProducts } from '../api/productApi';
-import { getMyStore } from '../api/storeApi';
+import { getMyReviews, replyToReview } from '../api/reviewApi';
+import { getMyStore, updateStore } from '../api/storeApi';
+import { useAuth } from '../context/AuthContext';
+import { isLocalDemoSession } from '../utils/localSession';
 
-const sections = ['Overview', 'Products', 'Orders', 'Verification', 'Reviews', 'Analytics'];
-// A seller hands the parcel over and stops there — only the assigned courier can
-// declare it delivered, so there is deliberately no 'shipped' action here.
-const nextAction = {
-  placed: { status: 'processing', label: 'Start packing' },
-  processing: { status: 'shipped', label: 'Hand to courier' },
-};
+const sections = ['Overview', 'Products', 'Orders', 'Analytics', 'Promotions', 'Store profile', 'Notifications', 'Reviews', 'Verification'];
+
+function deliveryLabel(status) {
+  if (status === 'delivered') return 'Delivered';
+  if (status === 'in_transit') return 'In transit';
+  return 'Pending';
+}
 
 export default function SellerDashboard() {
   const { user } = useAuth();
@@ -36,87 +32,94 @@ export default function SellerDashboard() {
   const [products, setProducts] = useState([]);
   const [orders, setOrders] = useState([]);
   const [reviews, setReviews] = useState([]);
-  const [, setMessage] = useState('');
-  const [confirmDelete, setConfirmDelete] = useState(null);
-  const [orderFilter, setOrderFilter] = useState('action');
-  const [replyDrafts, setReplyDrafts] = useState({});
-  const [storefront, setStorefront] = useState('/products');
-  const sellerName = user?.shop_name || user?.name || 'My Shop';
   const [score, setScore] = useState({ average: 0, count: 0 });
+  const [message, setMessage] = useState('');
+  const [confirmDelete, setConfirmDelete] = useState(null);
+  const [replyDrafts, setReplyDrafts] = useState({});
+  const [store, setStore] = useState(null);
+  const [storefront, setStorefront] = useState('/products');
+  const [profile, setProfile] = useState({ name: '', description: '', logo_url: '', contact_email: '', contact_phone: '', location: '' });
+  const [savingProfile, setSavingProfile] = useState(false);
+  const sellerName = user?.shop_name || user?.name || 'My Shop';
+
+  const loadProducts = () => getSellerProducts()
+    .then((rows) => setProducts(Array.isArray(rows) ? rows : []))
+    .catch(() => setMessage('Could not load your products.'));
+
+  const loadOrders = () => {
+    if (!isLocalDemoSession()) getMyOrders().then((rows) => setOrders(rows.map((order) => ({
+      id: order.id,
+      status: order.status === 'delivered' ? 'delivered' : ['shipped', 'picked_up', 'in_transit'].includes(order.status) ? 'in_transit' : 'pending',
+      createdAt: order.createdAt,
+      sellerTotal: order.sellerTotal,
+      items: (order.items || []).map((item) => ({
+        id: item.id,
+        name: item.name,
+        quantity: item.quantity,
+        image_url: item.image_url,
+      })),
+    })))).catch(() => {});
+  };
 
   const loadReviews = () => {
     if (isLocalDemoSession()) return;
-    getMyReviews()
-      .then((data) => {
-        setReviews(data.reviews || []);
-        setScore({ average: data.average || 0, count: data.count || 0 });
-      })
-      .catch(() => {});
+    getMyReviews().then((data) => {
+      setReviews(data.reviews || []);
+      setScore({ average: data.average || 0, count: data.count || 0 });
+    }).catch(() => {});
   };
 
-  const loadOrders = () => {
-    if (isLocalDemoSession()) return;
-    getMyOrders().then(setOrders).catch(() => {});
-  };
+  const editor = useProductEditor({ onSaved: (note) => { setMessage(note); loadProducts(); } });
 
-  const loadProducts = () => {
-    getSellerProducts()
-      .then((remote) => setProducts(Array.isArray(remote) ? remote : []))
-      .catch(() => setMessage('Could not load your products.'));
-  };
-
-  const editor = useProductEditor({
-    onSaved: (note) => {
-      setMessage(note);
-      loadProducts();
-    },
-  });
-
-  const loadData = () => {
+  useEffect(() => {
     loadProducts();
     loadOrders();
     loadReviews();
-  };
-
-  useEffect(() => {
-    loadData();
-    const poll = window.setInterval(() => {
-      loadOrders();
-      loadReviews();
-    }, 5000);
-    return () => window.clearInterval(poll);
-  }, [user?.email, sellerName]);
-
-  // The storefront path comes from the seller's real store id — matching on shop name
-  // sends anyone outside the six seeded shops to the wrong storefront.
-  useEffect(() => {
-    if (isLocalDemoSession()) return;
-    getMyStore().then((store) => { if (store?.id) setStorefront(`/stores/${store.id}`); }).catch(() => {});
+    const timer = window.setInterval(() => { loadOrders(); loadReviews(); }, 10000);
+    return () => window.clearInterval(timer);
   }, [user?.email]);
 
-  const filteredProducts = useMemo(
-    () => products.filter((product) => `${product.name} ${product.description || ''}`.toLowerCase().includes(query.toLowerCase())),
-    [products, query],
-  );
-  // "Needs action" means the seller still has something to do; once handed to the courier
-  // the parcel is out of their hands.
-  // A courier waiting at the counter is the most urgent thing a shop has, so a parcel at
-  // pickup_requested belongs in "Needs action" even though it has no nextAction step —
-  // the shop answers it with Picked up / Not picked up rather than by advancing a status.
-  const needsAction = (order) => Boolean(nextAction[order.status]) || order.status === 'pickup_requested';
-  const actionOrders = orders.filter(needsAction);
-  const visibleOrders = (orderFilter === 'action' ? actionOrders : orders).filter((order) => `${order.id} ${order.items?.[0]?.name || ''} ${order.customerName || ''}`.toLowerCase().includes(query.toLowerCase()));
-  const lowStock = products.filter((product) => Number(product.stock) > 0 && Number(product.stock) < 5);
-  // Only this store's own line items count towards its revenue — never the rest of a
-  // shared basket, and never the courier's delivery fee.
-  const revenue = orders.reduce((total, order) => total + Number(order.sellerTotal ?? 0), 0);
-  const statusCounts = {
-    placed: orders.filter((order) => order.status === 'placed').length,
-    processing: orders.filter((order) => order.status === 'processing').length,
-    shipped: orders.filter((order) => order.status === 'shipped').length,
-    pickupRequested: orders.filter((order) => order.status === 'pickup_requested').length,
-    delivered: orders.filter((order) => order.status === 'delivered').length,
-  };
+  useEffect(() => {
+    if (isLocalDemoSession()) return;
+    getMyStore().then((current) => {
+      if (!current) return;
+      setStore(current);
+      setProfile({ name: current.name || '', description: current.description || '', logo_url: current.logo_url || '', contact_email: current.contact_email || user?.email || '', contact_phone: current.contact_phone || user?.phone || '', location: current.location || '' });
+      if (current.id) setStorefront(`/stores/${current.id}`);
+    }).catch(() => {});
+  }, [user?.email]);
+
+  const filteredProducts = useMemo(() => products.filter((product) => `${product.name} ${product.description || ''}`.toLowerCase().includes(query.toLowerCase())), [products, query]);
+  const visibleOrders = orders.filter((order) => `${order.id} ${(order.items || []).map((item) => item.name).join(' ')}`.toLowerCase().includes(query.toLowerCase()));
+  const lowStock = products.filter((product) => Number(product.stock) >= 0 && Number(product.stock) < 5);
+  const revenue = orders.reduce((sum, order) => sum + Number(order.sellerTotal || 0), 0);
+  const inTransit = orders.filter((order) => order.status === 'in_transit').length;
+  const delivered = orders.filter((order) => order.status === 'delivered').length;
+  const unansweredReviews = reviews.filter((review) => !review.reply);
+  const notificationCount = orders.filter((order) => order.status === 'pending').length + lowStock.length + unansweredReviews.length;
+
+  const topProducts = useMemo(() => {
+    const totals = new Map();
+    orders.forEach((order) => (order.items || []).forEach((item) => {
+      const current = totals.get(item.name) || { name: item.name, units: 0 };
+      current.units += Number(item.quantity) || 0;
+      totals.set(item.name, current);
+    }));
+    return [...totals.values()].sort((a, b) => b.units - a.units).slice(0, 5);
+  }, [orders]);
+
+  const revenueByDay = useMemo(() => {
+    const days = Array.from({ length: 7 }, (_, index) => {
+      const date = new Date();
+      date.setDate(date.getDate() - 6 + index);
+      return { date: date.toLocaleDateString(), day: date.toLocaleDateString(undefined, { weekday: 'short' }), amount: 0 };
+    });
+    orders.forEach((order) => {
+      const row = days.find((day) => day.date === new Date(order.createdAt).toLocaleDateString());
+      if (row) row.amount += Number(order.sellerTotal) || 0;
+    });
+    return days;
+  }, [orders]);
 
   const removeProduct = async () => {
     try {
@@ -129,289 +132,84 @@ export default function SellerDashboard() {
     }
   };
 
-  // Acts on this store's own parcel only — other stores in the same order are untouched.
-  const advanceOrder = async (order) => {
-    const action = nextAction[order.status];
-    if (!action || !order.shipmentId) return;
+  const saveProfile = async (event) => {
+    event.preventDefault();
+    if (!store?.id) return setMessage('Your store profile is not available yet.');
+    setSavingProfile(true);
+    setMessage('');
     try {
-      await updateShipmentStatus(order.shipmentId, action.status);
-      loadOrders();
-    } catch {
-      setMessage('Could not update that parcel. Please try again.');
-    }
-  };
-
-  // The shop's word on whether the courier actually took the parcel. Confirming releases
-  // the courier's details to the customer; denying puts it back in the pool for someone
-  // else and tells the customer why it is taking longer.
-  const confirmHandover = async (order) => {
-    try {
-      await confirmPickup(order.shipmentId);
-      setMessage('Handover confirmed. The customer can now see the courier.');
-      loadOrders();
+      await updateStore(store.id, profile);
+      setStore((current) => ({ ...current, ...profile }));
+      setMessage('Store profile updated.');
     } catch (error) {
-      setMessage(error?.error || 'Could not confirm that handover.');
+      setMessage(error?.error || 'Could not update your store profile.');
+    } finally {
+      setSavingProfile(false);
     }
   };
 
-  const denyHandover = async (order) => {
-    const reason = window.prompt('What happened? (optional — the customer sees this)') ?? '';
-    try {
-      await denyPickup(order.shipmentId, reason);
-      setMessage('Marked as not collected. The parcel is back in the pool for another courier.');
-      loadOrders();
-    } catch (error) {
-      setMessage(error?.error || 'Could not update that parcel.');
-    }
-  };
-
-  const sendReply = (ratingId) => {
-    const reply = replyDrafts[ratingId];
+  const sendReply = (reviewId) => {
+    const reply = replyDrafts[reviewId];
     if (!reply?.trim()) return;
-    replyToReview(ratingId, reply.trim())
-      .then(() => {
-        loadReviews();
-        setReplyDrafts((current) => ({ ...current, [ratingId]: '' }));
-      })
-      .catch((error) => setMessage(error?.error || 'Could not post that reply.'));
+    replyToReview(reviewId, reply.trim()).then(() => {
+      loadReviews();
+      setReplyDrafts((current) => ({ ...current, [reviewId]: '' }));
+    }).catch((error) => setMessage(error?.error || 'Could not post that reply.'));
   };
 
-  return (
-    <div className="flex min-h-screen bg-gray-50">
-      <Sidebar items={sections} active={active} onSelect={setActive} role="seller" shopName={sellerName} />
-      <div className="min-w-0 flex-1">
-        <Topbar onSearch={setQuery} /><SuspendedNotice />
-        <main className="mx-auto max-w-7xl space-y-6 p-4 pb-28 sm:p-6 sm:pb-28 lg:p-8 lg:pb-8">
-          <div className="flex flex-wrap items-end justify-between gap-4">
-            <div>
-              <p className="text-sm font-semibold uppercase tracking-widest text-purple-700">{sellerName} studio</p>
-              <h1 className="mt-2 text-3xl font-bold text-slate-900">
-                {active === 'Overview' ? `Today at ${sellerName}` : active}
-              </h1>
-              <p className="mt-1 text-slate-500">
-                {active === 'Overview' && 'Pack orders, watch stock, and keep your storefront current.'}
-                {active === 'Products' && 'List items the way customers will see them.'}
-                {active === 'Orders' && 'Move each order one step: pack, hand to courier, then delivered.'}
-                {active === 'Reviews' && 'Read ratings and reply after a customer receives an order.'}
-                {active === 'Analytics' && 'A simple view of orders and revenue.'}
-              </p>
-            </div>
-            <Link to={storefront} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:border-purple-700 hover:text-purple-700">View storefront</Link>
+  return <div className="flex min-h-screen bg-[#f4f6f2]">
+    <Sidebar items={sections} active={active} onSelect={setActive} role="seller" shopName={sellerName} storefrontPath={storefront} />
+    <div className="min-w-0 flex-1">
+      <Topbar onSearch={setQuery} hideSellerNotifications />
+      <SuspendedNotice />
+      <main className="mx-auto max-w-screen-2xl space-y-6 p-4 pb-28 sm:p-6 sm:pb-28 lg:p-8 lg:pb-8">
+        <header className="flex flex-wrap items-end justify-between gap-4 border-b border-slate-200 pb-5">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-widest text-emerald-800">Seller workspace / {sellerName}</p>
+            <h1 className="mt-2 text-3xl font-bold text-slate-950">{active === 'Overview' ? 'Shop overview' : active}</h1>
+            <p className="mt-1 text-sm text-slate-600">{active === 'Overview' ? 'A clear view of your products, orders, and sales.' : active === 'Products' ? 'Manage your product listings.' : active === 'Orders' ? 'Follow order progress through delivery.' : active === 'Analytics' ? 'Revenue, best sellers, and customer engagement.' : active === 'Promotions' ? 'Schedule discounts on your products.' : active === 'Store profile' ? 'Keep your storefront details up to date.' : active === 'Notifications' ? 'New orders, low stock, and customer feedback.' : ''}</p>
           </div>
+          <Link to={storefront} className="inline-flex min-h-10 items-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 hover:border-emerald-700 hover:text-emerald-900">View storefront</Link>
+        </header>
+        {message && <p role="status" className="rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">{message}</p>}
 
-          {active === 'Overview' && (
-            <section className="space-y-4">
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                <button type="button" onClick={() => setActive('Orders')} className="text-left"><DashboardCard title="Needs action" value={actionOrders.length} detail="Orders still in progress" /></button>
-                <button type="button" onClick={() => setActive('Products')} className="text-left"><DashboardCard title="Low stock" value={lowStock.length} detail="Fewer than 5 units" /></button>
-                <button type="button" onClick={() => setActive('Products')} className="text-left"><DashboardCard title="Products" value={products.length} detail="Live listings" /></button>
-                <button type="button" onClick={() => setActive('Reviews')} className="text-left"><DashboardCard title="Seller rating" value={score.count ? `${score.average} ★` : '—'} detail={score.count ? `${score.count} reviews` : 'No ratings yet'} /></button>
-              </div>
-              <div className="grid gap-4 lg:grid-cols-2">
-                <DashboardCard title="Orders to pack">
-                  <div className="mt-4 space-y-3">
-                    {actionOrders.length ? actionOrders.slice(0, 3).map((order) => (
-                      <div key={order.id} className="flex items-center justify-between gap-3 border-b border-slate-100 pb-3 last:border-0">
-                        <div>
-                          <p className="font-semibold">{order.items?.[0]?.name}</p>
-                          <p className="text-sm capitalize text-slate-500">{order.status} · {order.customerName || 'Customer'}</p>
-                        </div>
-                        <button type="button" onClick={() => setActive('Orders')} className="text-sm font-semibold text-purple-700">Open</button>
-                      </div>
-                    )) : <p className="text-slate-500">No open orders. New sales will appear here.</p>}
-                  </div>
-                </DashboardCard>
-                <DashboardCard title="Latest rating">
-                  {reviews[0] ? (
-                    <div className="mt-4">
-                      <StarRating value={reviews[0].stars} readOnly size="sm" />
-                      <p className="mt-2 text-sm text-slate-600">{reviews[0].comment || 'Rated after purchase.'}</p>
-                      <p className="mt-1 text-xs text-slate-400">{reviews[0].customerName} · {reviews[0].productName}</p>
-                    </div>
-                  ) : <p className="mt-4 text-slate-500">When a customer marks an order received, their rating appears here.</p>}
-                </DashboardCard>
-              </div>
-            </section>
-          )}
-
-          {active === 'Products' && (
-            <DashboardCard title="Your listings" className="overflow-hidden">
-              <div className="mt-4 flex justify-end">
-                <button type="button" onClick={editor.openCreate} className="rounded-lg bg-purple-700 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-800">Add product</button>
-              </div>
-              <div className="mt-4 overflow-x-auto">
-                <table className="w-full min-w-[680px] text-left text-sm">
-                  <thead className="border-b border-slate-100 text-slate-400">
-                    <tr><th className="py-3">Product</th><th>Price</th><th>Stock</th><th>Status</th><th></th></tr>
-                  </thead>
-                  <tbody>
-                    {filteredProducts.length ? filteredProducts.map((product) => (
-                      <tr key={product.id} className="border-b border-slate-50 last:border-0">
-                        <td className="py-3">
-                          <div className="flex items-center gap-3">
-                            <img src={product.image_url || product.images?.[0] || '/images/products/mud-denim.jpg'} alt="" className="h-14 w-12 rounded object-cover" />
-                            <div>
-                              <p className="font-semibold text-slate-900">{product.name}</p>
-                              <p className="text-xs capitalize text-slate-400">{product.category}</p>
-                            </div>
-                          </div>
-                        </td>
-                        <td>K{Number(product.price).toFixed(2)}</td>
-                        <td>{product.stock}</td>
-                        <td>{Number(product.stock) === 0 ? <span className="text-rose-600">Sold out</span> : Number(product.stock) < 5 ? <span className="text-amber-600">Low stock</span> : <span className="text-emerald-600">In stock</span>}</td>
-                        <td className="text-right">
-                          <button type="button" onClick={() => editor.openEdit(product)} className="mr-2 font-semibold text-purple-700">Edit</button>
-                          <button type="button" onClick={() => setConfirmDelete(product)} className="font-semibold text-rose-600">Delete</button>
-                        </td>
-                      </tr>
-                    )) : <tr><td colSpan={5} className="py-8 text-slate-500">No products match your search.</td></tr>}
-                  </tbody>
-                </table>
-              </div>
-            </DashboardCard>
-          )}
-
-          {active === 'Verification' && (
-            <DashboardCard title="Shop verification">
-              <div className="mt-4"><VerificationPanel /></div>
-            </DashboardCard>
-          )}
-
-          {active === 'Orders' && (
-            <DashboardCard title="Fulfillment">
-              <div className="mt-4 flex flex-wrap gap-2">
-                <button type="button" onClick={() => setOrderFilter('action')} className={`rounded-full px-3 py-1 text-sm font-semibold ${orderFilter === 'action' ? 'bg-purple-700 text-white' : 'bg-slate-100 text-slate-600'}`}>
-                  Needs action{actionOrders.length ? ` (${actionOrders.length})` : ''}
-                </button>
-                <button type="button" onClick={() => setOrderFilter('all')} className={`rounded-full px-3 py-1 text-sm font-semibold ${orderFilter === 'all' ? 'bg-purple-700 text-white' : 'bg-slate-100 text-slate-600'}`}>All orders</button>
-              </div>
-
-              {/* A courier standing at the counter should not have to wait while the shop
-                  hunts through a list for them. */}
-              {statusCounts.pickupRequested > 0 && (
-                <p className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-900">
-                  {statusCounts.pickupRequested} courier{statusCounts.pickupRequested === 1 ? ' is' : 's are'} waiting for you to confirm
-                  a handover. Press <strong>Picked up</strong> once you have handed the parcel over, or
-                  <strong> Not picked up</strong> if they never came.
-                </p>
-              )}
-              <div className="mt-5 space-y-4">
-                {visibleOrders.length ? visibleOrders.map((order) => {
-                  const action = nextAction[order.status];
-                  const item = order.items?.[0] || {};
-                  return (
-                    <article key={order.id} className="flex flex-wrap items-start justify-between gap-4 rounded-lg border border-slate-200 p-4">
-                      <div className="flex gap-3">
-                        <img src={item.image_url || '/images/products/mud-denim.jpg'} alt="" className="h-20 w-16 rounded object-cover" />
-                        <div>
-                          <p className="font-semibold">Order #{order.id} · your parcel</p>
-                          <p className="text-sm text-slate-700">{(order.items || []).map((line) => `${line.name} x${line.quantity}`).join(', ') || item.name}</p>
-                          <p className="mt-1 text-sm text-slate-600">{order.customerName || 'Customer'} · {order.phone || 'No phone'}</p>
-                          <p className="text-sm text-slate-500">{order.address || 'No address'}</p>
-                          <p className="mt-1 text-xs capitalize text-slate-400">{order.status} · your items K{Number(order.sellerTotal ?? 0).toFixed(2)}</p>
-                        </div>
-                      </div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Link to={`/orders/${order.id}`} className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700">Track</Link>
-                        {action ? (
-                          <button type="button" onClick={() => advanceOrder(order)} className="rounded-lg bg-purple-700 px-3 py-2 text-sm font-semibold text-white hover:bg-purple-800">{action.label}</button>
-                        ) : order.status === 'shipped' ? (
-                          <span className={`text-right text-sm font-semibold ${isOverdue(order.releasedAt) ? 'text-rose-600' : 'text-amber-700'}`}>
-                            Waiting for a courier
-                            {order.releasedAt && <span className="block text-xs font-normal">released {formatWaiting(order.releasedAt)} ago</span>}
-                            {isOverdue(order.releasedAt) && <span className="block text-xs font-normal">overdue — being assigned</span>}
-                          </span>
-                        ) : order.status === 'pickup_requested' ? (
-                          // A courier says they are collecting it. Only the shop can say
-                          // whether that actually happened.
-                          <div className="text-right">
-                            <p className="text-sm font-semibold text-amber-700">
-                              {order.courier?.driver_name || 'A courier'} is collecting
-                            </p>
-                            <div className="mt-2 flex gap-2">
-                              <button type="button" onClick={() => confirmHandover(order)} className="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-700">Picked up</button>
-                              <button type="button" onClick={() => denyHandover(order)} className="rounded-lg border border-rose-300 px-3 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-50">Not picked up</button>
-                            </div>
-                          </div>
-                        ) : order.status === 'picked_up' ? (
-                          <span className="text-right text-sm font-semibold text-amber-700">
-                            With courier{order.courier?.driver_name ? ` · ${order.courier.driver_name}` : ''}
-                            {order.courier?.driver_phone && (
-                              <a href={`tel:${order.courier.driver_phone}`} className="block text-xs font-semibold text-slate-500 hover:underline">{order.courier.driver_phone}</a>
-                            )}
-                          </span>
-                        ) : <span className="text-sm font-semibold text-emerald-700">Delivered</span>}
-                      </div>
-                    </article>
-                  );
-                }) : <p className="text-slate-500">No orders in this view.</p>}
-              </div>
-            </DashboardCard>
-          )}
-
-          {active === 'Reviews' && (
-            <DashboardCard title="Customer ratings">
-              <div className="mt-2 flex items-center gap-3">
-                <StarRating value={Math.round(score.average)} readOnly />
-                <p className="text-sm text-slate-500">{score.count ? `${score.average} average from ${score.count} review${score.count === 1 ? '' : 's'}` : 'No ratings yet'}</p>
-              </div>
-              <div className="mt-5 space-y-4">
-                {reviews.length ? reviews.map((review) => (
-                  <article key={review.id} className="border-b border-slate-100 pb-4 last:border-0">
-                    <StarRating value={review.rating} readOnly size="sm" />
-                    <p className="mt-2 text-sm text-slate-600">{review.comment || 'Rated after purchase.'}</p>
-                    <p className="mt-1 text-xs text-slate-400">
-                      {review.customer_name || 'Zamglam shopper'} · order #{review.order_id} · {new Date(review.created_at).toLocaleDateString()}
-                    </p>
-                    {review.reply ? (
-                      <p className="mt-3 rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-600"><strong>Your reply:</strong> {review.reply}</p>
-                    ) : (
-                      <div className="mt-3 flex gap-2">
-                        <input value={replyDrafts[review.id] || ''} onChange={(event) => setReplyDrafts((current) => ({ ...current, [review.id]: event.target.value }))} placeholder="Thank the customer" className="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-purple-300" />
-                        <button type="button" onClick={() => sendReply(review.id)} className="rounded-lg bg-purple-700 px-3 py-2 text-sm font-semibold text-white">Reply</button>
-                      </div>
-                    )}
-                  </article>
-                )) : <p className="text-slate-500">When a customer marks an order received, their rating appears here.</p>}
-              </div>
-            </DashboardCard>
-          )}
-
-          {active === 'Analytics' && (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <DashboardCard title="Revenue" value={`K${revenue.toFixed(2)}`} detail="Your items only, excluding delivery" />
-              <DashboardCard title="Placed" value={statusCounts.placed} detail="Waiting to pack" />
-              <DashboardCard title="In transit" value={statusCounts.processing + statusCounts.shipped} detail="Packing or with courier" />
-              <DashboardCard title="Delivered" value={statusCounts.delivered} detail="Completed sales" />
-            </div>
-          )}
-        </main>
-      </div>
-
-      {editor.showForm && (
-        <ProductForm
-          form={editor.form}
-          setForm={editor.setForm}
-          message={editor.message}
-          saving={editor.saving}
-          onClose={editor.close}
-          onImages={editor.handleImages}
-          onSubmit={editor.submit}
-        />
-      )}
-
-      {confirmDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4">
-          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
-            <h2 className="text-xl font-bold text-slate-900">Remove this listing?</h2>
-            <p className="mt-2 text-sm text-slate-500">{confirmDelete.name} will disappear from your storefront in this browser.</p>
-            <div className="mt-6 flex justify-end gap-3">
-              <button type="button" onClick={() => setConfirmDelete(null)} className="rounded-lg border border-slate-300 px-4 py-2 font-semibold text-slate-700">Cancel</button>
-              <button type="button" onClick={removeProduct} className="rounded-lg bg-rose-600 px-4 py-2 font-semibold text-white">Delete</button>
-            </div>
+        {active === 'Overview' && <section className="space-y-5">
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <button type="button" onClick={() => setActive('Orders')} className="text-left"><DashboardCard title="Pending orders" value={orders.filter((order) => order.status === 'pending').length} detail="Need your attention" /></button>
+            <button type="button" onClick={() => setActive('Orders')} className="text-left"><DashboardCard title="In transit" value={inTransit} detail="On the way to customers" /></button>
+            <button type="button" onClick={() => setActive('Products')} className="text-left"><DashboardCard title="Low stock" value={lowStock.length} detail="Fewer than 5 units" /></button>
+            <button type="button" onClick={() => setActive('Products')} className="text-left"><DashboardCard title="Your products" value={products.length} detail="Active shop listings" /></button>
           </div>
-        </div>
-      )}
+          <div className="grid gap-4 xl:grid-cols-[1.25fr_0.75fr]">
+            <DashboardCard title="Recent orders" detail="Your shop's latest order activity."><div className="mt-3 divide-y divide-slate-100">{orders.slice(0, 5).map((order) => <div key={order.id} className="flex flex-wrap items-center justify-between gap-3 py-3"><div className="min-w-0"><p className="font-semibold text-slate-900">Order #{order.id}</p><p className="truncate text-sm text-slate-500">{(order.items || []).map((item) => item.name).join(', ')}</p></div><span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${order.status === 'delivered' ? 'bg-emerald-50 text-emerald-800' : order.status === 'in_transit' ? 'bg-sky-50 text-sky-800' : 'bg-amber-50 text-amber-800'}`}>{deliveryLabel(order.status)}</span></div>)}{!orders.length && <p className="py-4 text-sm text-slate-500">New orders will appear here.</p>}</div><button type="button" onClick={() => setActive('Orders')} className="mt-3 border-t border-slate-100 pt-4 text-sm font-semibold text-emerald-800">Open order tracker</button></DashboardCard>
+            <div className="space-y-4"><DashboardCard title="Sales snapshot"><div className="mt-4 flex items-end justify-between gap-4"><div><p className="text-sm text-slate-500">Total seller revenue</p><p className="mt-1 text-3xl font-bold text-slate-950">K{revenue.toFixed(2)}</p></div><div className="text-right"><p className="text-sm text-slate-500">Rating</p><p className="mt-1 text-lg font-bold text-slate-900">{score.count ? `${score.average} / 5` : '—'}</p></div></div><button type="button" onClick={() => setActive('Analytics')} className="mt-5 text-sm font-semibold text-emerald-800">View analytics</button></DashboardCard><button type="button" onClick={() => setActive('Notifications')} className="block w-full text-left"><DashboardCard title="Shop alerts" value={notificationCount} detail="Orders, stock, and feedback" /></button></div>
+          </div>
+        </section>}
+
+        {active === 'Products' && <DashboardCard title="Your listings" className="overflow-hidden">
+          <div className="mt-4 flex justify-end"><button type="button" onClick={editor.openCreate} className="rounded-md bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800">Add product</button></div>
+          <div className="mt-4 overflow-x-auto"><table className="w-full min-w-[680px] text-left text-sm"><thead className="border-b border-slate-100 text-slate-400"><tr><th className="py-3">Product</th><th>Price</th><th>Stock</th><th>Status</th><th /></tr></thead><tbody>
+            {filteredProducts.map((product) => <tr key={product.id} className="border-b border-slate-50 last:border-0"><td className="py-3"><div className="flex items-center gap-3"><img src={product.image_url || product.images?.[0] || '/images/products/mud-denim.jpg'} alt="" className="h-14 w-12 rounded object-cover" /><div><p className="font-semibold text-slate-900">{product.name}</p><p className="text-xs capitalize text-slate-400">{product.category}</p></div></div></td><td>K{Number(product.price).toFixed(2)}</td><td>{product.stock}</td><td>{Number(product.stock) === 0 ? <span className="text-rose-600">Sold out</span> : Number(product.stock) < 5 ? <span className="text-amber-600">Low stock</span> : <span className="text-emerald-700">In stock</span>}</td><td className="text-right"><button type="button" onClick={() => editor.openEdit(product)} className="mr-3 font-semibold text-emerald-700">Edit</button><button type="button" onClick={() => setConfirmDelete(product)} className="font-semibold text-rose-700">Delete</button></td></tr>)}
+            {!filteredProducts.length && <tr><td colSpan={5} className="py-8 text-slate-500">No products match your search.</td></tr>}
+          </tbody></table></div>
+        </DashboardCard>}
+
+        {active === 'Orders' && <OrderTracker orders={visibleOrders} />}
+
+        {active === 'Analytics' && <AnalyticsViewer revenue={revenue} orders={orders} inTransit={inTransit} delivered={delivered} revenueByDay={revenueByDay} topProducts={topProducts} reviews={reviews} unansweredReviews={unansweredReviews} score={score} />}
+
+        {active === 'Promotions' && <PromotionManager products={products} onMessage={setMessage} />}
+
+        {active === 'Store profile' && <StoreProfileManager store={store} profile={profile} setProfile={setProfile} saving={savingProfile} onSubmit={saveProfile} user={user} />}
+
+        {active === 'Notifications' && <NotificationCenter orders={orders} lowStock={lowStock} unansweredReviews={unansweredReviews} onNavigate={setActive} />}
+
+        {active === 'Reviews' && <DashboardCard title="Customer ratings"><div className="mt-2 flex items-center gap-3"><StarRating value={Math.round(score.average)} readOnly /><p className="text-sm text-slate-500">{score.count ? `${score.average} average from ${score.count} reviews` : 'No ratings yet'}</p></div><div className="mt-5 space-y-4">{reviews.map((review) => <article key={review.id} className="border-b border-slate-100 pb-4 last:border-0"><StarRating value={review.rating} readOnly size="sm" /><p className="mt-2 text-sm text-slate-600">{review.comment || 'Rated after purchase.'}</p><p className="mt-1 text-xs text-slate-400">Order #{review.order_id} · {new Date(review.created_at).toLocaleDateString()}</p>{review.reply ? <p className="mt-3 rounded-md bg-slate-50 px-3 py-2 text-sm text-slate-600"><strong>Your reply:</strong> {review.reply}</p> : <div className="mt-3 flex gap-2"><input value={replyDrafts[review.id] || ''} onChange={(event) => setReplyDrafts((current) => ({ ...current, [review.id]: event.target.value }))} placeholder="Write a reply" className="min-w-0 flex-1 rounded-md border border-slate-200 px-3 py-2 text-sm" /><button type="button" onClick={() => sendReply(review.id)} className="rounded-md bg-emerald-700 px-3 py-2 text-sm font-semibold text-white">Reply</button></div>}</article>)}{!reviews.length && <p className="text-slate-500">Customer ratings will appear here.</p>}</div></DashboardCard>}
+
+        {active === 'Verification' && <DashboardCard title="Shop verification"><div className="mt-4"><VerificationPanel /></div></DashboardCard>}
+      </main>
     </div>
-  );
+    {editor.showForm && <ProductForm form={editor.form} setForm={editor.setForm} message={editor.message} saving={editor.saving} onClose={editor.close} onImages={editor.handleImages} onSubmit={editor.submit} />}
+    {confirmDelete && <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4"><div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl"><h2 className="text-xl font-bold">Remove this listing?</h2><p className="mt-2 text-sm text-slate-500">{confirmDelete.name} will be removed from your storefront.</p><div className="mt-6 flex justify-end gap-3"><button type="button" onClick={() => setConfirmDelete(null)} className="rounded-md border border-slate-300 px-4 py-2 font-semibold">Cancel</button><button type="button" onClick={removeProduct} className="rounded-md bg-rose-700 px-4 py-2 font-semibold text-white">Delete</button></div></div></div>}
+  </div>;
 }

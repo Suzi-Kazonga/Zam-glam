@@ -6,9 +6,9 @@ import { Link } from 'react-router-dom';
 import { getStorefrontPath, getStoreLogo } from '../utils/storeLogos';
 import { themeForRole } from '../utils/roleTheme';
 
-export default function Sidebar({ items, active, onSelect, role, shopName }) {
+export default function Sidebar({ items, active, onSelect, role, shopName, storefrontPath }) {
   const [open, setOpen] = useState(false);
-  const storefront = getStorefrontPath(shopName);
+  const storefront = storefrontPath || getStorefrontPath(shopName);
   const theme = themeForRole(role);
   const accent = theme.sidebarActive;
 

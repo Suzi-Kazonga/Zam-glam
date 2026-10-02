@@ -13,7 +13,7 @@ import { getStorefrontPath } from '../utils/storeLogos';
 import { themeForRole } from '../utils/roleTheme';
 
 const Header = () => {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -25,6 +25,7 @@ const Header = () => {
   const brandClass = themed ? 'text-white hover:text-white/80' : 'text-slate-900 hover:text-indigo-600';
   const navClass = themed ? 'text-white/80' : 'text-slate-600';
   const linkClass = themed ? 'hover:text-white transition' : 'hover:text-indigo-600 transition';
+  const canBrowse = !loading && (!user || user.role === 'customer');
 
   // The nav is hidden below lg, so without this the links are unreachable on a phone.
   const [menuOpen, setMenuOpen] = useState(false);
@@ -32,8 +33,10 @@ const Header = () => {
 
   // One list, rendered twice: inline on desktop, stacked in the drawer on mobile.
   const navLinks = [
-    { to: '/collections', label: 'Collections' },
-    { to: '/products', label: 'All Products' },
+    ...(canBrowse ? [
+      { to: '/collections', label: 'Collections' },
+      { to: '/products', label: 'All Products' },
+    ] : []),
     ...(user?.role === 'customer' ? [{ to: '/customer/dashboard', label: 'Dashboard' }] : []),
     ...(user?.role === 'seller' ? [
       { to: '/seller/dashboard', label: 'Seller Dashboard' },
@@ -68,7 +71,7 @@ const Header = () => {
         {navLinks.map((link) => <Link key={link.to + link.label} to={link.to} className={linkClass}>{link.label}</Link>)}
       </nav>
       <div className="ml-auto flex items-center gap-3">
-        {user?.role !== 'admin' && user?.role !== 'seller' && user?.role !== 'courier' && <CartIcon />}
+        {canBrowse && <CartIcon />}
         {user?.role === 'courier' && <DeliveryIcon />}
         {user?.role === 'seller' && <SellerOrderIcon />}
         {user?.role === 'admin' && <AdminApprovalsIcon />}
@@ -91,7 +94,7 @@ const Header = () => {
           </div>
         )}
       </div>
-      <div className="order-3 w-full flex-1 md:order-2 md:w-auto"><SearchBar placeholder="Search all styles" onSearch={(value) => { if (value) navigate(`/products?search=${encodeURIComponent(value)}`); }} /></div>
+      {canBrowse && <div className="order-3 w-full flex-1 md:order-2 md:w-auto"><SearchBar placeholder="Search all styles" onSearch={(value) => { if (value) navigate(`/products?search=${encodeURIComponent(value)}`); }} /></div>}
       </div>
 
       {/* Mobile drawer: the same links, stacked, with targets big enough to tap. */}
