@@ -86,7 +86,9 @@ INSERT INTO products (product_id, store_id, name, description, category, price, 
 
     (16, 6, 'Designer Pants', 'Tailored statement pants from a local edit.', 'pants', 500.00, 20, '/images/products/designer-pants.jpg'),
     (17, 6, 'Silk Shirt', 'A softly draped silk shirt for occasion dressing.', 'shirts', 450.00, 20, '/images/products/silk-shirt.jpg'),
-    (18, 6, 'Luxury Shoes', 'Polished shoes for elevated evenings.', 'shoes', 800.00, 15, '/images/products/luxury-shoes.jpg');
+    (18, 6, 'Luxury Shoes', 'Polished shoes for elevated evenings.', 'shoes', 800.00, 15, '/images/products/luxury-shoes.jpg'),
+    (19, 5, 'Striped Polo Shirt', 'A smart-casual cotton polo with a comfortable fit.', 'shirts', 290.00, 24, '/images/products/mrprice-shirt.jpg'),
+    (20, 6, 'Linen Blouse', 'A lightweight linen blouse for warm-weather outfits.', 'shirts', 380.00, 18, '/images/products/fg-silkshirt.jpg');
 
 UPDATE products SET image_url = CASE product_id
     WHEN 1 THEN '/images/products/mud-denim.jpg'

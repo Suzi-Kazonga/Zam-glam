@@ -34,13 +34,14 @@ class Product {
     description,
     price,
     stock,
+    restock_expected_at,
     image_url,
     audience,
     sizes,
     images,
   }) {
     const query =
-      'INSERT INTO products (seller_id, store_id, category_id, name, description, price, stock, image_url, audience, sizes, images) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+      'INSERT INTO products (seller_id, store_id, category_id, name, description, price, stock, restock_expected_at, image_url, audience, sizes, images) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
 
     const [result] = await pool.query(query, [
       seller_id,
@@ -50,6 +51,7 @@ class Product {
       description,
       price,
       stock,
+      restock_expected_at || null,
       image_url,
       audience,
       JSON.stringify(sizes || []),
@@ -66,6 +68,7 @@ class Product {
                    sel.verification_status AS store_verification,
                    sel.account_status AS store_status,
                    sel.id AS store_seller_id,
+                   s.status AS storefront_status,
                    COALESCE(ROUND((SELECT AVG(r.rating) FROM reviews r WHERE r.seller_id = sel.id), 1), 0) AS store_rating,
                    (SELECT COUNT(*) FROM reviews r WHERE r.seller_id = sel.id) AS store_rating_count
             FROM products p
@@ -89,7 +92,7 @@ class Product {
   // The catalogue shoppers see, with optional filters.
   static async getFiltered(filters = {}) {
     // A deleted shop's products leave the catalogue while it is in the grace period.
-    let query = `${Product.selectWithStore} WHERE sel.deleted_at IS NULL`;
+    let query = `${Product.selectWithStore} WHERE sel.deleted_at IS NULL AND s.status = 'open'`;
     const values = [];
 
     if (filters.store_id) {
@@ -115,7 +118,7 @@ class Product {
   // fields (sellerEmail, store_name, category, …) which would otherwise land in the SQL
   // and fail with "Unknown column".
   static async update(id, data) {
-    const updatable = ['category_id', 'name', 'description', 'price', 'stock', 'image_url', 'audience', 'sizes', 'images'];
+    const updatable = ['category_id', 'name', 'description', 'price', 'stock', 'restock_expected_at', 'image_url', 'audience', 'sizes', 'images'];
     const fields = [];
     const values = [];
 

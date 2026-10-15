@@ -86,7 +86,7 @@ class Store {
   static async update(id, data) {
     const fields = [];
     const values = [];
-    const allowedFields = new Set(['name', 'description', 'logo_url', 'contact_email', 'contact_phone', 'location', 'open_hours']);
+    const allowedFields = new Set(['name', 'description', 'logo_url', 'contact_email', 'contact_phone', 'location', 'open_hours', 'status']);
 
     Object.entries(data).forEach(([key, value]) => {
       if (allowedFields.has(key)) {

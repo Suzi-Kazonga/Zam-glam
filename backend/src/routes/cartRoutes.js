@@ -17,8 +17,9 @@ router.get('/', authMiddleware, async (req, res, next) => {
     if (!customerId) return res.status(404).json({ error: 'Customer profile not found' });
 
     const [rows] = await pool.query(
-      `SELECT c.product_id AS id, c.quantity, p.name, p.price, p.image_url, p.stock
+      `SELECT c.product_id AS id, c.quantity, p.name, p.price, p.image_url, p.stock, s.status AS store_status
        FROM cart c JOIN products p ON p.id = c.product_id
+       LEFT JOIN stores s ON s.id = p.store_id
        WHERE c.customer_id = ?`,
       [customerId],
     );
@@ -31,8 +32,13 @@ router.post('/', authMiddleware, async (req, res, next) => {
     const { product_id, quantity = 1 } = req.body;
     if (!product_id || quantity < 1) return res.status(400).json({ error: 'product_id and a positive quantity are required' });
 
-    const [rows] = await pool.query('SELECT id, name, price, stock, image_url FROM products WHERE id = ?', [product_id]);
+    const [rows] = await pool.query(
+      `SELECT p.id, p.name, p.price, p.stock, p.image_url, s.status AS store_status
+       FROM products p LEFT JOIN stores s ON s.id = p.store_id WHERE p.id = ?`,
+      [product_id],
+    );
     if (!rows[0]) return res.status(404).json({ error: 'Product not found' });
+    if (rows[0].store_status === 'closed') return res.status(409).json({ error: 'This store is off duty and is not accepting orders right now' });
     if (rows[0].stock < quantity) return res.status(409).json({ error: 'Not enough stock' });
 
     const customerId = await resolveCustomerId(req.user.id);

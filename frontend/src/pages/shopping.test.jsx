@@ -8,7 +8,7 @@ import { fileURLToPath } from 'url';
 // stood in for, so these run without a backend — the backend has its own tests.
 
 const product = {
-  id: 7, name: 'Slim Fit Pants', price: 400, stock: 3, image_url: '/p.jpg', images: ['/p.jpg'],
+  id: 7, name: 'Slim Fit Pants', price: 400, stock: 3, image_url: '/p.jpg', images: ['/p.jpg', '/p-side.jpg', '/p-back.jpg'],
   store_name: 'Jets', store_seller_id: 2, store_rating: 0, store_rating_count: 0,
 };
 
@@ -64,6 +64,18 @@ describe('The product page', () => {
     await userEvent.clear(quantity);
     await userEvent.type(quantity, '9');
     expect(quantity).toHaveValue(3);
+  });
+
+  test('customers can choose front, side, and back product views', async () => {
+    openProductPage(7);
+    expect(await screen.findByRole('heading', { name: 'Slim Fit Pants' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Show product view 1' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Show product view 2' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Show product view 3' })).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Show product view 2' }));
+
+    expect(screen.getByRole('img', { name: 'Slim Fit Pants' })).toHaveAttribute('src', '/p-side.jpg');
   });
 });
 

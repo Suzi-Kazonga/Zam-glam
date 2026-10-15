@@ -117,30 +117,6 @@ function LoginPage() {
               </div>
             )}
 
-            {role === 'admin' && (
-              <div className="rounded-lg bg-slate-50 border border-slate-200 px-3 py-2 text-xs text-slate-600">
-                Seeded admin: <strong>admin@zamglam.local</strong> / <strong>ADMIN123456</strong>
-              </div>
-            )}
-
-            {role === 'customer' && (
-              <div className="rounded-lg bg-indigo-50 border border-indigo-100 px-3 py-2 text-xs text-slate-600">
-                Seeded customer: <strong>customer@zamglam.local</strong> / <strong>CUSTOMER123456</strong>
-              </div>
-            )}
-
-            {role === 'seller' && (
-              <div className="rounded-lg bg-purple-50 border border-purple-100 px-3 py-2 text-xs text-slate-600">
-                Seeded shop: <strong>mud@zamglam.local</strong> / <strong>MUD123456</strong>
-              </div>
-            )}
-
-            {role === 'courier' && (
-              <div className="rounded-lg bg-emerald-50 border border-emerald-100 px-3 py-2 text-xs text-slate-600">
-                Seeded courier: <strong>mwansa@zamglamcourier.local</strong> / <strong>COURIER123456</strong>
-              </div>
-            )}
-
             <div>
               <label htmlFor="login-email" className="block text-sm font-medium text-gray-700 mb-1">Email</label>
               <input

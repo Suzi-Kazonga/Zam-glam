@@ -14,11 +14,20 @@ export const emptyProductForm = {
   description: '',
   price: '',
   stock: '',
+  restock_expected_at: '',
   category: 'clothes',
   image_url: '',
   imageFiles: [],
   previews: [],
 };
+
+function dateInputValue(value) {
+  if (!value) return '';
+  const dateString = String(value);
+  if (/^\d{4}-\d{2}-\d{2}/.test(dateString)) return dateString.slice(0, 10);
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? '' : date.toISOString().slice(0, 10);
+}
 
 // Owns the add/edit product form so the dashboard, the seller home page and the seller's
 // own storefront all create and edit listings the same way. Pass onSaved to refresh
@@ -42,6 +51,7 @@ export function useProductEditor({ onSaved } = {}) {
       description: product.description || '',
       price: product.price,
       stock: product.stock,
+      restock_expected_at: dateInputValue(product.restock_expected_at),
       category: product.category || (String(product.category_name || '').toLowerCase().includes('shoe') ? 'shoes' : 'clothes'),
       image_url: product.image_url || '',
       imageFiles: [],
@@ -59,13 +69,36 @@ export function useProductEditor({ onSaved } = {}) {
   };
 
   const handleImages = async (files) => {
-    const previews = await filesToDataUrls(files);
-    setForm((current) => ({
-      ...current,
-      imageFiles: Array.from(files),
-      previews,
-      image_url: previews[0] || current.image_url,
-    }));
+    const selectedFiles = Array.from(files || []);
+    if (!selectedFiles.length) return;
+
+    const invalidFile = selectedFiles.find((file) =>
+      !['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(file.type)
+      || file.size > 5 * 1024 * 1024,
+    );
+    if (invalidFile) {
+      setMessage(invalidFile.size > 5 * 1024 * 1024
+        ? 'Each product image must be 5MB or smaller.'
+        : 'Use JPG, PNG, GIF, or WebP product images.');
+      return;
+    }
+
+    try {
+      const newPreviews = await filesToDataUrls(selectedFiles);
+      if (form.previews.length + newPreviews.length > 6) {
+        setMessage(`A product can have up to 6 photos. You can add ${Math.max(0, 6 - form.previews.length)} more.`);
+        return;
+      }
+      setForm((current) => ({
+        ...current,
+        imageFiles: [...current.imageFiles, ...selectedFiles],
+        previews: [...current.previews, ...newPreviews],
+        image_url: current.image_url || newPreviews[0] || '',
+      }));
+      setMessage('');
+    } catch (error) {
+      setMessage(error.message || 'Could not read the selected product images.');
+    }
   };
 
   const submit = async (event) => {
@@ -84,6 +117,7 @@ export function useProductEditor({ onSaved } = {}) {
       description: form.description,
       price: Number(form.price),
       stock: Number(form.stock),
+      restock_expected_at: form.restock_expected_at || null,
       category: form.category,
       imageFiles: form.imageFiles,
     };

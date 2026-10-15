@@ -8,11 +8,12 @@
     "dev": "node --watch --watch-path=src src/server.js",
     "start": "node src/server.js",
     "seed": "node src/seed.js",
+    "seed:clothes": "node src/seedClothes.js",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand",
     "test:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand --watch",
     "test:coverage": "node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand --coverage",
-    "test:integration": "node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand --testPathPatterns=integration",
-    "test:unit": "node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand --testPathPatterns=unit"
+    "test:integration": "node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand --testPathPattern=integration",
+    "test:unit": "node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand --testPathPattern=unit"
   },
   "keywords": [
     "e-commerce",

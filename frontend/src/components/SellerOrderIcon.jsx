@@ -12,7 +12,7 @@ import { isLocalDemoSession } from '../utils/localSession';
 // seen, because somebody is waiting on it.
 const NEEDS_PACKING = ['placed', 'processing'];
 
-export default function SellerOrderIcon() {
+export default function SellerOrderIcon({ neutral = false }) {
   const [orders, setOrders] = useState([]);
   const [customerThreads, setCustomerThreads] = useState([]);
   const [open, setOpen] = useState(false);
@@ -109,7 +109,7 @@ export default function SellerOrderIcon() {
         aria-label={title}
         aria-expanded={open}
         title={title}
-        className="relative inline-flex h-10 w-10 items-center justify-center rounded-lg text-xl hover:bg-white/10"
+        className={`relative inline-flex h-10 w-10 items-center justify-center rounded-lg text-xl transition ${neutral ? 'text-slate-700 hover:bg-slate-100' : 'text-white hover:bg-white/10'}`}
       >
         🧾
         {count > 0 && (

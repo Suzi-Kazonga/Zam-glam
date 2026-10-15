@@ -188,43 +188,6 @@ export default function Home() {
           />
         )}
 
-        {/* Quick Navigation */}
-        <section className="mb-16">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Link
-              to="/collections"
-              className="rounded-lg bg-gradient-to-br from-indigo-600 to-purple-600 p-8 text-center text-white hover:shadow-lg transition"
-            >
-              <h3 className="text-2xl font-bold mb-2">Browse Collections</h3>
-              <p className="text-indigo-100">Shop by category and discover new styles</p>
-            </Link>
-            <Link
-              to="/products"
-              className="rounded-lg bg-gradient-to-br from-emerald-600 to-teal-600 p-8 text-center text-white hover:shadow-lg transition"
-            >
-              <h3 className="text-2xl font-bold mb-2">All Products</h3>
-              <p className="text-emerald-100">Explore everything we have to offer</p>
-            </Link>
-            {isSeller ? (
-              <Link
-                to="/seller/dashboard"
-                className="rounded-lg bg-gradient-to-br from-purple-700 to-fuchsia-600 p-8 text-center text-white hover:shadow-lg transition"
-              >
-                <h3 className="text-2xl font-bold mb-2">My Products</h3>
-                <p className="text-purple-100">Add, edit and restock your listings</p>
-              </Link>
-            ) : (
-              <Link
-                to="#stores"
-                className="rounded-lg bg-gradient-to-br from-orange-600 to-rose-600 p-8 text-center text-white hover:shadow-lg transition"
-              >
-                <h3 className="text-2xl font-bold mb-2">Featured Stores</h3>
-                <p className="text-orange-100">Shop from your favorite brands</p>
-              </Link>
-            )}
-          </div>
-        </section>
-
         {/* Featured Stores — hidden from sellers, who should see their own shop, not rivals */}
         {!isSeller && (
           <section id="stores" className="mb-16">

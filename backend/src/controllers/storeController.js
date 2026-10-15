@@ -6,7 +6,15 @@
 import Store from '../models/Store.js';
 import Document from '../models/Document.js';
 import Seller, { VERIFICATION_STATUSES } from '../models/Seller.js';
-import { resolveSellerId } from '../utils/accounts.js';
+import { resolveSellerId, sameDatabaseId } from '../utils/accounts.js';
+
+function validOpenHours(hours) {
+  if (!hours || typeof hours !== 'object' || Array.isArray(hours)) return false;
+  const { open, close } = hours;
+  if (typeof open !== 'string' || typeof close !== 'string') return false;
+  const validTime = (time) => time === '' || /^([01]\d|2[0-3]):[0-5]\d$/.test(time);
+  return validTime(open) && validTime(close) && Boolean(open) === Boolean(close) && (!open || open < close);
+}
 
 // The signed-in seller's own store. The frontend needs the real store id to know which
 // storefront belongs to them — guessing it from the shop name sends new sellers to
@@ -116,8 +124,15 @@ export const updateStore = async (req, res) => {
     }
 
     const sellerId = await resolveSellerId(req.user.id);
-    if (!sellerId || store.seller_id !== sellerId) {
-      return res.status(403).json({ error: 'Forbidden' });
+    if (!sellerId || !sameDatabaseId(store.seller_id, sellerId)) {
+      return res.status(403).json({ error: 'You can only manage your own store.' });
+    }
+
+    if (Object.hasOwn(req.body, 'status') && !['open', 'closed'].includes(req.body.status)) {
+      return res.status(400).json({ error: 'Store status must be open or closed' });
+    }
+    if (Object.hasOwn(req.body, 'open_hours') && !validOpenHours(req.body.open_hours)) {
+      return res.status(400).json({ error: 'Provide both store hours in 24-hour format, with closing time after opening time' });
     }
 
     const success = await Store.update(id, req.body);

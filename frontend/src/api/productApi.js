@@ -37,11 +37,11 @@ function toProductPayload({ imageFiles = [], ...fields }) {
   if (!imageFiles.length) return fields;
   const formData = new FormData();
   Object.entries(fields).forEach(([key, value]) => {
-    if (value === undefined || value === null) return;
+    if (value === undefined || (value === null && key !== 'restock_expected_at')) return;
     // Skip data-URL previews; the files themselves are appended below.
     if (key === 'image_url' && String(value).startsWith('data:')) return;
     if (key === 'images' || key === 'previews') return;
-    formData.append(key, value);
+    formData.append(key, value ?? '');
   });
   imageFiles.forEach((file) => formData.append('images', file));
   return formData;

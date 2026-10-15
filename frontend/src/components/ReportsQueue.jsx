@@ -19,7 +19,7 @@ export default function ReportsQueue() {
 
   const load = () => {
     if (isLocalDemoSession()) {
-      setMessage('Sign in as the seeded admin (admin@zamglam.local / ADMIN123456) to moderate reports.');
+      setMessage('Sign in with an administrator account to moderate reports.');
       return;
     }
     getReportSummary().then(setRows).catch((e) => setMessage(e?.error || 'Could not load reports.'));

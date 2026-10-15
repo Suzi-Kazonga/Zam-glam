@@ -74,7 +74,7 @@ class Order {
       const quantity = Number(item.quantity) || 1;
       if (quantity < 1) throw Object.assign(new Error('Quantity must be at least 1'), { status: 400 });
       const [rows] = await connection.query(
-        `SELECT p.id, p.name, p.price, p.stock, p.seller_id, s.name AS store_name,
+        `SELECT p.id, p.name, p.price, p.stock, p.seller_id, s.name AS store_name, s.status AS store_status,
                 sel.account_status, sel.deleted_at
          FROM products p
          LEFT JOIN stores s ON s.id = p.store_id
@@ -92,6 +92,9 @@ class Order {
       }
       if (product.account_status === 'suspended') {
         throw Object.assign(new Error(`${product.store_name || 'That shop'} is suspended, so ${product.name} cannot be ordered right now.`), { status: 409 });
+      }
+      if (product.store_status === 'closed') {
+        throw Object.assign(new Error(`${product.store_name || 'That shop'} is off duty and is not accepting orders right now.`), { status: 409 });
       }
       if (Number(product.stock) < quantity) {
         throw Object.assign(new Error(`Not enough stock for ${product.name}`), { status: 409 });

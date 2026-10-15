@@ -75,7 +75,7 @@ export default function ProductDetail() {
           </div>
           <div className="mt-4 flex gap-3">
             {gallery.map((src) => (
-              <button key={src} onClick={() => setImage(src)} className={`h-20 w-16 overflow-hidden rounded border-2 ${image === src ? 'border-indigo-600' : 'border-slate-200'}`}>
+              <button key={src} type="button" aria-label={`Show product view ${gallery.indexOf(src) + 1}`} aria-pressed={image === src} onClick={() => setImage(src)} className={`h-20 w-16 overflow-hidden rounded border-2 ${image === src ? 'border-indigo-600' : 'border-slate-200'}`}>
                 <img src={src} alt="" className="h-full w-full object-cover" />
               </button>
             ))}

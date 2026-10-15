@@ -154,20 +154,23 @@ Created by `npm run seed`:
 
 | Role | Email | Password |
 | --- | --- | --- |
-| Administrator | admin@zamglam.local | ADMIN123456 |
-| Shop | mud@zamglam.local | MUD123456 |
-| Shop | jets@zamglam.local | JETS123456 |
-| Shop | bata@zamglam.local | BATA123456 |
-| Shop | pep@zamglam.local | PEP123456 |
-| Shop | mrprice@zamglam.local | MRPRICE123456 |
-| Shop | fashionsgalore@zamglam.local | FASHION123456 |
-| Courier | mwansa@zamglamcourier.local | COURIER123456 |
-| Courier | thandiwe@zamglamcourier.local | COURIER123456 |
-| Courier | joseph@zamglamcourier.local | COURIER123456 |
-| Customer | customer@zamglam.local | CUSTOMER123456 |
+| Administrator | admin@zamglam.local | Set during database seeding |
+| Shop | mud@zamglam.local | Set during database seeding |
+| Shop | jets@zamglam.local | Set during database seeding |
+| Shop | bata@zamglam.local | Set during database seeding |
+| Shop | pep@zamglam.local | Set during database seeding |
+| Shop | mrprice@zamglam.local | Set during database seeding |
+| Shop | fashionsgalore@zamglam.local | Set during database seeding |
+| Courier | mwansa@zamglamcourier.local | Set during database seeding |
+| Courier | thandiwe@zamglamcourier.local | Set during database seeding |
+| Courier | joseph@zamglamcourier.local | Set during database seeding |
+| Customer | customer@zamglam.local | Set during database seeding |
 
 Seeded couriers start **unapproved**: sign in as the administrator and approve one before
 it can take parcels.
+
+Demo shop passwords can be configured with `DEMO_SELLER_PASSWORD` when seeding. Change
+demo credentials before deploying to production.
 
 ---
 

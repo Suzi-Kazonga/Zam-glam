@@ -16,7 +16,7 @@ export default function UnclaimedParcels() {
 
   useEffect(() => {
     if (isLocalDemoSession()) {
-      setMessage('Sign in as the seeded admin (admin@zamglam.local / ADMIN123456) to see stalled parcels.');
+      setMessage('Sign in with an administrator account to see stalled parcels.');
       return undefined;
     }
     const load = () => getUnclaimedParcels().then(setParcels).catch((error) => setMessage(error?.error || 'Could not load parcels.'));

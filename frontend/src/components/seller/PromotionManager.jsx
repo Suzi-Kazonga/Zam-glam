@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 import { createSellerPromotion, deleteSellerPromotion, getSellerPromotions } from '../../api/dealApi';
 import DashboardCard from '../DashboardCard';
 
-const initialForm = () => ({
-  productId: '',
+const initialForm = (productId = '') => ({
+  productId: String(productId || ''),
   discount: '10',
   startsAt: new Date(Date.now() + 60_000).toISOString().slice(0, 16),
   endsAt: new Date(Date.now() + 24 * 60 * 60_000).toISOString().slice(0, 16),
@@ -22,9 +22,9 @@ function promotionState(promotion) {
   return 'Ended';
 }
 
-export default function PromotionManager({ products, onMessage }) {
+export default function PromotionManager({ products, onMessage, initialProductId = '' }) {
   const [promotions, setPromotions] = useState([]);
-  const [form, setForm] = useState(initialForm);
+  const [form, setForm] = useState(() => initialForm(initialProductId));
   const [saving, setSaving] = useState(false);
 
   const loadPromotions = () => getSellerPromotions()

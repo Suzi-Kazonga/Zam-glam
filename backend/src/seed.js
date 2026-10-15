@@ -33,13 +33,14 @@ async function seedDatabase() {
     console.log('✅ Categories seeded');
 
     // Create sample sellers
+    const demoSellerPassword = process.env.DEMO_SELLER_PASSWORD || '123456789';
     const sellers = [
-      { name: 'Mud', email: 'mud@zamglam.local', password: 'MUD123456' },
-      { name: 'Jets', email: 'jets@zamglam.local', password: 'JETS123456' },
-      { name: 'Bata', email: 'bata@zamglam.local', password: 'BATA123456' },
-      { name: 'Pep', email: 'pep@zamglam.local', password: 'PEP123456' },
-      { name: 'Mr Price Zambia', email: 'mrprice@zamglam.local', password: 'MRPRICE123456' },
-      { name: 'Fashions Galore', email: 'fashionsgalore@zamglam.local', password: 'FASHION123456' },
+      { name: 'Mud', email: 'mud@zamglam.local', password: demoSellerPassword },
+      { name: 'Jets', email: 'jets@zamglam.local', password: demoSellerPassword },
+      { name: 'Bata', email: 'bata@zamglam.local', password: demoSellerPassword },
+      { name: 'Pep', email: 'pep@zamglam.local', password: demoSellerPassword },
+      { name: 'Mr Price Zambia', email: 'mrprice@zamglam.local', password: demoSellerPassword },
+      { name: 'Fashions Galore', email: 'fashionsgalore@zamglam.local', password: demoSellerPassword },
     ];
 
     const sellerIds = [];
@@ -197,9 +198,11 @@ async function seedDatabase() {
       { store_id: storeIds[3], category_id: 4, name: 'Sandals', description: 'Lightweight sandals for sunny days.', price: 220, stock: 30, audience: 'kids', sizes: ['1', '2', '3', '4', '5'] },
       { store_id: storeIds[4], category_id: 3, name: 'Jogger Pants', description: 'Relaxed joggers with a polished finish.', price: 320, stock: 30, audience: 'unisex', sizes: ['S', 'M', 'L', 'XL'] },
       { store_id: storeIds[4], category_id: 1, name: 'Casual Shirt', description: 'An easy shirt for weekday layering.', price: 270, stock: 30, audience: 'unisex', sizes: ['S', 'M', 'L', 'XL'] },
+      { store_id: storeIds[4], category_id: 1, name: 'Striped Polo Shirt', description: 'A smart-casual cotton polo with a comfortable fit.', price: 290, stock: 24, audience: 'men', sizes: ['S', 'M', 'L', 'XL'] },
       { store_id: storeIds[4], category_id: 4, name: 'Canvas Shoes', description: 'Versatile canvas shoes for daily wear.', price: 350, stock: 30, audience: 'unisex', sizes: ['6', '7', '8', '9', '10'] },
       { store_id: storeIds[5], category_id: 3, name: 'Designer Pants', description: 'Tailored statement pants from a local edit.', price: 500, stock: 20, audience: 'women', sizes: ['S', 'M', 'L', 'XL'] },
       { store_id: storeIds[5], category_id: 1, name: 'Silk Shirt', description: 'A softly draped silk shirt for occasion dressing.', price: 450, stock: 20, audience: 'women', sizes: ['S', 'M', 'L', 'XL'] },
+      { store_id: storeIds[5], category_id: 1, name: 'Linen Blouse', description: 'A lightweight linen blouse for warm-weather outfits.', price: 380, stock: 18, audience: 'women', sizes: ['S', 'M', 'L', 'XL'] },
       { store_id: storeIds[5], category_id: 4, name: 'Luxury Shoes', description: 'Polished shoes for elevated evenings.', price: 800, stock: 15, audience: 'women', sizes: ['6', '7', '8', '9', '10'] },
     ];
 
@@ -222,8 +225,8 @@ async function seedDatabase() {
           'Slim Fit Pants': 'jets-pants.jpg', 'Formal White Shirt': 'jets-shirt.jpg', Sneakers: 'jets-sneakers.jpg',
           'Comfort Fit Pants': 'bata-pants.jpg', 'Printed T-Shirt': 'bata-tshirt.jpg', 'School Shoes': 'bata-schoolshoes.jpg',
           'Kids Pants': 'pep-kidspants.jpg', 'Graphic Tee': 'pep-graphictee.jpg', Sandals: 'pep-sandals.jpg',
-          'Jogger Pants': 'mrprice-joggers.jpg', 'Casual Shirt': 'mrprice-shirt.jpg', 'Canvas Shoes': 'mrprice-canvas.jpg',
-          'Designer Pants': 'fg-designerpants.jpg', 'Silk Shirt': 'fg-silkshirt.jpg', 'Luxury Shoes': 'fg-luxuryshoes.jpg',
+          'Jogger Pants': 'mrprice-joggers.jpg', 'Casual Shirt': 'mrprice-shirt.jpg', 'Striped Polo Shirt': 'mrprice-shirt.jpg', 'Canvas Shoes': 'mrprice-canvas.jpg',
+          'Designer Pants': 'fg-designerpants.jpg', 'Silk Shirt': 'fg-silkshirt.jpg', 'Linen Blouse': 'fg-silkshirt.jpg', 'Luxury Shoes': 'fg-luxuryshoes.jpg',
         };
         product.seller_id = storeData[storeIndex].seller_id;
         product.image_url = `/images/products/${imageFiles[product.name]}`;

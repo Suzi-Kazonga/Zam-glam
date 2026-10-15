@@ -1,7 +1,7 @@
 // Products: browsing the catalogue, and a shop managing its own listings.
 
 import Product from '../models/Product.js';
-import { resolveSellerId, resolveStoreIdForSeller, resolveCategoryId } from '../utils/accounts.js';
+import { resolveSellerId, resolveStoreIdForSeller, resolveCategoryId, sameDatabaseId } from '../utils/accounts.js';
 
 // multer is mounted with .array('images'), but a single-file 'image' field is still
 // accepted so older callers keep working.
@@ -13,13 +13,20 @@ function uploadedImagePaths(req) {
   return files.map((file) => `/uploads/${file.filename}`);
 }
 
+function validRestockDate(value) {
+  if (!value) return true;
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const parsed = new Date(`${value}T00:00:00.000Z`);
+  return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
+}
+
 // A shop adds something to sell.
 //
 // The shop and its store come from the sign-in token, never from the request — otherwise
 // anyone could list a product under somebody else’s shop by sending their id.
 export const createProduct = async (req, res) => {
   try {
-    const { store_id, category_id, category, name, description, price, stock, image_url, audience, sizes } =
+    const { store_id, category_id, category, name, description, price, stock, restock_expected_at, image_url, audience, sizes } =
       req.body;
     const uploaded = uploadedImagePaths(req);
     const uploadedImageUrl = uploaded[0] || image_url;
@@ -31,6 +38,9 @@ export const createProduct = async (req, res) => {
 
     if (!name || !price) {
       return res.status(400).json({ error: 'Name and price are required' });
+    }
+    if (!validRestockDate(restock_expected_at)) {
+      return res.status(400).json({ error: 'Restock date must be a valid calendar date' });
     }
 
     // Every listing needs a real picture: shoppers buy clothing on the photo, and a
@@ -54,6 +64,7 @@ export const createProduct = async (req, res) => {
       description,
       price,
       stock,
+      restock_expected_at: restock_expected_at || null,
       image_url: uploadedImageUrl,
       audience,
       sizes,
@@ -77,6 +88,9 @@ export const getProduct = async (req, res) => {
 
     if (!product) {
       return res.status(404).json({ error: 'Product not found' });
+    }
+    if (product.storefront_status === 'closed') {
+      return res.status(404).json({ error: 'This store is currently off duty' });
     }
 
     res.json(product);
@@ -130,8 +144,8 @@ export const updateProduct = async (req, res) => {
     }
 
     const sellerId = await resolveSellerId(req.user.id);
-    if (!sellerId || product.seller_id !== sellerId) {
-      return res.status(403).json({ error: 'Forbidden' });
+    if (!sellerId || !sameDatabaseId(product.seller_id, sellerId)) {
+      return res.status(403).json({ error: 'You can only update products listed by your own store.' });
     }
 
     // Replace the gallery only when new files were attached; otherwise keep what's stored,
@@ -139,9 +153,16 @@ export const updateProduct = async (req, res) => {
     const uploaded = uploadedImagePaths(req);
     const { category, ...rest } = req.body;
     const changes = { ...rest };
+    if (Object.hasOwn(changes, 'restock_expected_at')) {
+      if (!validRestockDate(changes.restock_expected_at)) {
+        return res.status(400).json({ error: 'Restock date must be a valid calendar date' });
+      }
+      changes.restock_expected_at = changes.restock_expected_at || null;
+    }
     if (uploaded.length) {
-      changes.images = uploaded;
-      changes.image_url = uploaded[0];
+      const existingImages = Array.isArray(product.images) ? product.images : [];
+      changes.images = [...existingImages, ...uploaded];
+      changes.image_url = product.image_url || existingImages[0] || uploaded[0];
     } else {
       delete changes.images;
       if (typeof changes.image_url === 'string' && changes.image_url.startsWith('data:')) delete changes.image_url;
@@ -171,8 +192,8 @@ export const deleteProduct = async (req, res) => {
     }
 
     const sellerId = await resolveSellerId(req.user.id);
-    if (!sellerId || product.seller_id !== sellerId) {
-      return res.status(403).json({ error: 'Forbidden' });
+    if (!sellerId || !sameDatabaseId(product.seller_id, sellerId)) {
+      return res.status(403).json({ error: 'You can only delete products listed by your own store.' });
     }
 
     const success = await Product.delete(id);

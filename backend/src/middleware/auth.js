@@ -40,7 +40,7 @@ export const authMiddleware = (req, res, next) => {
 // It runs after authMiddleware, which is what puts req.user there in the first place.
 export const roleMiddleware = (role) => (req, res, next) => {
   if (!req.user || req.user.role !== role) {
-    return res.status(403).json({ error: 'Forbidden' });
+    return res.status(403).json({ error: `This action requires a ${role} account. Please sign in with your ${role} account.` });
   }
   next();
 };

@@ -22,6 +22,9 @@ export default function ProductForm({ form, setForm, message, onClose, onImages,
               <input required type="number" value={form.stock} onChange={(event) => setForm({ ...form, stock: event.target.value })} className="mt-1 w-full rounded-lg border border-slate-200 px-4 py-2 outline-none focus:ring-2 focus:ring-purple-300" />
             </label>
           </div>
+          <label className="block text-sm font-medium text-slate-600">Expected restock date (optional)
+            <input type="date" value={form.restock_expected_at} onChange={(event) => setForm({ ...form, restock_expected_at: event.target.value })} className="mt-1 w-full rounded-lg border border-slate-200 px-4 py-2 outline-none focus:ring-2 focus:ring-purple-300" />
+          </label>
           <label className="block text-sm font-medium text-slate-600">Category
             <select value={form.category} onChange={(event) => setForm({ ...form, category: event.target.value })} className="mt-1 w-full rounded-lg border border-slate-200 px-4 py-2 outline-none focus:ring-2 focus:ring-purple-300">
               <option value="clothes">Clothes</option>
@@ -29,15 +32,18 @@ export default function ProductForm({ form, setForm, message, onClose, onImages,
             </select>
           </label>
           <label className="block rounded-lg border border-dashed border-slate-300 p-3 text-sm text-slate-500">
-            {form.id ? 'Replace product images (optional)' : 'Upload product images (required)'}
-            <input type="file" accept="image/*" multiple onChange={(event) => onImages(event.target.files)} className="mt-2 w-full text-xs" />
-            <span className="mt-1 block text-xs text-slate-400">Up to 6 photos, max 5MB each. The first is used as the main image.</span>
+            {form.id ? 'Add more product photos (optional)' : 'Upload product photos (required)'}
+            <input type="file" accept="image/jpeg,image/png,image/gif,image/webp" multiple onChange={(event) => { onImages(event.target.files); event.target.value = ''; }} className="mt-2 w-full text-xs" />
+            <span className="mt-1 block text-xs text-slate-400">Select several photos together (front, side, and back views). JPG, PNG, GIF, or WebP; up to 6 photos total, max 5MB each.</span>
           </label>
           {form.previews.length > 0 && (
             <div>
-              <p className="mb-1 text-xs font-semibold text-slate-500">{form.imageFiles.length ? 'New photos' : 'Current photos'}</p>
+              <p className="mb-1 text-xs font-semibold text-slate-500">{form.id && !form.imageFiles.length ? 'Current product photos' : 'Product photos · first photo is the main image'}</p>
               <div className="flex flex-wrap gap-2">
-                {form.previews.map((src) => <img key={src} src={src} alt="" className="h-20 w-16 rounded object-cover" />)}
+                {form.previews.map((src, index) => <div key={`${index}-${src}`} className="relative">
+                  <img src={src} alt={`Product view ${index + 1}`} className="h-20 w-16 rounded object-cover" />
+                  <span className="absolute bottom-1 left-1 rounded bg-slate-900/70 px-1 text-[10px] font-semibold text-white">{index === 0 ? 'Main' : `View ${index + 1}`}</span>
+                </div>)}
               </div>
             </div>
           )}

@@ -15,7 +15,7 @@ export default function SellerVerificationQueue() {
 
   const load = () => {
     if (isLocalDemoSession()) {
-      setMessage('Demo admin accounts cannot review sellers. Sign in as the seeded admin (admin@zamglam.local / ADMIN123456).');
+      setMessage('Demo admin accounts cannot review sellers. Sign in with an administrator account.');
       return;
     }
     getSellersForReview().then(setSellers).catch((error) => setMessage(error?.error || 'Could not load sellers.'));

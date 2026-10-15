@@ -17,4 +17,4 @@ export function isLocalDemoSession() {
 }
 
 export const LOCAL_DEMO_ORDER_MESSAGE =
-  'Demo accounts are for browsing only and don’t save orders. Sign up, or sign in as customer@zamglam.local / CUSTOMER123456 (seeded backend account), to place a real order.';
+  'Demo browsing is local-only. Sign in or create an account to place and track real orders.';

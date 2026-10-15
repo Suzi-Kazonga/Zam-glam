@@ -47,6 +47,7 @@ describe('The catalogue', () => {
       .field('name', 'Ankara Wrap Dress')
       .field('price', '450')
       .field('stock', '5')
+      .field('restock_expected_at', '2026-11-20')
       .field('audience', 'women')
       .field('category', 'clothes')
       .attach('images', onePixelPng, 'dress.png');
@@ -57,6 +58,10 @@ describe('The catalogue', () => {
     const created = await api().get(`/api/products/${response.body.product.id}`);
     created.body.images.forEach((image) => uploaded.push(image));
     expect(created.body.images.length).toBe(1);
+    expect(new Date(created.body.restock_expected_at).toISOString().slice(0, 10)).toBe('2026-11-20');
+    const image = await api().get(created.body.images[0]);
+    expect(image.status).toBe(200);
+    expect(image.headers['content-type']).toMatch(/^image\/png/);
   });
 
   test('a listing without a photo is refused', async () => {
@@ -82,6 +87,7 @@ describe('The catalogue', () => {
     const customer = await makeCustomer();
     const response = await api().post('/api/products').set(auth(customer)).field('name', 'Sneaky').field('price', '1');
     expect(response.status).toBe(403);
+    expect(response.body.error).toMatch(/seller account/i);
   });
 
   test('listing a product needs a signed-in account', async () => {
@@ -129,6 +135,7 @@ describe('The catalogue', () => {
     const theirs = await listProduct(otherShop, { name: 'Not Yours' });
     const response = await api().put(`/api/products/${theirs.id}`).set(auth(shop)).field('price', '1');
     expect(response.status).toBe(403);
+    expect(response.body.error).toMatch(/own store/i);
   });
 
   test('a shop cannot delete another shop\'s product', async () => {
@@ -146,6 +153,41 @@ describe('The catalogue', () => {
     expect(after.body.images).toEqual(before.body.images);
   });
 
+  test('a shop can add more angles to an existing product without replacing its photos', async () => {
+    const product = await listProduct(shop, { name: 'Multi-view Dress' });
+    const before = await api().get(`/api/products/${product.id}`);
+    const response = await api()
+      .put(`/api/products/${product.id}`)
+      .set(auth(shop))
+      .attach('images', onePixelPng, 'dress-side.png')
+      .attach('images', onePixelPng, 'dress-back.png');
+    expect(response.status).toBe(200);
+
+    const after = await api().get(`/api/products/${product.id}`);
+    after.body.images.filter((image) => !before.body.images.includes(image)).forEach((image) => uploaded.push(image));
+    expect(after.body.images).toHaveLength(before.body.images.length + 2);
+    expect(after.body.image_url).toBe(before.body.image_url);
+    expect(after.body.images.slice(0, before.body.images.length)).toEqual(before.body.images);
+  });
+
+  test('a shop can update and clear a product restock date', async () => {
+    const product = await listProduct(shop, { name: 'Restock date test', stock: 0 });
+    await api().put(`/api/products/${product.id}`).set(auth(shop)).field('restock_expected_at', '2026-12-01').expect(200);
+    const dated = await api().get(`/api/products/${product.id}`);
+    expect(new Date(dated.body.restock_expected_at).toISOString().slice(0, 10)).toBe('2026-12-01');
+
+    await api().put(`/api/products/${product.id}`).set(auth(shop)).field('restock_expected_at', '').expect(200);
+    const cleared = await api().get(`/api/products/${product.id}`);
+    expect(cleared.body.restock_expected_at).toBeNull();
+  });
+
+  test('a shop cannot save an invalid restock date', async () => {
+    const product = await listProduct(shop, { name: 'Invalid restock date test' });
+    const response = await api().put(`/api/products/${product.id}`).set(auth(shop)).field('restock_expected_at', '2026-02-31');
+    expect(response.status).toBe(400);
+    expect(response.body.error).toMatch(/restock date/i);
+  });
+
   test('asking for a product that does not exist is a 404', async () => {
     expect((await api().get('/api/products/999999')).status).toBe(404);
   });
@@ -154,6 +196,41 @@ describe('The catalogue', () => {
     const response = await api().get('/api/stores/mine').set(auth(shop));
     expect(response.status).toBe(200);
     expect(response.body.id).toBe(shop.store_id);
+  });
+
+  test('a shop can switch its storefront on and off duty', async () => {
+    const product = await listProduct(shop, { name: 'Off-duty listing', stock: 10 });
+    const customer = await makeCustomer();
+    await api().put(`/api/stores/${shop.store_id}`).set(auth(shop)).send({
+      location: 'Kabulonga, Lusaka',
+      open_hours: { open: '09:00', close: '18:00' },
+    }).expect(200);
+    const invalidHours = await api().put(`/api/stores/${shop.store_id}`).set(auth(shop)).send({
+      open_hours: { open: '18:00', close: '09:00' },
+    });
+    expect(invalidHours.status).toBe(400);
+    await api().put(`/api/stores/${shop.store_id}`).set(auth(shop)).send({ status: 'closed' }).expect(200);
+    const closed = await api().get('/api/stores/mine').set(auth(shop));
+    expect(closed.body.status).toBe('closed');
+    expect(closed.body.location).toBe('Kabulonga, Lusaka');
+    const savedHours = typeof closed.body.open_hours === 'string' ? JSON.parse(closed.body.open_hours) : closed.body.open_hours;
+    expect(savedHours).toMatchObject({ open: '09:00', close: '18:00' });
+
+    const catalogue = await api().get('/api/products');
+    expect(catalogue.body.some((item) => item.id === product.id)).toBe(false);
+    expect((await api().get(`/api/products/${product.id}`)).status).toBe(404);
+    expect((await api().get(`/api/stores/${shop.store_id}/products`)).body).toEqual([]);
+    const addToCart = await api().post('/api/cart').set(auth(customer)).send({ product_id: product.id, quantity: 1 });
+    expect(addToCart.status).toBe(409);
+    const orderQuote = await api().post('/api/orders/quote').set(auth(customer)).send({ items: [{ product_id: product.id, quantity: 1 }], location: 'Lusaka' });
+    expect(orderQuote.status).toBe(409);
+
+    const invalid = await api().put(`/api/stores/${shop.store_id}`).set(auth(shop)).send({ status: 'paused' });
+    expect(invalid.status).toBe(400);
+
+    await api().put(`/api/stores/${shop.store_id}`).set(auth(shop)).send({ status: 'open' }).expect(200);
+    const opened = await api().get('/api/stores/mine').set(auth(shop));
+    expect(opened.body.status).toBe('open');
   });
 
   test('a shop with no storefront is told so rather than given someone else\'s', async () => {

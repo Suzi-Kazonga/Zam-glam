@@ -23,10 +23,16 @@ export async function hasColumn(table, column) {
 async function resolveProfileId(table, user_id) {
   if (await hasColumn(table, 'user_id')) {
     const [linked] = await pool.query(`SELECT id FROM ${table} WHERE user_id = ?`, [user_id]);
-    if (linked[0]) return linked[0].id;
+    return linked[0]?.id || null;
   }
   const [rows] = await pool.query(`SELECT id FROM ${table} WHERE id = ?`, [user_id]);
   return rows[0]?.id || null;
+}
+
+export function sameDatabaseId(left, right) {
+  const leftId = Number(left);
+  const rightId = Number(right);
+  return Number.isSafeInteger(leftId) && leftId > 0 && leftId === rightId;
 }
 
 // The three the rest of the code actually calls.

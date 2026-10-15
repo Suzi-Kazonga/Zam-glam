@@ -411,6 +411,7 @@ export async function initializeDatabase() {
 
   await addColumnIfMissing('stores', 'contact_email', 'VARCHAR(255) NULL');
   await addColumnIfMissing('stores', 'contact_phone', 'VARCHAR(50) NULL');
+  await addColumnIfMissing('products', 'restock_expected_at', 'DATE NULL');
   await addColumnIfMissing('orders', 'total_price', 'DECIMAL(12,2) NOT NULL DEFAULT 0');
   // total_price is the grand total; these break it down for the receipt.
   await addColumnIfMissing('orders', 'items_total', 'DECIMAL(12,2) NOT NULL DEFAULT 0');

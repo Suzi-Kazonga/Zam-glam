@@ -4,9 +4,6 @@ import axios from 'axios';
 const apiClient = axios.create({
   // import.meta.env is Vite's; outside a Vite build (the tests) there is no such object.
   baseURL: import.meta.env?.VITE_API_URL || '/api',
-  headers: {
-    'Content-Type': 'application/json',
-  },
 });
 
 // Add token to requests if available

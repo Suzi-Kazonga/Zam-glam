@@ -43,6 +43,7 @@ describe('role-specific login page', () => {
     renderLogin();
 
     expect(screen.getByRole('group', { name: 'Choose account type' })).toBeInTheDocument();
+    expect(screen.queryByText(/Seeded (admin|customer|shop|courier):/i)).not.toBeInTheDocument();
     const roleButton = screen.getByRole('button', { name: label });
     fireEvent.click(roleButton);
     expect(roleButton).toHaveAttribute('aria-pressed', 'true');
