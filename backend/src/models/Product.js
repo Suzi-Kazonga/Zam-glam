@@ -15,9 +15,25 @@ function parseJsonArray(value) {
 }
 
 // Tidies one product row on its way out, so the API always answers with real arrays.
+// A DATE column comes back as a JavaScript date at midnight *here*. Sent as JSON that
+// becomes UTC, and anywhere east of Greenwich — Zambia included — midnight local is the
+// evening before, so a restock date of the 20th reached the browser as the 19th. The day
+// itself is what was meant, so hand over the plain date and no time at all.
+function asPlainDate(value) {
+  if (!value) return value ?? null;
+  if (typeof value === 'string') return value.slice(0, 10);
+  const pad = (number) => String(number).padStart(2, '0');
+  return `${value.getFullYear()}-${pad(value.getMonth() + 1)}-${pad(value.getDate())}`;
+}
+
 function normalize(row) {
   if (!row) return row;
-  return { ...row, sizes: parseJsonArray(row.sizes), images: parseJsonArray(row.images) };
+  return {
+    ...row,
+    sizes: parseJsonArray(row.sizes),
+    images: parseJsonArray(row.images),
+    ...(Object.hasOwn(row, 'restock_expected_at') ? { restock_expected_at: asPlainDate(row.restock_expected_at) } : {}),
+  };
 }
 
 // Products — what shops sell and shoppers browse.

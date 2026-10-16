@@ -23,7 +23,17 @@ export async function hasColumn(table, column) {
 async function resolveProfileId(table, user_id) {
   if (await hasColumn(table, 'user_id')) {
     const [linked] = await pool.query(`SELECT id FROM ${table} WHERE user_id = ?`, [user_id]);
-    return linked[0]?.id || null;
+    if (linked[0]) return linked[0].id;
+
+    // The column exists but is empty on this row. `couriers` is built with a nullable
+    // user_id even on the current layout, where the rider holds their own login and the
+    // id already IS the profile id — so a courier would resolve to nothing at all, and
+    // going on duty would answer "courier profile not found".
+    //
+    // Only rows with no link are considered, so this can never hand back somebody else's
+    // profile because a users.id happened to match an unrelated row's id.
+    const [unlinked] = await pool.query(`SELECT id FROM ${table} WHERE id = ? AND user_id IS NULL`, [user_id]);
+    return unlinked[0]?.id || null;
   }
   const [rows] = await pool.query(`SELECT id FROM ${table} WHERE id = ?`, [user_id]);
   return rows[0]?.id || null;

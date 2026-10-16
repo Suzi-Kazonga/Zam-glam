@@ -186,7 +186,7 @@ Each of these is covered by tests that drive the real application — see
 
 ### Quality
 
-- 235 backend tests, 31 frontend tests and 8 browser tests, all passing.
+- 259 backend tests, 82 frontend tests and 8 browser tests, all passing.
 - A fresh clone seeds and runs with no SQL run by hand.
 - The interface works on a phone, including the dashboards — which the literature review
   identified as important, since most Zambian users reach the internet by smartphone.
