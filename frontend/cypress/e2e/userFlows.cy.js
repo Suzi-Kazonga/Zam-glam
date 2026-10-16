@@ -11,7 +11,8 @@
  * data you care about.
  */
 
-const customer = { email: 'customer@zamglam.local', password: 'CUSTOMER123456' };
+// The seeded demonstration accounts all share this password (backend/src/seed.js).
+const customer = { email: 'customer@zamglam.local', password: '123456789' };
 
 // Sign in through the form, as a person would.
 const signIn = ({ email, password }) => {

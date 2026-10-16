@@ -56,15 +56,23 @@ It can be restored within 30 days — contact them.
 
 The seeded demonstration database contains:
 
-| Role | Email | Password |
-| --- | --- | --- |
-| Administrator | admin@zamglam.local | ADMIN123456 |
-| Shop | mud@zamglam.local | MUD123456 |
-| Shop | jets@zamglam.local | JETS123456 |
-| Courier | mwansa@zamglamcourier.local | COURIER123456 |
+Every demonstration account uses the same password: **`123456789`**.
 
-Other seeded shops follow the same pattern (`bata@`, `pep@`, `mrprice@`,
-`fashionsgalore@`), each with its own name in capitals followed by `123456`.
+| Role | Email |
+| --- | --- |
+| Administrator | `admin@zamglam.local` |
+| Customer | `customer@zamglam.local` |
+| Shop | `mud@zamglam.local` |
+| Shop | `jets@zamglam.local` |
+| Courier | `mwansa@zamglamcourier.local` |
+
+The other seeded shops are `bata@`, `pep@`, `mrprice@` and `fashionsgalore@zamglam.local`,
+and the other couriers are `thandiwe@` and `joseph@zamglamcourier.local` — same password.
+
+These are demonstration accounts, handed out on purpose. Anyone who registers chooses their
+own password, which is stored only as a bcrypt hash. `npm run seed` puts the demo accounts
+back on this password if they have drifted, and leaves every other account untouched. To
+use a different one, set `DEMO_PASSWORD` before seeding.
 
 ---
 

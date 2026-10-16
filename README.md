@@ -152,33 +152,36 @@ needs no SQL run by hand.
 
 Created by `npm run seed`:
 
-| Role | Email | Password |
-| --- | --- | --- |
-| Administrator | admin@zamglam.local | Set during database seeding |
-| Shop | mud@zamglam.local | Set during database seeding |
-| Shop | jets@zamglam.local | Set during database seeding |
-| Shop | bata@zamglam.local | Set during database seeding |
-| Shop | pep@zamglam.local | Set during database seeding |
-| Shop | mrprice@zamglam.local | Set during database seeding |
-| Shop | fashionsgalore@zamglam.local | Set during database seeding |
-| Courier | mwansa@zamglamcourier.local | Set during database seeding |
-| Courier | thandiwe@zamglamcourier.local | Set during database seeding |
-| Courier | joseph@zamglamcourier.local | Set during database seeding |
-| Customer | customer@zamglam.local | Set during database seeding |
+All of them share one password: **`123456789`**.
+
+| Role | Email |
+| --- | --- |
+| Administrator | `admin@zamglam.local` |
+| Customer | `customer@zamglam.local` |
+| Shop | `mud@zamglam.local` |
+| Shop | `jets@zamglam.local` |
+| Shop | `bata@zamglam.local` |
+| Shop | `pep@zamglam.local` |
+| Shop | `mrprice@zamglam.local` |
+| Shop | `fashionsgalore@zamglam.local` |
+| Courier | `mwansa@zamglamcourier.local` |
+| Courier | `thandiwe@zamglamcourier.local` |
+| Courier | `joseph@zamglamcourier.local` |
 
 Seeded couriers start **unapproved**: sign in as the administrator and approve one before
 it can take parcels.
 
-Demo shop passwords can be configured with `DEMO_SELLER_PASSWORD` when seeding. Change
-demo credentials before deploying to production.
+Seeding again puts these accounts back on that password and leaves accounts people
+registered themselves alone. Set `DEMO_PASSWORD` to seed a different one. These are
+demonstration accounts: change or remove them before deploying anywhere public.
 
 ---
 
 ## Tests
 
 ```powershell
-cd backend;  npm.cmd test     # 235 tests
-cd frontend; npm.cmd test     # 31 tests
+cd backend;  npm.cmd test     # 259 tests
+cd frontend; npm.cmd test     # 82 tests
 ```
 
 The backend tests drive the real Express app through supertest against a real database
