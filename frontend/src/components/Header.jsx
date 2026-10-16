@@ -15,7 +15,7 @@ import { getStorefrontPath } from '../utils/storeLogos';
 import { themeForRole } from '../utils/roleTheme';
 
 const Header = () => {
-  const { user, loading } = useAuth();
+  const { user, loading, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -36,6 +36,12 @@ const Header = () => {
   const accountMenu = useRef(null);
   const closeMenu = () => setMenuOpen(false);
   const closeAccountMenu = () => setAccountMenuOpen(false);
+  const initials = user?.name
+    ?.split(' ')
+    .map((part) => part[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase() || 'U';
 
   useEffect(() => {
     if (!accountMenuOpen) return undefined;
@@ -105,11 +111,69 @@ const Header = () => {
         {user?.role === 'admin' && <AdminApprovalsIcon />}
 
         {user ? (
-          <div className="flex items-center gap-3">
-            <Link to="/account" className={`inline-flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold transition hover:opacity-90 ${theme.avatar}`} title="View profile">
-              {user.name?.charAt(0)?.toUpperCase() || 'U'}
-            </Link>
-            <span className={`hidden text-sm font-semibold sm:inline ${isCustomer ? 'text-slate-700' : 'text-white'}`}>{user.name}</span>
+          <div className="relative" ref={accountMenu}>
+            <button
+              type="button"
+              onClick={() => setAccountMenuOpen((open) => !open)}
+              aria-label="Open account menu"
+              aria-haspopup="menu"
+              aria-expanded={accountMenuOpen}
+              className={`inline-flex items-center gap-2 rounded-full border px-2 py-1.5 text-left transition ${themed && !isCustomer ? 'border-white/20 bg-white/5 text-white hover:bg-white/10' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'}`}
+            >
+              <span className={`inline-flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold ${themed && !isCustomer ? 'bg-white/20 text-white' : 'bg-slate-900 text-white'}`}>
+                {initials}
+              </span>
+              <span className={`hidden text-sm font-semibold sm:inline ${isCustomer ? 'text-slate-700' : 'text-white'}`}>{user.name}</span>
+              <span aria-hidden="true" className={`hidden text-base sm:inline ${isCustomer ? 'text-slate-400' : 'text-white/70'}`}>▾</span>
+            </button>
+            {accountMenuOpen && (
+              <div role="menu" aria-label="Account menu" className="absolute right-0 top-14 z-50 w-72 rounded-2xl border border-slate-200 bg-white p-3 text-slate-700 shadow-[0_18px_50px_rgba(15,23,42,0.18)]">
+                <div className="flex items-center gap-3 border-b border-slate-100 px-2 pb-3">
+                  <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 text-base font-bold text-white">
+                    {initials}
+                  </span>
+                  <div className="min-w-0">
+                    <p className="truncate text-base font-bold text-slate-900">{user.name}</p>
+                    <p className="text-xs uppercase tracking-[0.15em] text-slate-400">{user.role || 'customer'}</p>
+                  </div>
+                </div>
+                <div className="mt-2 space-y-1">
+                  <Link to="/account" onClick={closeAccountMenu} className="flex items-center justify-between rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">
+                    <span>My Profile</span>
+                    <span aria-hidden="true">→</span>
+                  </Link>
+                  <Link to="/account#orders" onClick={closeAccountMenu} className="flex items-center justify-between rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">
+                    <span>My Orders</span>
+                    <span aria-hidden="true">→</span>
+                  </Link>
+                  <Link to={user.role === 'customer' ? '/customer/dashboard?section=Messages' : '/seller/dashboard?section=Messages'} onClick={closeAccountMenu} className="flex items-center justify-between rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">
+                    <span>My Messages</span>
+                    <span aria-hidden="true">→</span>
+                  </Link>
+                  <Link to="/policies" onClick={closeAccountMenu} className="flex items-center justify-between rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">
+                    <span>Policies & guide</span>
+                    <span aria-hidden="true">→</span>
+                  </Link>
+                  <Link to="/contact" onClick={closeAccountMenu} className="flex items-center justify-between rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">
+                    <span>Customer support</span>
+                    <span aria-hidden="true">→</span>
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      closeAccountMenu();
+                      setMenuOpen(false);
+                      logout();
+                      navigate('/');
+                    }}
+                    className="mt-2 flex w-full items-center justify-between rounded-xl border border-rose-100 bg-rose-50 px-3 py-2.5 text-sm font-semibold text-rose-600 transition hover:bg-rose-100"
+                  >
+                    <span>Sign Out</span>
+                    <span aria-hidden="true">↗</span>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           <div className="relative" ref={accountMenu}>
