@@ -1,7 +1,7 @@
 // The rider’s dashboard: parcels to collect, parcels in hand, and their duty switch.
 
 import { useEffect, useMemo, useState } from 'react';
-import { Link, Navigate, useLocation } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import DashboardCard from '../components/DashboardCard';
 import Sidebar from '../components/Sidebar';
 import Topbar from '../components/Topbar';
@@ -12,7 +12,7 @@ import CourierShiftToggle from '../components/CourierShiftToggle';
 import { formatWaiting, isOverdue } from '../utils/waiting';
 import { formatZmwPrice } from '../utils/currency';
 
-const sections = ['Available', 'Deliveries', 'Completed', 'Stores'];
+const sections = ['Available', 'Deliveries', 'Completed'];
 
 // Once a courier has collected a parcel it is theirs to deliver.
 // A requested parcel is not yours until the shop confirms; it still belongs in your list
@@ -22,7 +22,10 @@ const isOutForDelivery = (order) => order.status === 'picked_up' || order.status
 export default function CourierDashboard() {
   const { user } = useAuth();
   const location = useLocation();
-  const [active, setActive] = useState(() => new URLSearchParams(location.search).get('section') || 'Available');
+  const [active, setActive] = useState(() => {
+    const requested = new URLSearchParams(location.search).get('section');
+    return sections.includes(requested) ? requested : 'Available';
+  });
   const [query, setQuery] = useState('');
   const [orders, setOrders] = useState([]);
   const [available, setAvailable] = useState([]);
@@ -48,8 +51,12 @@ export default function CourierDashboard() {
         });
       })
       .catch(() => setMessage('Could not load your parcels.'));
-    getAvailableParcels().then(setAvailable).catch(() => {});
-    getShift().then((s) => setOnShift(Boolean(s.on_shift))).catch(() => {});
+    getAvailableParcels()
+      .then(setAvailable)
+      .catch((error) => setMessage(error.response?.data?.error || 'Could not load available parcels.'));
+    getShift()
+      .then((s) => setOnShift(Boolean(s.on_shift)))
+      .catch((error) => setMessage(error.response?.data?.error || 'Could not load your duty status.'));
   };
 
   useEffect(() => {
@@ -63,28 +70,13 @@ export default function CourierDashboard() {
     if (sections.includes(requested)) setActive(requested);
   }, [location.search]);
 
-  const matchesQuery = (order) => `${order.id} ${order.address} ${order.customerName || ''}`
+  const matchesQuery = (order) => `${order.id} ${order.address} ${order.location || ''} ${order.storeName || ''} ${order.customerName || ''} ${order.phone || ''} ${order.status}`
     .toLowerCase()
     .includes(query.toLowerCase());
 
   const availableParcels = useMemo(() => available.filter(matchesQuery), [available, query]);
   const myDeliveries = useMemo(() => orders.filter((o) => isOutForDelivery(o) && matchesQuery(o)), [orders, query]);
   const deliveredParcels = useMemo(() => orders.filter((o) => o.status === 'delivered' && matchesQuery(o)), [orders, query]);
-
-  // Which shops this courier collects from most, counted from their own parcels — a
-  // courier only ever sees their own work, so this stays within what they may know.
-  const storeVisits = useMemo(() => {
-    const counts = new Map();
-    orders.forEach((order) => {
-      const store = order.storeName || 'Unknown store';
-      const entry = counts.get(store) || { store, pickups: 0, delivered: 0 };
-      entry.pickups += 1;
-      if (order.status === 'delivered') entry.delivered += 1;
-      counts.set(store, entry);
-    });
-    return [...counts.values()].sort((a, b) => b.pickups - a.pickups);
-  }, [orders]);
-  const busiestCount = storeVisits[0]?.pickups || 1;
 
   if (user && user.role !== 'courier') return <Navigate to="/" replace />;
 
@@ -143,11 +135,6 @@ export default function CourierDashboard() {
         )}
       </div>
       <div className="flex flex-col items-end gap-2">
-        {/* Only parcels this courier holds can be opened — an unclaimed pool parcel is
-            not theirs to inspect yet. */}
-        {order.status !== 'shipped' && (
-          <Link to={`/orders/${order.id}`} className="text-xs font-semibold text-emerald-800 hover:underline">View order →</Link>
-        )}
         <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold capitalize text-slate-600">{order.status}</span>
         {/* This parcel's goods and its own fee — not the whole basket's total. */}
         <span className="text-sm font-bold text-slate-700">{formatZmwPrice(order.parcelTotal ?? 0)}</span>
@@ -166,7 +153,7 @@ export default function CourierDashboard() {
           <div>
             <p className="text-sm font-semibold uppercase tracking-widest text-emerald-700">Courier</p>
             <h1 className="mt-2 text-3xl font-bold text-slate-900">Hello, {user?.name?.split(' ')[0] || 'driver'}</h1>
-            <p className="mt-1 text-slate-500">Parcels assigned to you. Only you can confirm one has been delivered.</p>
+            <p className="mt-1 text-slate-500">Pick up released parcels, complete deliveries, and keep track of your work.</p>
           </div>
 
           {/* Duty status decides whether this courier is offered work at all. */}
@@ -245,39 +232,6 @@ export default function CourierDashboard() {
                   )}
                 />
               )) : <p className="rounded-lg border border-dashed border-slate-300 p-6 text-center text-slate-500">You have not picked up any parcels yet.</p>}
-            </section>
-          )}
-
-          {active === 'Stores' && (
-            <section className="space-y-4">
-              <div>
-                <h2 className="text-xl font-bold text-slate-900">Stores you collect from most</h2>
-                <p className="mt-1 text-slate-500">Based on the parcels assigned to you. Browse any shop to check their prices.</p>
-              </div>
-              {storeVisits.length ? (
-                <div className="space-y-3">
-                  {storeVisits.map((entry) => (
-                    <article key={entry.store} className="rounded-lg border border-slate-200 bg-white p-4">
-                      <div className="flex flex-wrap items-center justify-between gap-3">
-                        <p className="font-semibold text-slate-900">{entry.store}</p>
-                        <p className="text-sm text-slate-500">
-                          {entry.pickups} pickup{entry.pickups === 1 ? '' : 's'} · {entry.delivered} delivered
-                        </p>
-                      </div>
-                      <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-100">
-                        <div className="h-full rounded-full bg-emerald-700" style={{ width: `${(entry.pickups / busiestCount) * 100}%` }} />
-                      </div>
-                    </article>
-                  ))}
-                </div>
-              ) : (
-                <p className="rounded-lg border border-dashed border-slate-300 p-6 text-center text-slate-500">
-                  No pickups yet — once you deliver, your busiest shops appear here.
-                </p>
-              )}
-              <Link to="/products" className="inline-block rounded-lg border border-slate-300 px-5 py-2 font-semibold text-slate-700 hover:border-emerald-700 hover:text-emerald-700">
-                Explore the catalogue and prices →
-              </Link>
             </section>
           )}
 

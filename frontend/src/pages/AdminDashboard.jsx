@@ -8,9 +8,10 @@ import Topbar from '../components/Topbar';
 import SellerVerificationQueue from '../components/SellerVerificationQueue';
 import UnclaimedParcels from '../components/UnclaimedParcels';
 import ReportsQueue from '../components/ReportsQueue';
+import AdminRefundQueue from '../components/AdminRefundQueue';
 import useAdminConsoleController from '../hooks/useAdminConsoleController';
 
-const sections = ['Overview', 'Sellers', 'Customers', 'Couriers', 'Attention', 'Verification', 'Reports', 'Deliveries'];
+const sections = ['Overview', 'Sellers', 'Customers', 'Couriers', 'Attention', 'Verification', 'Reports', 'Refunds', 'Deliveries'];
 
 // "All" means all three kinds of account together, not just one of them.
 const ROLE_FILTERS = [
@@ -45,7 +46,7 @@ export default function AdminDashboard() {
           <div>
             <p className="text-sm font-semibold uppercase tracking-widest text-slate-800">Admin console</p>
             <h1 className="mt-2 text-3xl font-bold text-slate-900">{active === 'Overview' ? 'Manage marketplace accounts' : active}</h1>
-            <p className="mt-1 text-slate-500">{active === 'Attention' ? 'Pending approvals and flagged reports that need a decision.' : 'Review, edit, suspend or remove shops, customers and couriers from one place.'}</p>
+            <p className="mt-1 text-slate-500">{active === 'Attention' ? 'Pending approvals and flagged reports that need a decision.' : active === 'Refunds' ? 'Review customer and seller discussions and record the final case decision.' : 'Review, edit, suspend or remove shops, customers and couriers from one place.'}</p>
           </div>
 
           {error && <p role="alert" className="rounded-md border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">{error}</p>}
@@ -166,6 +167,13 @@ export default function AdminDashboard() {
             <DashboardCard title="Complaints and suspensions">
               <p className="mt-1 text-sm text-slate-500">Parties reported by customers, shops or couriers. Three reports against the same party flag them here.</p>
               <div className="mt-4"><ReportsQueue /></div>
+            </DashboardCard>
+          )}
+
+          {active === 'Refunds' && (
+            <DashboardCard title="Refund requests">
+              <p className="mt-1 text-sm text-slate-500">The seller and customer discuss the issue first. Admin makes the final case decision; approval does not transfer money.</p>
+              <div className="mt-4"><AdminRefundQueue /></div>
             </DashboardCard>
           )}
 

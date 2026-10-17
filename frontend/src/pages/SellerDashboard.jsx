@@ -10,6 +10,7 @@ import { AnalyticsViewer, NotificationCenter, OrderTracker, StoreDutyCard, Store
 import SuspendedNotice from '../components/SuspendedNotice';
 import Topbar from '../components/Topbar';
 import VerificationPanel from '../components/VerificationPanel';
+import SellerRefundInbox from '../components/SellerRefundInbox';
 import { useProductEditor } from '../hooks/useProductEditor';
 import { getMyOrders, updateShipmentStatus } from '../api/orderApi';
 import { deleteProduct, getSellerProducts } from '../api/productApi';
@@ -19,7 +20,7 @@ import { getMyStore, updateStore } from '../api/storeApi';
 import { useAuth } from '../context/AuthContext';
 import { isLocalDemoSession } from '../utils/localSession';
 
-const sections = ['Overview', 'Products', 'Orders', 'Messages', 'Analytics', 'Promotions', 'Store profile', 'Notifications', 'Reviews', 'Verification'];
+const sections = ['Overview', 'Products', 'Orders', 'Messages', 'Refunds', 'Analytics', 'Promotions', 'Store profile', 'Notifications', 'Reviews', 'Verification'];
 
 function formatRestockDate(value) {
   const match = String(value || '').match(/^(\d{4})-(\d{2})-(\d{2})/);
@@ -257,7 +258,7 @@ export default function SellerDashboard() {
           <div>
             <p className="text-xs font-bold uppercase tracking-widest text-emerald-800">Seller workspace / {sellerName}</p>
             <h1 className="mt-2 text-3xl font-bold text-slate-950">{active === 'Overview' ? 'Shop overview' : active}</h1>
-            <p className="mt-1 text-sm text-slate-600">{active === 'Overview' ? 'A clear view of your products, orders, and sales.' : active === 'Products' ? 'Manage your product listings.' : active === 'Orders' ? 'Follow order progress through delivery.' : active === 'Messages' ? 'Reply to customer questions about your shop.' : active === 'Analytics' ? 'Revenue, best sellers, and customer engagement.' : active === 'Promotions' ? 'Schedule discounts on your products.' : active === 'Store profile' ? 'Keep your storefront details up to date.' : active === 'Notifications' ? 'New orders, low stock, and customer feedback.' : ''}</p>
+            <p className="mt-1 text-sm text-slate-600">{active === 'Overview' ? 'A clear view of your products, orders, and sales.' : active === 'Products' ? 'Manage your product listings.' : active === 'Orders' ? 'Follow order progress through delivery.' : active === 'Messages' ? 'Reply to customer questions about your shop.' : active === 'Refunds' ? 'Discuss customer concerns and recommend a solution for admin review.' : active === 'Analytics' ? 'Revenue, best sellers, and customer engagement.' : active === 'Promotions' ? 'Schedule discounts on your products.' : active === 'Store profile' ? 'Keep your storefront details up to date.' : active === 'Notifications' ? 'New orders, low stock, and customer feedback.' : ''}</p>
           </div>
           <Link to={storefront} className="inline-flex min-h-10 items-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 hover:border-emerald-700 hover:text-emerald-900">View storefront</Link>
         </header>
@@ -327,6 +328,8 @@ export default function SellerDashboard() {
         {active === 'Orders' && <OrderTracker orders={visibleOrders} onAdvance={advanceOrder} busyId={updatingOrderId} />}
 
         {active === 'Messages' && <StoreMessages role="seller" />}
+
+        {active === 'Refunds' && <SellerRefundInbox />}
 
         {active === 'Analytics' && <AnalyticsViewer revenue={revenue} orders={orders} inTransit={inTransit} delivered={delivered} revenueByDay={revenueByDay} topProducts={topProducts} reviews={reviews} unansweredReviews={unansweredReviews} score={score} />}
 
