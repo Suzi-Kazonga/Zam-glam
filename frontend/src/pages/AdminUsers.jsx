@@ -341,7 +341,11 @@ export default function AdminUsers() {
                             </button>
                           ) : (
                             <>
-                              {role === 'couriers' && r.approval_status !== 'approved' && (
+                              {/* Approving is offered only while the application is still
+                                  open. Once it has been rejected the decision is made, so
+                                  the option goes — reinstating a rejected rider is a
+                                  deliberate act, not a stray click beside "Reject". */}
+                              {role === 'couriers' && r.approval_status !== 'approved' && r.approval_status !== 'rejected' && (
                                 <button type="button" disabled={busyId === r.id} onClick={() => decideCourier(r, 'approved')} className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-slate-50 disabled:opacity-50">Approve</button>
                               )}
                               {role === 'couriers' && r.approval_status !== 'rejected' && (

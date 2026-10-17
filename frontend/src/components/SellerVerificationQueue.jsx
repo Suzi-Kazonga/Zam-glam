@@ -79,7 +79,11 @@ export default function SellerVerificationQueue() {
                 placeholder="Note to the seller (optional)"
                 className="min-w-[220px] flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm"
               />
-              <button type="button" disabled={busyId === seller.id} onClick={() => decide(seller, 'verified')} className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60">Approve</button>
+              {/* A rejected application has been decided, so the approve option goes: a
+                  shop is never verified by a stray click beside "Reject". */}
+              {seller.verification_status !== 'rejected' && (
+                <button type="button" disabled={busyId === seller.id} onClick={() => decide(seller, 'verified')} className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60">Approve</button>
+              )}
               <button type="button" disabled={busyId === seller.id} onClick={() => decide(seller, 'rejected')} className="rounded-lg border border-rose-300 px-4 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-50 disabled:opacity-60">Reject</button>
             </div>
           </article>
