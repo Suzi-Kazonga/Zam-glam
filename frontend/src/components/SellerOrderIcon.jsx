@@ -1,6 +1,7 @@
 // The shop’s notification bell in the header.
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import useNotificationChime from '../hooks/useNotificationChime';
 import { Link } from 'react-router-dom';
 import { confirmPickup, denyPickup, getMyOrders } from '../api/orderApi';
 import { getMessageThreads } from '../api/messageApi';
@@ -74,6 +75,8 @@ export default function SellerOrderIcon({ neutral = false }) {
   const pickupRequests = orders.filter((order) => order.status === 'pickup_requested');
   const toPack = orders.filter((order) => NEEDS_PACKING.includes(order.status));
   const count = pickupRequests.length + toPack.length + customerThreads.length;
+  // A shop packing an order is not watching the screen, so the device sounds as well.
+  useNotificationChime(count);
 
   const answer = async (order, accept) => {
     setBusyId(order.shipmentId);

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import useNotificationChime from '../hooks/useNotificationChime';
 import { Link } from 'react-router-dom';
 import { getMessageThreads } from '../api/messageApi';
 import { isLocalDemoSession } from '../utils/localSession';
@@ -21,6 +22,9 @@ export default function CustomerMessagesIcon() {
       window.clearInterval(timer);
     };
   }, []);
+
+  // A reply from a shop chimes, so it is not missed while browsing elsewhere.
+  useNotificationChime(replies.length);
 
   const label = replies.length
     ? `${replies.length} seller repl${replies.length === 1 ? 'y' : 'ies'} waiting`

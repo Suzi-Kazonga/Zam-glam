@@ -1,6 +1,7 @@
 // Courier work and actions in the dashboard header.
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import useNotificationChime from '../hooks/useNotificationChime';
 import { Link } from 'react-router-dom';
 import { getAvailableParcels, getMyOrders, requestPickup } from '../api/orderApi';
 import { isLocalDemoSession } from '../utils/localSession';
@@ -50,6 +51,8 @@ export default function DeliveryIcon() {
   const awaitingShop = myOrders.filter((order) => order.status === 'pickup_requested');
   const readyToDeliver = myOrders.filter((order) => order.status === 'picked_up');
   const count = available.length + awaitingShop.length + readyToDeliver.length;
+  // A rider on the road needs to hear a new parcel, not see it.
+  useNotificationChime(count);
   const title = count
     ? `${count} courier update${count === 1 ? '' : 's'}: pickups, handovers, or deliveries`
     : 'No courier updates';

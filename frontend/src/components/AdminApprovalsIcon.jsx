@@ -2,6 +2,7 @@
 // enough complaints to need looking at.
 
 import { useEffect, useState } from 'react';
+import useNotificationChime from '../hooks/useNotificationChime';
 import { Link } from 'react-router-dom';
 import { getPendingRegistrations } from '../api/adminApi';
 import { getReportSummary } from '../api/reportApi';
@@ -34,6 +35,8 @@ export default function AdminApprovalsIcon() {
   }, []);
 
   const count = (pending.total || 0) + flagged;
+  // Approvals and flags arrive while the console sits open on another tab.
+  useNotificationChime(count);
   const title = count
     ? `${pending.shops.length} shop(s) and ${pending.couriers.length} courier(s) awaiting approval`
       + (flagged ? `, ${flagged} party(ies) with 3+ complaints` : '')
