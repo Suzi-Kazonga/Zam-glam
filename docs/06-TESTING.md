@@ -4,14 +4,14 @@
 
 ```powershell
 cd backend
-npm.cmd test              # 259 tests
+npm.cmd test              # 276 tests
 npm.cmd run test:unit     # the unit tests only
 npm.cmd run test:coverage # with a coverage report
 ```
 
 ```powershell
 cd frontend
-npm.cmd test              # 82 tests
+npm.cmd test              # 100 tests
 ```
 
 The backend tests use **their own database**, `zamglam_db_test`, created automatically on
@@ -109,6 +109,14 @@ using them rather than by tests. The API they depend on is covered thoroughly, s
 untested is the rendering, not the rules.
 
 ## End-to-end browser tests
+
+Three specs, 49 checks in all:
+
+| Spec | Covers |
+| --- | --- |
+| `userFlows.cy.js` | Signing in, signing up, browsing, and one whole purchase |
+| `navigation.cy.js` | Every menu entry for all four roles, that each role stays in its own area, and that a courier has no chat button |
+| `support.cy.js` | Reporting a problem as a shopper and a courier, the administrator reading it with the sender's role, and the count dropping when it is marked done |
 
 `frontend/cypress/e2e/userFlows.cy.js` clicks through the real site in a real browser:
 signing in, refusing a wrong password, refusing a sign-up that has not agreed to the terms,

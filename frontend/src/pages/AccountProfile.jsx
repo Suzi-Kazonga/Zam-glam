@@ -7,6 +7,10 @@ import { getMyOrders } from '../api/orderApi';
 import { isLocalDemoSession } from '../utils/localSession';
 import { dashboardForRole } from '../utils/authRedirect';
 import CourierShiftToggle from '../components/CourierShiftToggle';
+import ReportProblemButton from '../components/ReportProblemButton';
+import CustomerServicePanel from '../components/CustomerServicePanel';
+import useOpenProblems from '../hooks/useOpenProblems';
+import useNotificationChime from '../hooks/useNotificationChime';
 
 const tabs = [
   { id: 'unpaid', label: 'Unpaid', icon: '▣' },
@@ -37,10 +41,15 @@ const policyGroups = [
 ];
 
 export default function AccountProfile() {
-  const { user, logout } = useAuth();
+  const { user, loading, logout } = useAuth();
   const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
   const [activeTab, setActiveTab] = useState('processing');
+  const [showCustomerService, setShowCustomerService] = useState(false);
+  // What is waiting for an administrator. The same figure rides on the profile icon in
+  // the header, which is also where the chime comes from, so this one stays silent.
+  // setOpenProblems lets the panel drop the count the moment one is marked done.
+  const { open: openProblems, setOpen: setOpenProblems } = useOpenProblems();
 
   useEffect(() => {
     if (user?.email && !isLocalDemoSession()) {
@@ -52,6 +61,13 @@ export default function AccountProfile() {
         .catch(() => setOrders([]));
     }
   }, [user]);
+
+  // The signed-in account is read back from storage after the first render, so this has
+  // to wait for it. Without the check, opening /account directly — or refreshing on it —
+  // threw a signed-in person to the login page.
+  if (loading) {
+    return <div className="p-10 text-center text-slate-500">Loading your account...</div>;
+  }
 
   if (!user) {
     return <Navigate to="/login" replace />;
@@ -82,21 +98,24 @@ export default function AccountProfile() {
             </div>
 
             <div className="space-y-2 text-lg font-medium text-slate-700">
-              <button type="button" className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 transition hover:bg-slate-100">
-                <span>My Assets</span>
-                <span className="text-slate-400">＋</span>
-              </button>
-              <button type="button" className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 transition hover:bg-slate-100">
-                <span>My Orders</span>
-                <span className="text-slate-400">＋</span>
-              </button>
-              <button type="button" className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 transition hover:bg-slate-100">
-                <span>My Favorites</span>
-                <span className="text-slate-400">＋</span>
-              </button>
-              <button type="button" className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 transition hover:bg-slate-100">
-                <span>Customer Service</span>
-                <span className="text-slate-400">＋</span>
+              {/* Customer service opens the panel below: for an administrator the queue of
+                  reported problems, for everybody else what they have reported. The count
+                  is of problems still waiting, and the device chimes as new ones arrive. */}
+              <button
+                type="button"
+                onClick={() => setShowCustomerService((current) => !current)}
+                aria-expanded={showCustomerService}
+                className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 transition hover:bg-slate-100 ${showCustomerService ? 'bg-slate-100' : ''}`}
+              >
+                <span className="flex items-center gap-2">
+                  Customer Service
+                  {openProblems > 0 && (
+                    <span aria-label={`${openProblems} reported problem${openProblems === 1 ? '' : 's'} waiting`} className="rounded-full bg-red-600 px-2 py-0.5 text-xs font-bold text-white">
+                      {openProblems}
+                    </span>
+                  )}
+                </span>
+                <span className="text-slate-400">{showCustomerService ? '−' : '＋'}</span>
               </button>
               <div className="pt-3">
                 <p className="px-3 text-base font-bold text-slate-900">Other Services</p>
@@ -105,6 +124,8 @@ export default function AccountProfile() {
                     <span>◔</span>
                     <span>Contact Preferences</span>
                   </button>
+                  {/* Nothing for an administrator: this is what reaches them. */}
+                  <ReportProblemButton />
                 </div>
               </div>
             </div>
@@ -179,6 +200,12 @@ export default function AccountProfile() {
               </div>
             )}
           </div>
+
+          {showCustomerService && (
+            <div id="customer-service" className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+              <CustomerServicePanel onCountChange={setOpenProblems} />
+            </div>
+          )}
 
           <div id="orders" className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <div className="flex flex-wrap gap-2 border-b border-slate-200 pb-4">

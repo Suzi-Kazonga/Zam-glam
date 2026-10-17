@@ -11,7 +11,9 @@ import DeliveryIcon from './DeliveryIcon';
 import SellerOrderIcon from './SellerOrderIcon';
 import AdminApprovalsIcon from './AdminApprovalsIcon';
 import SearchBar from './SearchBar';
+import ReportProblemButton from './ReportProblemButton';
 import { themeForRole } from '../utils/roleTheme';
+import useOpenProblems from '../hooks/useOpenProblems';
 
 const navigationGroups = [
   { title: 'Manage your shop', items: ['Overview', 'Products', 'Orders', 'Messages'] },
@@ -25,6 +27,8 @@ export default function Topbar({ onSearch, navigationItems, activeNavigation, on
   const [navigationOpen, setNavigationOpen] = useState(false);
   const navigate = useNavigate();
   const theme = themeForRole(user?.role);
+  // Only an administrator ever has a figure here.
+  const { open: openProblems } = useOpenProblems({ chime: false });
   const isCustomer = user?.role === 'customer';
   const hasDashboardMenu = Array.isArray(navigationItems) && typeof onNavigationSelect === 'function';
   const lightHeader = isCustomer || (user?.role === 'seller' && hasDashboardMenu);
@@ -67,10 +71,20 @@ export default function Topbar({ onSearch, navigationItems, activeNavigation, on
     </div>
     <div className="relative ml-auto flex shrink-0 items-center gap-1 sm:gap-2">
       {user?.role === 'customer' && <CartIcon />}
-      {user?.role === 'customer' ? <CustomerMessagesIcon /> : <HelpChatIcon user={user} neutral={lightHeader} />}
+      {/* Shoppers and shops message each other about an order. A courier has nobody on the
+          platform to message — theirs only pointed at the contact page, which is no use
+          mid-delivery — so they get the parcel icon below and nothing else. */}
+      {user?.role === 'customer' && <CustomerMessagesIcon />}
+      {(user?.role === 'seller' || user?.role === 'admin') && <HelpChatIcon user={user} neutral={lightHeader} />}
       {user?.role === 'courier' && <DeliveryIcon />}
       {user?.role === 'seller' && <SellerOrderIcon neutral={lightHeader} />}
       {user?.role === 'admin' && <AdminApprovalsIcon />}
+      {/* Reported problems wait in the profile, so the count rides on the profile icon. */}
+      {openProblems > 0 && (
+        <span aria-label={`${openProblems} reported problem${openProblems === 1 ? '' : 's'} waiting`} className="absolute -top-1 right-8 z-10 rounded-full bg-red-600 px-2 py-0.5 text-xs font-bold text-white">
+          {openProblems}
+        </span>
+      )}
       <button onClick={() => setMenuOpen(!menuOpen)} aria-label="Open account menu" aria-expanded={menuOpen} className={`flex items-center gap-2 rounded-lg p-1 transition ${lightHeader ? 'hover:bg-slate-100' : 'hover:bg-white/10'}`}><span title="View profile" className={`flex h-9 w-9 items-center justify-center rounded-full font-bold ${theme.avatar}`}>{user?.name?.charAt(0)?.toUpperCase() || 'U'}</span><span className={`hidden text-sm font-semibold sm:block ${lightHeader ? 'text-slate-700' : 'text-white'}`}>{user?.name || 'Account'}</span></button>
       {menuOpen && <div className="absolute right-0 top-12 z-40 w-44 rounded-lg border border-slate-200 bg-white p-2 shadow-lg"><Link to="/products" className="block rounded px-3 py-2 text-sm hover:bg-slate-50">Shop</Link><Link to="/account" className="block rounded px-3 py-2 text-sm hover:bg-slate-50">Profile</Link><button onClick={() => { logout(); navigate('/login'); }} className="w-full rounded px-3 py-2 text-left text-sm text-rose-600 hover:bg-rose-50">Log out</button></div>}
     </div>
@@ -83,6 +97,10 @@ export default function Topbar({ onSearch, navigationItems, activeNavigation, on
           {items.map((item) => <button key={item} type="button" onClick={() => { onNavigationSelect(item); setNavigationOpen(false); }} aria-current={activeNavigation === item ? 'page' : undefined} className={`block w-full rounded-lg px-3 py-2.5 text-left text-sm font-semibold transition ${activeNavigation === item ? 'bg-emerald-50 text-emerald-900' : 'text-slate-700 hover:bg-slate-50'}`}>{item}</button>)}
         </div>;
       })}
+      {/* Last in the shop's menu, as it is in every other role's. */}
+      <div className="border-t border-slate-200 pt-2">
+        <ReportProblemButton />
+      </div>
     </nav>}
   </header>;
 }

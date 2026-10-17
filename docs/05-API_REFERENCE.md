@@ -674,6 +674,54 @@ six-hour `expires_at`, for the home page's deals strip.
 
 ---
 
+## Customer service
+
+Problems with Zamglam itself, reported by the people using it. A complaint about another
+*party on an order* goes through `/reports` instead; this is "something here is broken".
+
+### `POST /support/problems`
+
+`customer`, `seller`, `courier`. An administrator is refused — these come to them.
+
+```json
+{ "message": "The tracking page shows the wrong delivery date." }
+```
+
+The reporter's role, name and email are taken from the signed-in account and stored with
+the report, so the administrator sees who sent it and what kind of account they hold.
+
+**201** `{ message, id, status: "open" }` · **400** empty, or over 2000 characters
+· **403** an administrator · **401** not signed in
+
+### `GET /support/problems/mine`
+
+Any signed-in account. What that person has reported, newest first, each with its status.
+
+### `GET /support/problems`
+
+`admin`. The queue. `?status=open` (default), `done`, or `all`.
+
+**200** `{ reports: [{ id, reporter_role, reporter_name, reporter_email, message, status,
+created_at, resolved_at }], open }`
+
+### `GET /support/problems/count`
+
+`admin`. **200** `{ open }` — the figure behind the badge on the profile icon and the
+customer service button.
+
+### `PATCH /support/problems/:id/done`
+
+`admin`. Takes it out of the queue and the count. Marking one twice changes nothing, so a
+double click cannot make the figures drift.
+
+**200** `{ message, id, status, open }` · **404** no such report
+
+### `PATCH /support/problems/:id/reopen`
+
+`admin`. Puts one back in the queue. **200** `{ message, id, status, open }`
+
+---
+
 ## Health
 
 ### `GET /health`

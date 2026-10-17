@@ -198,6 +198,23 @@ and rating again updates it.
 report the same party twice for the same order. **Three open reports** against one party
 flag them for an administrator.
 
+### `problem_reports`
+
+Problems with Zamglam itself, reported by the people using it — not a complaint about
+another party, which is `reports` above.
+
+| Column | Notes |
+| --- | --- |
+| `reporter_role`, `reporter_id` | Who reported it, and what kind of account they hold |
+| `reporter_name`, `reporter_email` | Copied in at the time, so the queue still reads properly if the account is later renamed or removed |
+| `message` | What they wrote, up to 2000 characters |
+| `status` | `open` by default; `done` once an administrator has dealt with it |
+| `created_at`, `resolved_at` | When it arrived, and when it was cleared |
+
+The count of `open` rows is what the badge on the profile icon and the customer service
+button shows. Marking one done is conditional on it still being open, so clearing the same
+report twice cannot make the figure drift.
+
 ## Migrations
 
 `initializeDatabase()` runs on every startup and is safe to run repeatedly:

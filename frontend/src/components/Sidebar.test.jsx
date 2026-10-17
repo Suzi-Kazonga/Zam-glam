@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { jest } from '@jest/globals';
 import { MemoryRouter } from 'react-router-dom';
+import { AuthProvider } from '../context/AuthContext';
 import Sidebar from './Sidebar';
 
 describe('customer dashboard navigation', () => {
@@ -9,9 +10,9 @@ describe('customer dashboard navigation', () => {
     const items = ['Overview', 'Orders', 'Products', 'Messages', 'Cart', 'Collections', 'Profile', 'Wishlist'];
 
     render(
-      <MemoryRouter>
+      <MemoryRouter><AuthProvider>
         <Sidebar items={items} active="Overview" onSelect={onSelect} role="customer" />
-      </MemoryRouter>,
+      </AuthProvider></MemoryRouter>,
     );
 
     expect(screen.getByText('Discover')).toBeInTheDocument();

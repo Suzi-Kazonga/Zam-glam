@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getStorefrontPath, getStoreLogo } from '../utils/storeLogos';
 import { themeForRole } from '../utils/roleTheme';
+import ReportProblemButton from './ReportProblemButton';
 
 const customerIconPaths = {
   Overview: 'M3 10.5 12 3l9 7.5v9a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 19.5v-9ZM9 21v-6h6v6',
@@ -111,6 +112,12 @@ export default function Sidebar({ items, active, onSelect, role, shopName, store
               </button>
             </div>
           ))}
+
+          {/* Last in the menu, and only for the people who report problems rather than
+              receive them: it opens a message box addressed to the administrators. */}
+          <div className="border-t border-slate-200 pt-2">
+            <ReportProblemButton />
+          </div>
         </nav>
       </aside>
     </>

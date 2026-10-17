@@ -258,6 +258,21 @@ Everything here is read from the database. Any action you take changes the real 
   A verified shop carries a badge shoppers can see.
 - A courier sign‑up is approved or rejected from **Couriers**. An approved courier can go
   on duty; rejecting one takes them off duty immediately.
+- Once an application has been **rejected the approve button disappears**, so a decided
+  application cannot be reversed by a stray click. Reinstating somebody is deliberate:
+  change the account from the list.
+
+### Reported problems
+
+Anybody who is not an administrator has a **Report a problem** button at the bottom of
+their menu and in their profile. What they write goes straight to the administrators.
+
+- Open **Profile → Customer Service** to read them. Each one shows the message, who sent
+  it, and whether they are a customer, a seller or a courier.
+- The number of problems still waiting sits on the **profile icon** and on the customer
+  service button, and the device chimes when a new one arrives.
+- **Mark done** clears one: it leaves the queue and the count drops by one. *Show the ones
+  already done* brings them back for reference, and one cleared too soon can be reopened.
 
 ### Complaints
 
@@ -292,6 +307,18 @@ early, or a town with nobody on duty.
 ---
 
 ## 6. If something goes wrong
+
+**Tell the administrators.** Whatever kind of account you have — shopper, shop or courier
+— there is a **Report a problem** button at the bottom of your menu, and another in your
+profile under *Other Services*. Describe what you were doing and what happened; it reaches
+the administrators with your name and the kind of account you hold, and stays on their
+list until somebody deals with it. **Profile → Customer Service** shows what you have
+already reported.
+
+**Notification sounds.** Every notification — a new order, a parcel to collect, a courier
+at the counter, a reply from a shop, a reported problem — chimes as well as showing a
+number, since nobody watches a screen while they work. A browser only allows sound after
+you have clicked something on the page.
 
 | What you see | What it means |
 | --- | --- |

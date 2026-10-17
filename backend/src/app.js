@@ -21,6 +21,7 @@ import reviewRoutes from './routes/reviewRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import reportRoutes from './routes/reportRoutes.js';
 import messageRoutes from './routes/messageRoutes.js';
+import supportRoutes from './routes/supportRoutes.js';
 import { apiLimiter } from './middleware/rateLimit.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -64,6 +65,8 @@ app.use('/api/reviews', reviewRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/messages', messageRoutes);
+// Problems with Zamglam itself, and the administrators' queue for them.
+app.use('/api/support', supportRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ message: 'Route not found.' });

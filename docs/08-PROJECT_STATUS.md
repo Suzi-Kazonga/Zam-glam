@@ -133,6 +133,9 @@ Each of these is covered by tests that drive the real application — see
 - Sign-in attempts and sign-ups capped per address; a successful sign-in is never counted
   as a failure.
 - A dead token ends the session cleanly instead of leaving the browser looking signed in.
+- Every notification chimes as well as showing a number, since a shop packing an order or
+  a rider on the road is not watching a screen. It sounds only when the count rises, and
+  can be turned off per device.
 
 ### Selling
 
@@ -172,6 +175,9 @@ Each of these is covered by tests that drive the real application — see
 - Any party to an order can report another party on it — only somebody they dealt with,
   once per order.
 - Three open complaints flag a party for an administrator.
+- Anybody who is not an administrator can report a problem with Zamglam itself from their
+  own menu. It reaches the administrators tagged with the sender's role, counts on the
+  profile icon until it is marked done, and the count drops as each one is cleared.
 - Suspension stops an account ordering, listing or delivering, takes a courier off duty,
   and shows the account a notice with the reason. Suspended shops read *Unavailable* and
   cannot be ordered from.
@@ -186,7 +192,7 @@ Each of these is covered by tests that drive the real application — see
 
 ### Quality
 
-- 259 backend tests, 82 frontend tests and 8 browser tests, all passing.
+- 276 backend tests, 100 frontend tests and 49 browser tests, all passing.
 - A fresh clone seeds and runs with no SQL run by hand.
 - The interface works on a phone, including the dashboards — which the literature review
   identified as important, since most Zambian users reach the internet by smartphone.

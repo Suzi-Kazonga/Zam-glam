@@ -335,6 +335,25 @@ export async function initializeDatabase() {
     );
   `);
 
+  // Problems with Zamglam itself, reported by the people using it. Unlike `reports`
+  // above, this is not about another party on an order — it is a shopper, shop or courier
+  // telling the administrators that something is wrong. Each one stays in the customer
+  // service queue until an administrator marks it done.
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS problem_reports (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      reporter_role VARCHAR(20) NOT NULL,
+      reporter_id INT NOT NULL,
+      reporter_name VARCHAR(255),
+      reporter_email VARCHAR(255),
+      message TEXT NOT NULL,
+      status VARCHAR(20) NOT NULL DEFAULT 'open',
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      resolved_at TIMESTAMP NULL DEFAULT NULL,
+      KEY idx_problem_reports_status (status)
+    );
+  `);
+
   await pool.query(`
     CREATE TABLE IF NOT EXISTS order_status_history (
       id INT AUTO_INCREMENT PRIMARY KEY,

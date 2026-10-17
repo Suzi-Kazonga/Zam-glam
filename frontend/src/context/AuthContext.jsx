@@ -1,7 +1,9 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import * as authApi from '../api/authApi';
 
-const AuthContext = createContext();
+// Exported so a test can stand a signed-in account of any role in front of a component
+// without going through a real sign-in.
+export const AuthContext = createContext();
 
 export const useAuth = () => {
   const context = useContext(AuthContext);

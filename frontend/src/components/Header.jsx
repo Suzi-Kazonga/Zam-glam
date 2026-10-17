@@ -13,6 +13,7 @@ import SellerOrderIcon from './SellerOrderIcon';
 import AdminApprovalsIcon from './AdminApprovalsIcon';
 import { getStorefrontPath } from '../utils/storeLogos';
 import { themeForRole } from '../utils/roleTheme';
+import useOpenProblems from '../hooks/useOpenProblems';
 
 const Header = () => {
   const { user, loading, logout } = useAuth();
@@ -22,6 +23,8 @@ const Header = () => {
   // Customer shopping stays neutral white; other signed-in roles retain their
   // role colour bar.
   const theme = themeForRole(user?.role);
+  // Only an administrator ever has a figure here.
+  const { open: openProblems } = useOpenProblems({ chime: true });
   const themed = Boolean(user);
   const isCustomer = user?.role === 'customer';
   const shellClass = themed && !isCustomer ? `${theme.bar} border-b border-black/10` : 'border-b border-slate-200 bg-white';
@@ -104,7 +107,10 @@ const Header = () => {
       )}
       <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-2">
         {user?.role === 'customer' && <CustomerMessagesIcon />}
-        {user?.role !== 'customer' && <HelpChatIcon user={user} />}
+        {/* Shoppers and shops message each other about an order, so the icon takes them
+            to those threads. A courier has nobody to message — theirs only pointed at the
+            contact page, which is of no use mid-delivery. */}
+        {(user?.role === 'seller' || user?.role === 'admin' || !user) && <HelpChatIcon user={user} />}
         {canBrowse && <CartIcon />}
         {user?.role === 'courier' && <DeliveryIcon />}
         {user?.role === 'seller' && <SellerOrderIcon />}
@@ -112,6 +118,13 @@ const Header = () => {
 
         {user ? (
           <div className="relative" ref={accountMenu}>
+            {/* Reported problems wait in the profile, so their count rides on the profile
+                icon as well as on the customer service button inside it. */}
+            {openProblems > 0 && (
+              <span aria-label={`${openProblems} reported problem${openProblems === 1 ? '' : 's'} waiting`} className="absolute -right-1 -top-1 z-10 rounded-full bg-red-600 px-2 py-0.5 text-xs font-bold text-white">
+                {openProblems}
+              </span>
+            )}
             <button
               type="button"
               onClick={() => setAccountMenuOpen((open) => !open)}

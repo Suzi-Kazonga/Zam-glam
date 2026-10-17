@@ -41,11 +41,12 @@ jest.unstable_mockModule(fileURLToPath(new URL('../components/UnclaimedParcels.j
 }));
 
 const { MemoryRouter } = await import('react-router-dom');
+const { AuthProvider } = await import('../context/AuthContext');
 const { default: AdminDashboard } = await import('./AdminDashboard.jsx');
 const { default: AdminApprovalsIcon } = await import('../components/AdminApprovalsIcon.jsx');
 
 function renderHub() {
-  return render(<MemoryRouter><AdminDashboard /></MemoryRouter>);
+  return render(<MemoryRouter><AuthProvider><AdminDashboard /></AuthProvider></MemoryRouter>);
 }
 
 beforeEach(() => {
@@ -108,7 +109,7 @@ describe('admin console hub actions', () => {
 
   test('header attention link opens the real Attention section', () => {
     localStorage.setItem('token', 'admin-local-session');
-    render(<MemoryRouter><AdminApprovalsIcon /></MemoryRouter>);
+    render(<MemoryRouter><AuthProvider><AdminApprovalsIcon /></AuthProvider></MemoryRouter>);
     expect(screen.getByRole('link', { name: 'Nothing waiting' })).toHaveAttribute('href', '/admin/dashboard?section=Attention');
     localStorage.removeItem('token');
   });
