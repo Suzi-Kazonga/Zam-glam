@@ -1,17 +1,19 @@
-// Clothes grouped by who they are for.
+// Clothing and shoe categories that are present in the live catalogue.
 
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import StoreCard from '../components/StoreCard';
+import apiClient from '../api/axios';
 
 const categories = [
-  { id: 1, name: 'Men\'s Fashion', icon: '👔' },
-  { id: 2, name: 'Women\'s Fashion', icon: '👗' },
-  { id: 3, name: 'Shoes & Sneakers', icon: '👟' },
-  { id: 4, name: 'Accessories', icon: '⌚' },
-  { id: 5, name: 'Home & Living', icon: '🏠' },
-  { id: 6, name: 'Sports & Outdoors', icon: '⛹️' },
+  { name: 'Men’s Fashion', icon: '👔', href: '/products?audience=men' },
+  { name: 'Women’s Fashion', icon: '👗', href: '/products?audience=women' },
+  { name: 'Shoes & Sneakers', icon: '👟', href: '/products?category=shoes' },
 ];
+
+const categoryValue = (product) => String(product.category_name || product.category || '').trim();
+const categorySlug = (value) => value.toLowerCase().replace(/[\s_]+/g, '-');
+const genericTypes = new Set(['clothes', 'clothing', 'shoes', 'footwear', 'general']);
 
 const fallbackStores = [
   { id: 1, name: 'Mud', logo_url: '/images/logos/mud.png' },
@@ -23,7 +25,21 @@ const fallbackStores = [
 ];
 
 export default function Collections() {
-  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [products, setProducts] = useState([]);
+  const [loadError, setLoadError] = useState('');
+
+  useEffect(() => {
+    apiClient.get('/products')
+      .then(({ data }) => {
+        setProducts(Array.isArray(data) ? data : []);
+        setLoadError('');
+      })
+      .catch(() => setLoadError('Could not load product categories. Please refresh and try again.'));
+  }, []);
+
+  const clothingTypes = useMemo(() => [...new Set(
+    products.map(categoryValue).filter((type) => type && !genericTypes.has(type.toLowerCase())),
+  )].sort((left, right) => left.localeCompare(right)), [products]);
 
   return (
     <main className="min-h-screen bg-slate-50">
@@ -31,21 +47,37 @@ export default function Collections() {
       <section className="py-12 px-4 sm:px-6">
         <div className="mx-auto max-w-7xl">
           <h1 className="text-3xl font-bold text-slate-900 mb-8">Shop by Category</h1>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            {categories.map((cat) => (
-              <button
-                key={cat.id}
-                onClick={() => setSelectedCategory(selectedCategory === cat.id ? null : cat.id)}
-                className={`flex flex-col items-center justify-center p-6 rounded-lg transition ${
-                  selectedCategory === cat.id
-                    ? 'bg-indigo-600 text-white shadow-lg'
-                    : 'bg-white text-slate-900 hover:shadow-md hover:border-indigo-300'
-                } border border-slate-200`}
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+            {categories.map((category) => (
+              <Link
+                key={category.name}
+                to={category.href}
+                className="flex min-h-32 flex-col items-center justify-center rounded-xl border border-slate-200 bg-white p-6 text-slate-900 shadow-sm transition hover:-translate-y-0.5 hover:border-indigo-300 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-600"
               >
-                <span className="text-3xl mb-2">{cat.icon}</span>
-                <span className="text-sm font-semibold text-center">{cat.name}</span>
-              </button>
+                <span aria-hidden="true" className="mb-2 text-3xl">{category.icon}</span>
+                <span className="text-center text-sm font-semibold">{category.name}</span>
+              </Link>
             ))}
+          </div>
+
+          <div className="mt-10">
+            <h2 className="text-lg font-bold text-slate-900">Browse by clothing type</h2>
+            {loadError && <p role="alert" className="mt-2 text-sm text-rose-700">{loadError}</p>}
+            {clothingTypes.length ? (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {clothingTypes.map((type) => (
+                  <Link
+                    key={type}
+                    to={`/products?category=${encodeURIComponent(categorySlug(type))}`}
+                    className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-indigo-300 hover:text-indigo-700"
+                  >
+                    {type}
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <p className="mt-2 text-sm text-slate-500">Clothing types will appear here as shops add products.</p>
+            )}
           </div>
         </div>
       </section>

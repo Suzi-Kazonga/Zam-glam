@@ -16,6 +16,7 @@ export const emptyProductForm = {
   stock: '',
   restock_expected_at: '',
   category: 'clothes',
+  audience: 'unisex',
   image_url: '',
   imageFiles: [],
   previews: [],
@@ -52,7 +53,8 @@ export function useProductEditor({ onSaved } = {}) {
       price: product.price,
       stock: product.stock,
       restock_expected_at: dateInputValue(product.restock_expected_at),
-      category: product.category || (String(product.category_name || '').toLowerCase().includes('shoe') ? 'shoes' : 'clothes'),
+      category: product.category_name || product.category || 'clothes',
+      audience: product.audience || 'unisex',
       image_url: product.image_url || '',
       imageFiles: [],
       previews: Array.isArray(product.images) && product.images.length
@@ -119,6 +121,7 @@ export function useProductEditor({ onSaved } = {}) {
       stock: Number(form.stock),
       restock_expected_at: form.restock_expected_at || null,
       category: form.category,
+      audience: form.audience,
       imageFiles: form.imageFiles,
     };
 

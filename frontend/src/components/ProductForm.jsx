@@ -1,6 +1,18 @@
 // Add/edit product modal, shared by the seller dashboard, the seller home page and the
 // seller's own storefront. Drive it with the useProductEditor hook, which owns the state
 // and the create/update calls.
+const productCategories = [
+  { value: 'clothes', label: 'Clothes' },
+  { value: 'Shoes', label: 'Shoes' },
+  { value: 'Casual wear', label: 'Casual wear' },
+  { value: 'Formal wear', label: 'Formal wear' },
+  { value: 'Shirts', label: 'Shirts & tops' },
+  { value: 'Pants', label: 'Pants' },
+  { value: 'Dresses', label: 'Dresses' },
+  { value: 'Jackets', label: 'Jackets' },
+  { value: 'Accessories', label: 'Accessories' },
+];
+
 export default function ProductForm({ form, setForm, message, onClose, onImages, onSubmit, saving }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4">
@@ -27,8 +39,18 @@ export default function ProductForm({ form, setForm, message, onClose, onImages,
           </label>
           <label className="block text-sm font-medium text-slate-600">Category
             <select value={form.category} onChange={(event) => setForm({ ...form, category: event.target.value })} className="mt-1 w-full rounded-lg border border-slate-200 px-4 py-2 outline-none focus:ring-2 focus:ring-purple-300">
-              <option value="clothes">Clothes</option>
-              <option value="shoes">Shoes</option>
+              {!productCategories.some((category) => category.value.toLowerCase() === String(form.category).toLowerCase()) && (
+                <option value={form.category}>{form.category}</option>
+              )}
+              {productCategories.map((category) => <option key={category.value} value={category.value}>{category.label}</option>)}
+            </select>
+          </label>
+          <label className="block text-sm font-medium text-slate-600">Audience
+            <select value={form.audience || 'unisex'} onChange={(event) => setForm({ ...form, audience: event.target.value })} className="mt-1 w-full rounded-lg border border-slate-200 px-4 py-2 outline-none focus:ring-2 focus:ring-purple-300">
+              <option value="unisex">Unisex</option>
+              <option value="men">Men</option>
+              <option value="women">Women</option>
+              <option value="kids">Kids</option>
             </select>
           </label>
           <label className="block rounded-lg border border-dashed border-slate-300 p-3 text-sm text-slate-500">

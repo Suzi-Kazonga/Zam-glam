@@ -300,6 +300,46 @@ export async function initializeDatabase() {
     );
   `);
 
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS refund_requests (
+     id INT AUTO_INCREMENT PRIMARY KEY,
+     order_id ${await idTypeOf('orders')} NOT NULL,
+     shipment_id ${await idTypeOf('shipments')} NOT NULL,
+     customer_id ${await idTypeOf('customers')} NOT NULL,
+     seller_id ${await idTypeOf('sellers')} NOT NULL,
+     reason VARCHAR(100) NOT NULL,
+     details TEXT NOT NULL,
+     status VARCHAR(30) NOT NULL DEFAULT 'seller_review',
+     seller_recommendation VARCHAR(10) NULL,
+     seller_note TEXT NULL,
+     admin_decision_note TEXT NULL,
+     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+     UNIQUE KEY uk_refund_shipment (shipment_id),
+     KEY idx_refund_customer (customer_id),
+     KEY idx_refund_seller (seller_id),
+     KEY idx_refund_status (status),
+     CONSTRAINT fk_refund_order FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
+     CONSTRAINT fk_refund_shipment FOREIGN KEY (shipment_id) REFERENCES shipments(id) ON DELETE CASCADE,
+     CONSTRAINT fk_refund_customer FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE,
+     CONSTRAINT fk_refund_seller FOREIGN KEY (seller_id) REFERENCES sellers(id) ON DELETE CASCADE
+    );
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS refund_messages (
+     id INT AUTO_INCREMENT PRIMARY KEY,
+     refund_request_id ${await idTypeOf('refund_requests')} NOT NULL,
+     sender_role VARCHAR(20) NOT NULL,
+     sender_id INT NOT NULL,
+     body TEXT NOT NULL,
+     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+     KEY idx_refund_message_thread (refund_request_id, created_at),
+     CONSTRAINT fk_refund_message_request FOREIGN KEY (refund_request_id)
+       REFERENCES refund_requests(id) ON DELETE CASCADE
+    );
+  `);
+
   // Seller ratings left by customers after a delivery. Ratings were previously kept in the
   // rater's own browser, so nobody else could see them — the trust signal was decorative.
   await pool.query(`

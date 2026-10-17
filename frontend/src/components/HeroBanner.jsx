@@ -33,7 +33,7 @@ export default function HeroBanner() {
   }, []);
 
   useEffect(() => {
-    if (slides.length < 2) return undefined;
+    if (slides.length < 2 || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return undefined;
     const timer = window.setInterval(() => setIndex((current) => (current + 1) % slides.length), 5000);
     return () => window.clearInterval(timer);
   }, [slides.length]);
@@ -43,11 +43,11 @@ export default function HeroBanner() {
   return (
     <section className="relative min-h-[430px] overflow-hidden bg-slate-900 text-white">
       {slide && (
-        <img src={slide.image} alt={slide.name} className="absolute inset-0 h-full w-full object-cover opacity-70" />
+        <img key={slide.id} src={slide.image} alt={slide.name} className="deal-background-enter absolute inset-0 h-full w-full object-cover opacity-70" />
       )}
       <div className="absolute inset-0 bg-gradient-to-r from-slate-950/80 via-slate-900/35 to-transparent" />
       <div className="relative mx-auto flex min-h-[430px] max-w-7xl items-center px-6 py-16">
-        <div className="max-w-xl">
+        <div key={slide?.id || 'shop-local'} className="deal-slide-enter max-w-xl">
           <p className="text-sm font-semibold uppercase tracking-[0.25em] text-indigo-200">
             {slide ? slide.store : 'Shop local'}
           </p>

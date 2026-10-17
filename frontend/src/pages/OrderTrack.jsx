@@ -13,6 +13,7 @@ import { getOrder } from '../api/orderApi';
 import { isLocalDemoSession, LOCAL_DEMO_ORDER_MESSAGE } from '../utils/localSession';
 import SellerRatingForm from '../components/SellerRatingForm';
 import ReportPartyForm from '../components/ReportPartyForm';
+import RefundRequestPanel from '../components/RefundRequestPanel';
 import { getMyRatings } from '../api/reviewApi';
 import { STATUS_META } from '../utils/orderStore';
 
@@ -134,6 +135,7 @@ export default function OrderTrack() {
                   eta: shipment.status === 'delivered' ? 'Delivered' : shipment.status === 'shipped' ? '25-40 min' : 'Pending pickup',
                 }} />
               </div>
+              {user?.role === 'customer' && <RefundRequestPanel shipment={shipment} />}
             </div>
           ))}
         </div>

@@ -14,7 +14,9 @@ export default function CourierShiftToggle({ onChange, compact = false }) {
 
   const load = () => {
     if (isLocalDemoSession()) return;
-    getShift().then(setState).catch(() => {});
+    getShift()
+      .then(setState)
+      .catch((error) => setMessage(error.response?.data?.error || 'Could not load your duty status.'));
   };
 
   useEffect(load, []);

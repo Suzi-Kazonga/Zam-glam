@@ -20,15 +20,31 @@ const productType = (product) => {
   return /shoe|sneaker|sandal|boot/i.test(`${product.name}`) ? 'Shoes' : 'Clothes';
 };
 
+const normalizeCategory = (value) => String(value || '').trim().toLowerCase().replace(/[\s_]+/g, '-');
+const normalizeAudience = (value) => {
+  const audience = String(value || 'unisex').trim().toLowerCase();
+  if (['male', 'men', 'mens'].includes(audience)) return 'men';
+  if (['female', 'women', 'womens'].includes(audience)) return 'women';
+  return audience;
+};
+
 export default function Products() {
   const [params] = useSearchParams();
   const [products, setProducts] = useState(() => mergeShopProducts());
-  const [selectedType, setSelectedType] = useState(params.get('category') === 'shoes' ? 'Shoes' : 'All');
+  const requestedType = params.get('category') || '';
+  const requestedAudience = params.get('audience') || 'all';
+  const [selectedType, setSelectedType] = useState(requestedType ? requestedType.replace(/[-_]/g, ' ') : 'All');
+  const [selectedAudience, setSelectedAudience] = useState(requestedAudience);
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
   const [sort, setSort] = useState('newest');
   const [collection, setCollection] = useState('all');
   const search = params.get('search') || '';
+
+  useEffect(() => {
+    setSelectedType(requestedType ? requestedType.replace(/[-_]/g, ' ') : 'All');
+    setSelectedAudience(requestedAudience);
+  }, [requestedType, requestedAudience]);
 
   useEffect(() => {
     apiClient.get('/products')
@@ -38,8 +54,11 @@ export default function Products() {
 
   // Offer only the types actually present in the catalogue.
   const types = useMemo(
-    () => ['All', ...[...new Set(products.map(productType))].sort()],
-    [products],
+    () => ['All', ...new Set([
+      ...products.map(productType),
+      ...(selectedType !== 'All' ? [selectedType] : []),
+    ])].sort((left, right) => left === 'All' ? -1 : right === 'All' ? 1 : left.localeCompare(right)),
+    [products, selectedType],
   );
 
   const priceCap = useMemo(
@@ -55,11 +74,12 @@ export default function Products() {
       const searchable = `${product.name} ${product.description || ''} ${product.store_name || ''} ${productType(product)}`.toLowerCase();
       const price = Number(product.price) || 0;
       const matchesSearch = searchable.includes(search.toLowerCase());
-      const matchesType = selectedType === 'All' || productType(product) === selectedType;
+      const matchesType = selectedType === 'All' || normalizeCategory(productType(product)) === normalizeCategory(selectedType);
+      const matchesAudience = selectedAudience === 'all' || normalizeAudience(product.audience) === normalizeAudience(selectedAudience);
       const matchesPrice = price >= min && price <= max;
       const matchesCollection = collection === 'all'
         || (collection === 'new' ? isNewProduct(product) : getProductClickCount(product.id) > 0);
-      return matchesSearch && matchesType && matchesPrice && matchesCollection;
+      return matchesSearch && matchesType && matchesAudience && matchesPrice && matchesCollection;
     });
 
     return result.sort((a, b) => (
@@ -68,10 +88,11 @@ export default function Products() {
           : sort === 'trending' ? getProductClickCount(b.id) - getProductClickCount(a.id)
             : new Date(b.createdAt || b.created_at || 0) - new Date(a.createdAt || a.created_at || 0)
     ));
-  }, [products, search, selectedType, minPrice, maxPrice, collection, sort]);
+  }, [products, search, selectedType, selectedAudience, minPrice, maxPrice, collection, sort]);
 
   const clearFilters = () => {
     setSelectedType('All');
+    setSelectedAudience('all');
     setMinPrice('');
     setMaxPrice('');
     setCollection('all');
@@ -111,6 +132,16 @@ export default function Products() {
           <label className="mt-5 block text-sm font-medium text-slate-600">Type
             <select value={selectedType} onChange={(event) => setSelectedType(event.target.value)} className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2">
               {types.map((type) => <option key={type} value={type}>{type}</option>)}
+            </select>
+          </label>
+
+          <label className="mt-5 block text-sm font-medium text-slate-600">Audience
+            <select value={selectedAudience} onChange={(event) => setSelectedAudience(event.target.value)} className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2">
+              <option value="all">All</option>
+              <option value="men">Men</option>
+              <option value="women">Women</option>
+              <option value="unisex">Unisex</option>
+              <option value="kids">Kids</option>
             </select>
           </label>
 

@@ -14,7 +14,7 @@ import SearchBar from './SearchBar';
 import { themeForRole } from '../utils/roleTheme';
 
 const navigationGroups = [
-  { title: 'Manage your shop', items: ['Overview', 'Products', 'Orders', 'Messages'] },
+  { title: 'Manage your shop', items: ['Overview', 'Products', 'Orders', 'Messages', 'Refunds'] },
   { title: 'Grow your shop', items: ['Analytics', 'Promotions'] },
   { title: 'Store settings', items: ['Store profile', 'Notifications', 'Reviews', 'Verification'] },
 ];
@@ -72,7 +72,11 @@ export default function Topbar({ onSearch, navigationItems, activeNavigation, on
       {user?.role === 'seller' && <SellerOrderIcon neutral={lightHeader} />}
       {user?.role === 'admin' && <AdminApprovalsIcon />}
       <button onClick={() => setMenuOpen(!menuOpen)} aria-label="Open account menu" aria-expanded={menuOpen} className={`flex items-center gap-2 rounded-lg p-1 transition ${lightHeader ? 'hover:bg-slate-100' : 'hover:bg-white/10'}`}><span title="View profile" className={`flex h-9 w-9 items-center justify-center rounded-full font-bold ${theme.avatar}`}>{user?.name?.charAt(0)?.toUpperCase() || 'U'}</span><span className={`hidden text-sm font-semibold sm:block ${lightHeader ? 'text-slate-700' : 'text-white'}`}>{user?.name || 'Account'}</span></button>
-      {menuOpen && <div className="absolute right-0 top-12 z-40 w-44 rounded-lg border border-slate-200 bg-white p-2 shadow-lg"><Link to="/products" className="block rounded px-3 py-2 text-sm hover:bg-slate-50">Shop</Link><Link to="/account" className="block rounded px-3 py-2 text-sm hover:bg-slate-50">Profile</Link><button onClick={() => { logout(); navigate('/login'); }} className="w-full rounded px-3 py-2 text-left text-sm text-rose-600 hover:bg-rose-50">Log out</button></div>}
+      {menuOpen && <div className="absolute right-0 top-12 z-40 w-44 rounded-lg border border-slate-200 bg-white p-2 shadow-lg">
+        {user?.role === 'customer' && <Link to="/products" onClick={() => setMenuOpen(false)} className="block rounded px-3 py-2 text-sm hover:bg-slate-50">Shop</Link>}
+        <Link to="/account" onClick={() => setMenuOpen(false)} className="block rounded px-3 py-2 text-sm hover:bg-slate-50">Profile</Link>
+        <button type="button" onClick={() => { setMenuOpen(false); logout(); navigate('/login'); }} className="w-full rounded px-3 py-2 text-left text-sm text-rose-600 hover:bg-rose-50">Log out</button>
+      </div>}
     </div>
     {hasDashboardMenu && navigationOpen && <nav id="seller-dashboard-navigation" aria-label="Seller dashboard navigation" className="absolute left-4 top-full z-40 mt-2 w-72 max-w-[calc(100vw-2rem)] rounded-xl border border-slate-200 bg-white p-3 text-slate-700 shadow-xl">
       {navigationGroups.map((group) => {

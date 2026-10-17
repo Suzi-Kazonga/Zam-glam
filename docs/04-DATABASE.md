@@ -21,6 +21,7 @@ customers ──< orders ──< order_items >── products >── sellers �
                  ├──< shipments >── couriers  │          └──< documents
                  ├──< order_status_history    │
                  ├──< payments                └── categories
+                 ├──< refund_requests ──< refund_messages
                  └──< reports
 customers ──< cart >── products
 customers ──< reviews >── sellers
@@ -197,6 +198,17 @@ and rating again updates it.
 `UNIQUE (order_id, reporter_role, reporter_id, reported_role, reported_id)` — you cannot
 report the same party twice for the same order. **Three open reports** against one party
 flag them for an administrator.
+
+### `refund_requests` and `refund_messages`
+
+One refund case can be opened for each delivered parcel. A case records the order, parcel,
+customer, seller, reason, details and status (`seller_review`, `admin_review`, `approved`
+or `rejected`). The seller's recommendation and the administrator's final decision note
+are stored separately. A unique key on `shipment_id` prevents duplicate cases.
+
+Messages belong to a case and record the sender role and profile id. Only the customer and
+seller participate in the conversation; an administrator reviews it before making the final
+decision. Approving a case does not transfer money: no payment gateway is connected.
 
 ## Migrations
 

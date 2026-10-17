@@ -139,6 +139,11 @@ the shop or the courier on that order. You can only report someone you actually 
 with, and only once per order. Three separate complaints against the same party raise a
 flag for an administrator.
 
+For a refund concern, open the delivered parcel's **Refund help** section and submit a
+reason and explanation. You and the shop can discuss the case there. The shop recommends
+a resolution, then an administrator makes the final decision. An approval records the
+decision only; the system does not transfer money.
+
 ---
 
 ## 3. If you run a shop
@@ -182,6 +187,13 @@ see only your own items, even when the customer bought from several shops in one
    happened.
 
 You cannot mark a parcel delivered — that is the courier's to record.
+
+### Refund requests
+
+Open **Dashboard → Refunds** to read customer cases for your shop. Reply in the case
+conversation to discuss the concern. When ready, send a recommendation and note to the
+administrator; the administrator makes the final decision. A recommendation or approval
+does not transfer money.
 
 ### Complaints about you
 
@@ -264,6 +276,10 @@ Everything here is read from the database. Any action you take changes the real 
 **Reports** lists every party with open complaints against them, worst first, with the
 reasons given. Anything at three or more is flagged. From there you can read the
 individual complaints and suspend or reinstate the account.
+
+**Refunds** lists customer cases and the conversation with the shop. Review the seller's
+recommendation and discussion, then record the final approve-or-decline decision with a
+note. This does not move money.
 
 A suspended account can still sign in, and sees a notice saying it is suspended and why,
 but cannot order, list items or take deliveries. Reinstating clears the complaints so an

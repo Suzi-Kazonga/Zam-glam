@@ -572,6 +572,76 @@ re-flag somebody just cleared.
 
 ---
 
+## Refund requests
+
+A customer can open one case for a delivered parcel. The customer and seller use the case
+conversation to discuss the issue; the seller then recommends a resolution and an admin
+makes the final decision. An approval records the case outcome only — no money is transferred.
+
+### `GET /refunds/shipment/:shipmentId`
+
+`customer` or `seller` involved in the parcel. Returns `{ refund }`, where `refund` is the
+case and conversation or `null` if no case has been opened.
+
+### `POST /refunds`
+
+`customer`. The parcel must belong to the signed-in customer and be delivered.
+
+```json
+{ "shipment_id": 12, "reason": "Wrong or missing item",
+  "details": "The parcel contained the wrong size." }
+```
+
+**201** `{ message, refund }` — the new case starts at `seller_review`
+· **400** invalid reason or details
+· **403** the parcel belongs to another customer
+· **409** the parcel is not delivered or already has a case
+
+### `GET /refunds/my`
+
+`customer` or `seller`. Lists that account's cases.
+
+### `GET /refunds/:id`
+
+The case's customer, seller or an admin. Returns the case with its conversation.
+
+### `POST /refunds/:id/messages`
+
+The case's customer or seller, while the case is awaiting seller or admin review.
+
+```json
+{ "body": "Please share a photo of the item label." }
+```
+
+**200** the updated case · **403** not a case participant · **409** the case is closed
+
+### `PATCH /refunds/:id/recommendation`
+
+`seller` on the case. Submitting a recommendation moves the case to `admin_review`.
+
+```json
+{ "recommendation": "approve", "note": "The wrong size was packed." }
+```
+
+`recommendation` is `approve | reject`; a note is required.
+
+### `GET /refunds/admin`
+
+`admin`. Lists all cases, with cases awaiting a decision first.
+
+### `PATCH /refunds/admin/:id/decision`
+
+`admin`. Available only after the seller has submitted a recommendation.
+
+```json
+{ "decision": "approved", "note": "Evidence supports the request." }
+```
+
+`decision` is `approved | rejected`; a note is required. **200** `{ message, refund }`.
+This records the final case decision; it does not execute a payout.
+
+---
+
 ## Admin console
 
 Everything here is admin-only (`authMiddleware` + `roleMiddleware('admin')` on the whole
