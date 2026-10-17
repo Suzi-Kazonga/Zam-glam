@@ -32,6 +32,8 @@ router.patch('/:id/status', authMiddleware, orderController.updateOrderStatus);
 // would be read as parcel ids.
 router.get('/shipments/available', authMiddleware, orderController.getAvailableParcels);
 router.get('/shipments/unclaimed', authMiddleware, roleMiddleware('admin'), orderController.getUnclaimedParcels);
+// A shop's own parcel: the customer it is for and the courier carrying it.
+router.get('/shipments/:id/details', authMiddleware, roleMiddleware('seller'), orderController.getShipmentDetails);
 
 // --- Courier duty -----------------------------------------------------------------
 //

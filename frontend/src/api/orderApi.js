@@ -155,6 +155,13 @@ export async function getUnclaimedParcels() {
 }
 
 // A courier's duty state. Only on-duty couriers see the pool or get escalated parcels.
+// One of the shop's own parcels: the customer it is for and the courier carrying it.
+// The order list leaves these out; the shop asks for them one parcel at a time.
+export async function getShipmentDetails(shipmentId) {
+  const { data } = await apiClient.get(`/orders/shipments/${shipmentId}/details`);
+  return data;
+}
+
 export async function getShift() {
   const { data } = await apiClient.get('/orders/courier/shift');
   return data;

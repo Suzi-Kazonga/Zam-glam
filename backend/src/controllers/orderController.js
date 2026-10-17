@@ -126,6 +126,17 @@ export const getAvailableParcels = async (req, res) => {
 
 // Admin: everything a shop has released but nobody has collected, with how long it has
 // been waiting.
+// Details of one of a shop's parcels: who it is for, and who is carrying it. Behind the
+// Details button on the shop's order list, which leaves contact details out.
+export const getShipmentDetails = async (req, res) => {
+  try {
+    if (req.user.role !== 'seller') return res.status(403).json({ error: 'Only the shop can see these details' });
+    res.json(await Order.detailsForSeller(req.params.id, req.user.id));
+  } catch (error) {
+    res.status(error.status || 500).json({ error: error.message });
+  }
+};
+
 export const getUnclaimedParcels = async (req, res) => {
   try {
     res.json(await Order.findUnclaimed());

@@ -792,6 +792,63 @@ class Order {
   }
 
   // Is this parcel from this shop? Guards confirming and denying a handover.
+  // Who a shop's parcel is for, and who is carrying it — for the Details button on the
+  // shop's order list.
+  //
+  // The order list itself leaves the customer's contact details out, so they are only
+  // fetched here: one parcel at a time, on purpose, and only for a parcel that belongs to
+  // the shop asking. The courier's details appear once a courier has taken the parcel on.
+  static async detailsForSeller(shipmentId, seller_user_id) {
+    if (!(await Order.sellerOwnsShipment(shipmentId, seller_user_id))) {
+      throw Object.assign(new Error('That parcel is not one of yours'), { status: 404 });
+    }
+
+    const customer = await Order.customerFieldsSql();
+    const [rows] = await pool.query(
+      `SELECT sh.id AS shipment_id, sh.order_id, sh.status, sh.price AS delivery_fee,
+              sh.distance, sh.created_at, sh.courier_id,
+              o.address, o.location, o.phone AS customer_phone, o.payment_method,
+              ${customer.select},
+              cr.name AS courier_name, cr.phone AS courier_phone, cr.email AS courier_email,
+              cr.vehicle AS courier_vehicle,
+              sh.driver_name, sh.driver_phone
+       FROM shipments sh
+       JOIN orders o ON o.id = sh.order_id
+       ${customer.join}
+       LEFT JOIN couriers cr ON cr.id = sh.courier_id
+       WHERE sh.id = ?`,
+      [shipmentId],
+    );
+    const row = rows[0];
+    if (!row) throw Object.assign(new Error('That parcel is not one of yours'), { status: 404 });
+
+    return {
+      shipment_id: row.shipment_id,
+      order_id: row.order_id,
+      status: row.status,
+      delivery_fee: row.delivery_fee,
+      distance: row.distance,
+      placed_at: row.created_at,
+      payment_method: row.payment_method,
+      customer: {
+        name: row.customer_name,
+        email: row.customer_email,
+        phone: row.customer_phone,
+        address: row.address,
+        location: row.location,
+      },
+      // No courier yet means nobody to show — not an empty card pretending to be one.
+      courier: row.courier_id || row.driver_name
+        ? {
+          name: row.courier_name || row.driver_name,
+          phone: row.courier_phone || row.driver_phone,
+          email: row.courier_email,
+          vehicle: row.courier_vehicle,
+        }
+        : null,
+    };
+  }
+
   static async sellerOwnsShipment(shipmentId, seller_user_id) {
     const sellerId = await Order.resolveSellerId(seller_user_id);
     if (!sellerId) return false;

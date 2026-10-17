@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import DashboardCard from '../DashboardCard';
 import StarRating from '../StarRating';
+import OrderDetailsButton from './OrderDetailsButton';
 
 function statusLabel(status) {
   if (status === 'delivered') return 'Delivered';
@@ -39,6 +40,8 @@ export function OrderTracker({ orders, onAdvance, busyId }) {
         <div className="min-w-0 flex-1"><p className="font-semibold text-slate-900">Order #{order.id}</p><p className="mt-1 text-sm text-slate-600">{(order.items || []).map((item) => `${item.name} ×${item.quantity}`).join(', ')}</p><p className="mt-1 text-sm text-slate-500">Your items · K{Number(order.sellerTotal || 0).toFixed(2)}</p></div>
         <div className="flex flex-wrap items-center justify-end gap-3">
           <span className={`shrink-0 rounded-full px-3 py-1 text-sm font-semibold ${statusStyle(order.fulfillmentStatus || order.status)}`}>{statusLabel(order.fulfillmentStatus || order.status)}</span>
+          {/* Who it is for and who is carrying it — fetched only when asked for. */}
+          <OrderDetailsButton shipmentId={order.shipmentId} orderId={order.id} />
           {order.fulfillmentStatus === 'placed' && <button type="button" disabled={busyId === order.shipmentId} onClick={() => onAdvance(order, 'processing')} className="rounded-md bg-emerald-800 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-900 disabled:opacity-50">{busyId === order.shipmentId ? 'Saving...' : 'Start packing'}</button>}
           {order.fulfillmentStatus === 'processing' && <button type="button" disabled={busyId === order.shipmentId} onClick={() => onAdvance(order, 'shipped')} className="rounded-md bg-sky-800 px-3 py-2 text-sm font-semibold text-white hover:bg-sky-900 disabled:opacity-50">{busyId === order.shipmentId ? 'Saving...' : 'Release to courier'}</button>}
         </div>
