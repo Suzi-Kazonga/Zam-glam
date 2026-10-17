@@ -33,6 +33,10 @@ jest.unstable_mockModule(fileURLToPath(new URL('../components/Topbar.jsx', impor
 jest.unstable_mockModule(fileURLToPath(new URL('../components/SellerVerificationQueue.jsx', import.meta.url)), () => ({
   default: () => <p>Seller verification actions</p>,
 }));
+// The Attention panel's approvals list: shops and couriers together.
+jest.unstable_mockModule(fileURLToPath(new URL('../components/ApprovalsQueue.jsx', import.meta.url)), () => ({
+  default: () => <p>Shop and courier approval actions</p>,
+}));
 jest.unstable_mockModule(fileURLToPath(new URL('../components/ReportsQueue.jsx', import.meta.url)), () => ({
   default: () => <p>Report moderation actions</p>,
 }));
@@ -103,7 +107,7 @@ describe('admin console hub actions', () => {
       active: 'Attention', error: '', live: {}, openSection, query: '', roleFilter: 'all', setQuery, setRoleFilter, visible: [],
     });
     renderHub();
-    expect(screen.getByText('Seller verification actions')).toBeInTheDocument();
+    expect(screen.getByText('Shop and courier approval actions')).toBeInTheDocument();
     expect(screen.getByText('Report moderation actions')).toBeInTheDocument();
   });
 

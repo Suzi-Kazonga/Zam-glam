@@ -6,6 +6,7 @@ import DashboardCard from '../components/DashboardCard';
 import Sidebar from '../components/Sidebar';
 import Topbar from '../components/Topbar';
 import SellerVerificationQueue from '../components/SellerVerificationQueue';
+import ApprovalsQueue from '../components/ApprovalsQueue';
 import UnclaimedParcels from '../components/UnclaimedParcels';
 import ReportsQueue from '../components/ReportsQueue';
 import AdminRefundQueue from '../components/AdminRefundQueue';
@@ -153,8 +154,8 @@ export default function AdminDashboard() {
           {active === 'Attention' && (
             <div className="grid gap-6 xl:grid-cols-2">
               <DashboardCard title="Pending approvals">
-                <p className="mt-1 text-sm text-slate-500">Review seller verification and courier registrations.</p>
-                <div className="mt-4"><SellerVerificationQueue /></div>
+                <p className="mt-1 text-sm text-slate-500">Shops asking to be verified and couriers asking to be let in. A decision takes the application off this list.</p>
+                <div className="mt-4"><ApprovalsQueue onOpenSection={openSection} /></div>
               </DashboardCard>
               <DashboardCard title="Flagged reports">
                 <p className="mt-1 text-sm text-slate-500">Review parties with repeated complaints.</p>
