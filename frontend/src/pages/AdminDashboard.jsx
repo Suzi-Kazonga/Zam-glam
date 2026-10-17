@@ -7,12 +7,13 @@ import Sidebar from '../components/Sidebar';
 import Topbar from '../components/Topbar';
 import SellerVerificationQueue from '../components/SellerVerificationQueue';
 import ApprovalsQueue from '../components/ApprovalsQueue';
+import CustomerServicePanel from '../components/CustomerServicePanel';
 import UnclaimedParcels from '../components/UnclaimedParcels';
 import ReportsQueue from '../components/ReportsQueue';
 import AdminRefundQueue from '../components/AdminRefundQueue';
 import useAdminConsoleController from '../hooks/useAdminConsoleController';
 
-const sections = ['Overview', 'Sellers', 'Customers', 'Couriers', 'Attention', 'Verification', 'Reports', 'Refunds', 'Deliveries'];
+const sections = ['Overview', 'Sellers', 'Customers', 'Couriers', 'Attention', 'Verification', 'Reports', 'Refunds', 'Customer service', 'Deliveries'];
 
 // "All" means all three kinds of account together, not just one of them.
 const ROLE_FILTERS = [
@@ -161,7 +162,22 @@ export default function AdminDashboard() {
                 <p className="mt-1 text-sm text-slate-500">Review parties with repeated complaints.</p>
                 <div className="mt-4"><ReportsQueue /></div>
               </DashboardCard>
+              {/* Problems people have reported with Zamglam itself wait here with everything
+                  else needing a decision, until they are marked done. */}
+              <DashboardCard title="Reported problems" className="xl:col-span-2">
+                <p className="mt-1 text-sm text-slate-500">Problems shoppers, shops and couriers have reported. Each stays until it is marked done.</p>
+                <div className="mt-4"><CustomerServicePanel /></div>
+              </DashboardCard>
             </div>
+          )}
+
+          {/* The customer service desk: every reported problem, from every kind of account,
+              with who sent it. This is where the Customer Service button in the profile
+              brings an administrator. */}
+          {active === 'Customer service' && (
+            <DashboardCard title="Customer service">
+              <div className="mt-2"><CustomerServicePanel /></div>
+            </DashboardCard>
           )}
 
           {active === 'Reports' && (

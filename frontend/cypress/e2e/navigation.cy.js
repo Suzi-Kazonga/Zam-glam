@@ -97,10 +97,13 @@ describe('The administrator\'s menu', () => {
   });
 
   // These stay on the console and swap the panel.
-  ['Overview', 'Attention', 'Verification', 'Reports', 'Refunds', 'Deliveries'].forEach((label) => {
+  ['Overview', 'Attention', 'Verification', 'Reports', 'Refunds', 'Customer service', 'Deliveries'].forEach((label) => {
     it(`opens ${label} on the console`, () => {
       sidebarSection(label);
       cy.location('pathname').should('eq', '/admin/dashboard');
+      // Staying on the page is not enough: a dead entry stays on the page too. The
+      // heading must change to the section asked for.
+      cy.get('h1').should('contain', label === 'Overview' ? 'Manage marketplace accounts' : label);
     });
   });
 

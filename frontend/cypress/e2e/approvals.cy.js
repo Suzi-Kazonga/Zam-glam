@@ -21,55 +21,115 @@ const openAttention = () => {
   cy.contains('Pending approvals').should('be.visible');
 };
 
-const queue = () => cy.contains('h3, h2, p', 'Pending approvals').parents('section, div').first();
+
+// Fresh applications every run, so the spec can be run again and again: deciding one
+// uses it up.
+const stamp = Date.now();
+const rider = `Rider ${stamp}`;
+const shop = `Threads ${stamp}`;
+
+const register = (body) => cy.request('POST', '/api/auth/register', { password: '123456789', accepted_terms: true, ...body });
 
 describe('Pending approvals', () => {
+  before(() => {
+    register({ name: rider, email: `rider${stamp}@zamglamcourier.local`, role: 'courier', phone: '+260 97 555 0001' });
+    register({ name: 'New Owner', email: `shop${stamp}@zamglam.local`, role: 'seller', shop_name: shop });
+  });
+
   beforeEach(() => {
     signInAsAdmin();
     openAttention();
   });
 
   it('lists courier registrations as well as shop applications', () => {
-    cy.contains('li', 'Pending Rider').should('be.visible').within(() => {
+    cy.contains('li', rider).should('be.visible').within(() => {
       cy.contains('Courier').should('exist');
       cy.contains('Waiting').should('exist');
     });
-    cy.contains('li', 'Fresh Threads').should('be.visible').within(() => {
+    cy.contains('li', shop).should('be.visible').within(() => {
       cy.contains('Shop').should('exist');
     });
   });
 
   it('the filter isolates couriers from shops', () => {
     cy.get('#approval-filter').select('courier');
-    cy.contains('li', 'Pending Rider').should('exist');
-    cy.contains('li', 'Fresh Threads').should('not.exist');
+    cy.contains('li', rider).should('exist');
+    cy.contains('li', shop).should('not.exist');
 
     cy.get('#approval-filter').select('shop');
-    cy.contains('li', 'Fresh Threads').should('exist');
-    cy.contains('li', 'Pending Rider').should('not.exist');
+    cy.contains('li', shop).should('exist');
+    cy.contains('li', rider).should('not.exist');
   });
 
   it('a decision takes the application off the list, and it can be made again', () => {
     // Reject the rider: it leaves the waiting list…
-    cy.contains('li', 'Pending Rider').contains('button', 'Reject').click();
-    cy.contains('li', 'Pending Rider').should('not.exist');
+    cy.contains('li', rider).contains('button', 'Reject').click();
+    cy.contains('li', rider).should('not.exist');
 
     // …and appears under the decided applications, carrying its tag.
     cy.contains('button', /decided applications/i).click();
-    cy.contains('li', 'Pending Rider').within(() => {
+    cy.contains('li', rider).within(() => {
       cy.contains('Rejected').should('exist');
       cy.contains('button', 'Approve').should('not.exist');
       cy.contains('button', /review again/i).click();
     });
 
     // Reviewing it again lets the decision be reversed.
-    cy.contains('li', 'Pending Rider').contains('button', 'Approve').click();
-    cy.contains('li', 'Pending Rider').within(() => cy.contains('Approved').should('exist'));
+    cy.contains('li', rider).contains('button', 'Approve').click();
+    cy.contains('li', rider).within(() => cy.contains('Approved').should('exist'));
   });
 
   it('the bottom button opens the marketplace accounts overview', () => {
     cy.contains('button', /marketplace accounts/i).click();
     cy.contains('Subscribers').should('be.visible');
     cy.contains('Accounts, newest first').should('be.visible');
+  });
+});
+
+// The same rule in the Verification section and the couriers' account list: once
+// decided, Approve and Reject give way to a single Review button.
+describe('Review replaces Approve and Reject once an account is decided', () => {
+  const reviewRider = `Review rider ${stamp}`;
+
+  before(() => {
+    register({ name: reviewRider, email: `review${stamp}@zamglamcourier.local`, role: 'courier', phone: '+260 97 555 0002' });
+  });
+
+  it('in the couriers list', () => {
+    signInAsAdmin();
+    cy.visit('/admin/users/couriers');
+
+    // Still waiting: both decisions are offered.
+    cy.contains('tr', reviewRider).within(() => {
+      cy.contains('button', 'Approve').should('exist');
+      cy.contains('button', 'Reject').click();
+    });
+
+    // Decided: only Review, until it is pressed.
+    cy.contains('tr', reviewRider).within(() => {
+      cy.contains('button', 'Approve').should('not.exist');
+      cy.contains('button', 'Reject').should('not.exist');
+      cy.contains('button', 'Review').click();
+      cy.contains('button', 'Approve').click();
+    });
+
+    cy.contains('tr', reviewRider).within(() => {
+      cy.contains('button', 'Review').should('exist');
+      cy.contains('button', 'Approve').should('not.exist');
+    });
+  });
+
+  it('in the shop verification section', () => {
+    signInAsAdmin();
+    cy.get('aside').contains('button', 'Verification').click();
+    // Jets was verified by the seed: decided, so Review only.
+    cy.contains('article', 'Jets').within(() => {
+      cy.contains('button', 'Approve').should('not.exist');
+      cy.contains('button', 'Reject').should('not.exist');
+      cy.contains('button', 'Review').click();
+      cy.contains('button', 'Reject').should('exist');
+      cy.contains('button', 'Cancel').click();
+      cy.contains('button', 'Review').should('exist');
+    });
   });
 });

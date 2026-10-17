@@ -63,8 +63,10 @@ export default function CustomerServicePanel({ onCountChange }) {
         <div>
           <h2 className="text-lg font-bold text-slate-900">Customer service</h2>
           <p className="text-sm text-slate-500">
+            {/* No figure until the list has arrived: "0 waiting" while it loads is untrue,
+                and an administrator glancing at it would take the queue to be clear. */}
             {isAdmin
-              ? `${open.length} problem${open.length === 1 ? '' : 's'} waiting to be dealt with`
+              ? (loading ? 'Checking the queue…' : `${open.length} problem${open.length === 1 ? '' : 's'} waiting to be dealt with`)
               : 'Problems you have reported to the Zamglam administrators'}
           </p>
         </div>

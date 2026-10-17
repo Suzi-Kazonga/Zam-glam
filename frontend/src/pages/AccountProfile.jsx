@@ -123,7 +123,12 @@ export default function AccountProfile() {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <button
             type="button"
-            onClick={() => setShowCustomerService((current) => !current)}
+            // An administrator is taken to the customer service desk in the console, where
+            // every reported problem waits with who sent it. Anybody else sees their own
+            // reports right here.
+            onClick={() => (user.role === 'admin'
+              ? navigate('/admin/dashboard?section=Customer%20service')
+              : setShowCustomerService((current) => !current))}
             aria-expanded={showCustomerService}
             className="flex items-center gap-2 text-lg font-bold text-slate-900"
           >

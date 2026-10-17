@@ -4,7 +4,9 @@ import { getAdminStats, getAdminUsers } from '../api/adminApi';
 import { isLocalDemoSession } from '../utils/localSession';
 
 const EMPTY_STATS = { subscribers: { customers: 0, sellers: 0, couriers: 0, admins: 0, total: 0 }, pending: { shops: 0, couriers: 0, total: 0 }, activity: { orders: 0, products: 0, stores: 0, reviews: 0 }, grace_days: 30 };
-const HUB_SECTIONS = ['Overview', 'Sellers', 'Customers', 'Couriers', 'Attention', 'Verification', 'Reports', 'Deliveries'];
+// Every section the console can show. A menu entry missing from here does nothing when
+// clicked — which is how Refunds came to be listed but unreachable.
+const HUB_SECTIONS = ['Overview', 'Sellers', 'Customers', 'Couriers', 'Attention', 'Verification', 'Reports', 'Refunds', 'Customer service', 'Deliveries'];
 const SECTION_ROUTES = {
   Sellers: '/admin/users/sellers',
   Customers: '/admin/users/customers',

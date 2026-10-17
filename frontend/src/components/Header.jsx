@@ -24,7 +24,8 @@ const Header = () => {
   // role colour bar.
   const theme = themeForRole(user?.role);
   // Only an administrator ever has a figure here.
-  const { open: openProblems } = useOpenProblems({ chime: true });
+  // The attention bell chimes for reported problems, so this copy of the figure stays quiet.
+  const { open: openProblems } = useOpenProblems({ chime: false });
   const themed = Boolean(user);
   const isCustomer = user?.role === 'customer';
   const shellClass = themed && !isCustomer ? `${theme.bar} border-b border-black/10` : 'border-b border-slate-200 bg-white';

@@ -55,7 +55,10 @@ describe('Reporting a problem', () => {
     cy.contains('button', 'Report a problem').should('not.exist');
 
     // The count sits on the button until the queue is cleared.
+    // An administrator's Customer Service button opens the desk in the console.
     cy.contains('button', 'Customer Service').click();
+    cy.location('search').should('contain', 'section=Customer');
+    cy.get('h1').should('contain', 'Customer service');
     cy.contains(fromCustomer, { timeout: 10000 }).should('be.visible');
     cy.contains(fromCourier).should('be.visible');
     cy.contains('customer').should('be.visible');
@@ -66,14 +69,33 @@ describe('Reporting a problem', () => {
     signIn('admin@zamglam.local', 'admin');
     cy.visit('/account');
 
+    // An administrator's Customer Service button opens the desk in the console.
     cy.contains('button', 'Customer Service').click();
-    cy.contains(/\d+ problems? waiting/i, { timeout: 10000 }).invoke('text').then((before) => {
-      const waiting = Number(before.match(/\d+/)[0]);
+    cy.location('search').should('contain', 'section=Customer');
+    cy.get('h1').should('contain', 'Customer service');
+    // Read the panel's own sentence, not whatever container happens to hold a number.
+    cy.contains('p', /\d+ problems? waiting to be dealt with/i, { timeout: 10000 }).invoke('text').then((before) => {
+      const waiting = Number(before.match(/(\d+) problems? waiting/i)[1]);
 
       cy.contains('li', fromCustomer).contains('button', 'Mark done').click();
 
       cy.contains('li', fromCustomer).should('not.exist');
       cy.contains(`${waiting - 1} problem`, { timeout: 10000 }).should('be.visible');
     });
+  });
+});
+
+describe('Reported problems in the administrator\'s Attention panel', () => {
+  it('wait there with everything else needing a decision', () => {
+    cy.visit('/login');
+    cy.get('fieldset').contains('button', /admin/i).click();
+    cy.get('input[type="email"]').type('admin@zamglam.local');
+    cy.get('input[type="password"]').type('123456789');
+    cy.contains('button[type="submit"]', 'Sign in').click();
+    cy.location('pathname', { timeout: 15000 }).should('eq', '/admin/dashboard');
+
+    cy.get('aside').contains('button', 'Attention').click();
+    cy.contains('Reported problems').should('be.visible');
+    cy.contains(/problems? waiting to be dealt with/i).should('be.visible');
   });
 });

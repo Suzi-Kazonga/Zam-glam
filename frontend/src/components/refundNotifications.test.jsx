@@ -40,6 +40,9 @@ jest.unstable_mockModule(url('../api/messageApi.js'), () => ({
 jest.unstable_mockModule(url('../api/adminApi.js'), () => ({
   getPendingRegistrations: jest.fn(() => Promise.resolve({ shops: [], couriers: [], total: 0 })),
 }));
+jest.unstable_mockModule(url('../api/supportApi.js'), () => ({
+  getOpenProblemCount: jest.fn(() => Promise.resolve(0)),
+}));
 jest.unstable_mockModule(url('../api/reportApi.js'), () => ({
   getReportSummary: jest.fn(() => Promise.resolve([])),
 }));
