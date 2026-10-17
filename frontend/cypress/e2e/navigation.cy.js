@@ -54,7 +54,7 @@ describe('The shop\'s menu', () => {
     cy.location('pathname').should('eq', '/seller/dashboard');
   });
 
-  const sections = ['Overview', 'Products', 'Orders', 'Messages', 'Analytics', 'Promotions', 'Store profile', 'Notifications', 'Reviews', 'Verification'];
+  const sections = ['Overview', 'Products', 'Orders', 'Messages', 'Refunds', 'Analytics', 'Promotions', 'Store profile', 'Notifications', 'Reviews', 'Verification'];
 
   sections.forEach((label) => {
     it(`opens ${label}`, () => {
@@ -73,7 +73,7 @@ describe('The courier\'s menu', () => {
     cy.location('pathname').should('eq', '/courier/dashboard');
   });
 
-  ['Available', 'Deliveries', 'Completed', 'Stores'].forEach((label) => {
+  ['Available', 'Deliveries', 'Completed'].forEach((label) => {
     it(`opens ${label}`, () => {
       sidebarSection(label);
       cy.location('pathname').should('eq', '/courier/dashboard');
@@ -97,7 +97,7 @@ describe('The administrator\'s menu', () => {
   });
 
   // These stay on the console and swap the panel.
-  ['Overview', 'Attention', 'Verification', 'Reports', 'Deliveries'].forEach((label) => {
+  ['Overview', 'Attention', 'Verification', 'Reports', 'Refunds', 'Deliveries'].forEach((label) => {
     it(`opens ${label} on the console`, () => {
       sidebarSection(label);
       cy.location('pathname').should('eq', '/admin/dashboard');

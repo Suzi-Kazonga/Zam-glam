@@ -180,8 +180,8 @@ demonstration accounts: change or remove them before deploying anywhere public.
 ## Tests
 
 ```powershell
-cd backend;  npm.cmd test     # 276 tests
-cd frontend; npm.cmd test     # 100 tests
+cd backend;  npm.cmd test     # 282 tests
+cd frontend; npm.cmd test     # 106 tests
 ```
 
 The backend tests drive the real Express app through supertest against a real database

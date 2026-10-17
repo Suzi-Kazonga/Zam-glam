@@ -5,6 +5,7 @@ import useNotificationChime from '../hooks/useNotificationChime';
 import { Link } from 'react-router-dom';
 import { confirmPickup, denyPickup, getMyOrders } from '../api/orderApi';
 import { getMessageThreads } from '../api/messageApi';
+import { getMyRefundRequests } from '../api/refundApi';
 import { isLocalDemoSession } from '../utils/localSession';
 
 // The shop's notifications. Two things land here: parcels still waiting to be packed or
@@ -16,6 +17,7 @@ const NEEDS_PACKING = ['placed', 'processing'];
 export default function SellerOrderIcon({ neutral = false }) {
   const [orders, setOrders] = useState([]);
   const [customerThreads, setCustomerThreads] = useState([]);
+  const [refundCases, setRefundCases] = useState([]);
   const [open, setOpen] = useState(false);
   const [busyId, setBusyId] = useState(null);
   const [message, setMessage] = useState('');
@@ -26,6 +28,11 @@ export default function SellerOrderIcon({ neutral = false }) {
 
   const load = useCallback(() => {
     if (isLocalDemoSession()) return Promise.resolve();
+    // A refund case waiting on this shop's recommendation is work like any other, and
+    // nobody finds it by chance in a dashboard section they are not looking at.
+    getMyRefundRequests()
+      .then((rows) => setRefundCases((Array.isArray(rows) ? rows : []).filter((row) => row.status === 'seller_review')))
+      .catch(() => {});
     getMessageThreads().then((threads) => {
       const waiting = threads.filter((thread) => thread.last_sender_role === 'customer');
       const ids = new Set(waiting.map((thread) => `${thread.store_id}:${thread.customer_id}`));
@@ -74,7 +81,7 @@ export default function SellerOrderIcon({ neutral = false }) {
 
   const pickupRequests = orders.filter((order) => order.status === 'pickup_requested');
   const toPack = orders.filter((order) => NEEDS_PACKING.includes(order.status));
-  const count = pickupRequests.length + toPack.length + customerThreads.length;
+  const count = pickupRequests.length + toPack.length + customerThreads.length + refundCases.length;
   // A shop packing an order is not watching the screen, so the device sounds as well.
   useNotificationChime(count);
 
@@ -178,6 +185,19 @@ export default function SellerOrderIcon({ neutral = false }) {
               <p className="text-sm font-semibold text-sky-950">New customer message · {thread.customer_name || 'Customer'}</p>
               <p className="mt-1 truncate text-xs text-sky-800">{thread.last_message}</p>
               <p className="mt-1 text-xs font-semibold text-sky-900">Reply in Messages</p>
+            </Link>
+          ))}
+
+          {refundCases.map((refund) => (
+            <Link
+              key={refund.id}
+              to="/seller/dashboard?section=Refunds"
+              onClick={() => setOpen(false)}
+              className="mb-2 block rounded-lg border border-amber-200 bg-amber-50 p-3"
+            >
+              <p className="text-sm font-semibold text-amber-950">Refund request · order #{refund.order_id}</p>
+              {refund.reason && <p className="mt-1 truncate text-xs text-amber-800">{refund.reason}</p>}
+              <p className="mt-1 text-xs font-semibold text-amber-900">Give your recommendation in Refunds</p>
             </Link>
           ))}
 

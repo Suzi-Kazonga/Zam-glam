@@ -4,14 +4,14 @@
 
 ```powershell
 cd backend
-npm.cmd test              # 276 tests
+npm.cmd test              # 282 tests
 npm.cmd run test:unit     # the unit tests only
 npm.cmd run test:coverage # with a coverage report
 ```
 
 ```powershell
 cd frontend
-npm.cmd test              # 100 tests
+npm.cmd test              # 106 tests
 ```
 
 The backend tests use **their own database**, `zamglam_db_test`, created automatically on
