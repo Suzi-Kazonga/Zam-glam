@@ -12,6 +12,8 @@ export default function SellerVerificationQueue() {
   const [notes, setNotes] = useState({});
   const [message, setMessage] = useState('');
   const [busyId, setBusyId] = useState(null);
+  // The decided shop whose decision is being looked at again, if any.
+  const [reviewingId, setReviewingId] = useState(null);
 
   const load = () => {
     if (isLocalDemoSession()) {
@@ -29,6 +31,7 @@ export default function SellerVerificationQueue() {
     try {
       await reviewSeller(seller.id, status, notes[seller.id]);
       setMessage(`${seller.shop_name} marked ${status}.`);
+      setReviewingId(null);
       load();
     } catch (error) {
       setMessage(error?.error || 'Could not update that seller.');
@@ -72,20 +75,38 @@ export default function SellerVerificationQueue() {
               </p>
             )}
 
-            <div className="mt-4 flex flex-wrap items-center gap-2">
-              <input
-                value={notes[seller.id] || ''}
-                onChange={(event) => setNotes((current) => ({ ...current, [seller.id]: event.target.value }))}
-                placeholder="Note to the seller (optional)"
-                className="min-w-[220px] flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm"
-              />
-              {/* A rejected application has been decided, so the approve option goes: a
-                  shop is never verified by a stray click beside "Reject". */}
-              {seller.verification_status !== 'rejected' && (
-                <button type="button" disabled={busyId === seller.id} onClick={() => decide(seller, 'verified')} className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60">Approve</button>
-              )}
-              <button type="button" disabled={busyId === seller.id} onClick={() => decide(seller, 'rejected')} className="rounded-lg border border-rose-300 px-4 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-50 disabled:opacity-60">Reject</button>
-            </div>
+            {/* Once a shop has been verified or rejected the decision is settled, and
+                Approve and Reject give way to a single Review button — so it is never
+                changed by a stray click, but a wrong decision can still be undone. */}
+            {seller.verification_status !== 'pending' && reviewingId !== seller.id ? (
+              <div className="mt-4">
+                <button
+                  type="button"
+                  onClick={() => setReviewingId(seller.id)}
+                  className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                >
+                  Review
+                </button>
+              </div>
+            ) : (
+              <div className="mt-4 flex flex-wrap items-center gap-2">
+                <input
+                  value={notes[seller.id] || ''}
+                  onChange={(event) => setNotes((current) => ({ ...current, [seller.id]: event.target.value }))}
+                  placeholder="Note to the seller (optional)"
+                  className="min-w-[220px] flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                />
+                {seller.verification_status !== 'verified' && (
+                  <button type="button" disabled={busyId === seller.id} onClick={() => decide(seller, 'verified')} className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60">Approve</button>
+                )}
+                {seller.verification_status !== 'rejected' && (
+                  <button type="button" disabled={busyId === seller.id} onClick={() => decide(seller, 'rejected')} className="rounded-lg border border-rose-300 px-4 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-50 disabled:opacity-60">Reject</button>
+                )}
+                {reviewingId === seller.id && (
+                  <button type="button" onClick={() => setReviewingId(null)} className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50">Cancel</button>
+                )}
+              </div>
+            )}
           </article>
         );
       }) : <p className="rounded-lg border border-dashed border-slate-300 p-6 text-center text-slate-500">No sellers to review.</p>}

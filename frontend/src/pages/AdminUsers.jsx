@@ -147,6 +147,8 @@ export default function AdminUsers() {
   const [query, setQuery] = useState('');
   const [message, setMessage] = useState('');
   const [busyId, setBusyId] = useState(null);
+  // The decided courier whose application is being looked at again, if any.
+  const [reviewingId, setReviewingId] = useState(null);
   const [graceDays, setGraceDays] = useState(30);
   const [editing, setEditing] = useState(null);
   const [confirming, setConfirming] = useState(null);
@@ -198,7 +200,7 @@ export default function AdminUsers() {
   };
 
   const decideCourier = (courier, status) =>
-    run(courier, () => reviewCourierApproval(courier.id, status), `${courier.name} ${status}.`);
+    run(courier, () => reviewCourierApproval(courier.id, status), `${courier.name} ${status}.`).then(() => setReviewingId(null));
 
   const toggleSuspension = (account) => {
     const next = account.account_status === 'suspended' ? 'active' : 'suspended';
@@ -341,15 +343,20 @@ export default function AdminUsers() {
                             </button>
                           ) : (
                             <>
-                              {/* Approving is offered only while the application is still
-                                  open. Once it has been rejected the decision is made, so
-                                  the option goes — reinstating a rejected rider is a
-                                  deliberate act, not a stray click beside "Reject". */}
-                              {role === 'couriers' && r.approval_status !== 'approved' && r.approval_status !== 'rejected' && (
+                              {/* A courier still waiting gets Approve and Reject. Once decided, both give way to
+                                  a single Review button: the decision cannot be changed by a stray click, but a
+                                  wrong one — approved or rejected — can still be put right. */}
+                              {role === 'couriers' && (r.approval_status === 'pending' || reviewingId === r.id) && r.approval_status !== 'approved' && (
                                 <button type="button" disabled={busyId === r.id} onClick={() => decideCourier(r, 'approved')} className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-slate-50 disabled:opacity-50">Approve</button>
                               )}
-                              {role === 'couriers' && r.approval_status !== 'rejected' && (
+                              {role === 'couriers' && (r.approval_status === 'pending' || reviewingId === r.id) && r.approval_status !== 'rejected' && (
                                 <button type="button" disabled={busyId === r.id} onClick={() => decideCourier(r, 'rejected')} className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-rose-600 hover:bg-slate-50 disabled:opacity-50">Reject</button>
+                              )}
+                              {role === 'couriers' && r.approval_status !== 'pending' && reviewingId !== r.id && (
+                                <button type="button" disabled={busyId === r.id} onClick={() => setReviewingId(r.id)} className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50">Review</button>
+                              )}
+                              {role === 'couriers' && reviewingId === r.id && (
+                                <button type="button" onClick={() => setReviewingId(null)} className="rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-500 hover:bg-slate-50">Cancel</button>
                               )}
                               <button type="button" disabled={busyId === r.id} onClick={() => setEditing(r)} className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold hover:bg-slate-50 disabled:opacity-50">Edit</button>
                               <button type="button" disabled={busyId === r.id} onClick={() => toggleSuspension(r)} className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold hover:bg-slate-50 disabled:opacity-50">
