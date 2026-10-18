@@ -12,7 +12,10 @@
     "build": "cd frontend && npm run build",
     "test": "cd backend && npm test",
     "lint": "cd frontend && npm run lint",
-    "test:frontend": "cd frontend && npm test"
+    "test:frontend": "cd frontend && npm test",
+    "prepare": "node scripts/enable-git-hooks.cjs",
+    "predev": "node scripts/enable-git-hooks.cjs",
+    "fix-logins": "cd backend && node scripts/repair-demo-accounts.js"
   },
   "devDependencies": {
     "concurrently": "^9.1.0"

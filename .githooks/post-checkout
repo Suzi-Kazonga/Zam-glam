@@ -1,0 +1,8 @@
+#!/bin/sh
+# Runs after switching branch (and after a clone). Only a branch switch matters here:
+# the third argument is 1 for a branch checkout, 0 for checking out a single file.
+
+[ "$3" = "1" ] || exit 0
+root="$(git rev-parse --show-toplevel)"
+"$root/.githooks/repair-demo-accounts" || true
+exit 0

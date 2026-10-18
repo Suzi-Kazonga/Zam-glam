@@ -13,7 +13,11 @@
     "test:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand --watch",
     "test:coverage": "node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand --coverage",
     "test:integration": "node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand --testPathPattern=integration",
-    "test:unit": "node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand --testPathPattern=unit"
+    "test:unit": "node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand --testPathPattern=unit",
+    "prepare": "node -e \"try{require('../scripts/enable-git-hooks.cjs')}catch(e){}\"",
+    "predev": "node -e \"try{require('../scripts/enable-git-hooks.cjs')}catch(e){}\"",
+    "prestart": "node -e \"try{require('../scripts/enable-git-hooks.cjs')}catch(e){}\"",
+    "fix-logins": "node scripts/repair-demo-accounts.js"
   },
   "keywords": [
     "e-commerce",

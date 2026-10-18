@@ -11,7 +11,9 @@
     "test:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watch",
     "test:coverage": "node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage",
     "test:e2e": "cypress open",
-    "test:e2e:headless": "cypress run"
+    "test:e2e:headless": "cypress run",
+    "prepare": "node -e \"try{require('../scripts/enable-git-hooks.cjs')}catch(e){}\"",
+    "predev": "node -e \"try{require('../scripts/enable-git-hooks.cjs')}catch(e){}\""
   },
   "dependencies": {
     "react": "^18.2.0",

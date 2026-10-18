@@ -1,0 +1,13 @@
+#!/bin/sh
+# Shared by the hooks. Quietly does nothing where it cannot run yet.
+
+root="$(git rev-parse --show-toplevel)"
+script="$root/backend/scripts/repair-demo-accounts.js"
+
+[ -f "$script" ] || exit 0
+command -v node >/dev/null 2>&1 || { echo "Demo accounts: Node is not installed, skipped."; exit 0; }
+[ -d "$root/backend/node_modules" ] || { echo "Demo accounts: run 'npm install' in backend/ first, skipped."; exit 0; }
+
+# From inside backend/, so its .env is the one that is read.
+cd "$root/backend" && node scripts/repair-demo-accounts.js || true
+exit 0

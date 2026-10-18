@@ -1,0 +1,11 @@
+#!/bin/sh
+# Runs after every `git pull` or `git merge`.
+#
+# Puts the demo accounts back on the shared password straight away, so whatever was just
+# pulled can be signed into with the documented password — no restart or re-seed needed.
+# It never fails the pull: if Node, the packages or MySQL are not ready, it says so and
+# the backend catches up when it next starts.
+
+root="$(git rev-parse --show-toplevel)"
+"$root/.githooks/repair-demo-accounts" || true
+exit 0
