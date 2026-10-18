@@ -8,6 +8,7 @@ import React, { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
+import BackButton from '../components/BackButton';
 import { dashboardForRole, getPostLoginPath } from '../utils/authRedirect';
 import { LOGIN_STRATEGIES } from '../utils/loginStrategies';
 import { ROLE_THEMES } from '../utils/roleTheme';
@@ -76,6 +77,9 @@ function LoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#f2f5f0] p-4">
       <div className="w-full max-w-lg overflow-hidden rounded-lg border border-slate-200 bg-white shadow-lg">
+        <div className="px-4 pt-4">
+          <BackButton to="/" label="Home" />
+        </div>
         <div className={`px-6 py-6 text-center sm:px-8 ${roleStyles[role].header}`}>
           <p className="text-xs font-bold uppercase tracking-widest text-white/75">Zamglam account access</p>
           <h1 className="mt-2 text-2xl font-bold text-white">{strategy.label} sign in</h1>

@@ -15,6 +15,7 @@ import AdminApprovalsIcon from './AdminApprovalsIcon';
 import { getStorefrontPath } from '../utils/storeLogos';
 import { themeForRole } from '../utils/roleTheme';
 import useOpenProblems from '../hooks/useOpenProblems';
+import { resolveUserMeta } from '../utils/profileStorage';
 
 const Header = () => {
   const { user, loading, logout } = useAuth();
@@ -27,12 +28,13 @@ const Header = () => {
   // Only an administrator ever has a figure here.
   // The attention bell chimes for reported problems, so this copy of the figure stays quiet.
   const { open: openProblems } = useOpenProblems({ chime: false });
+  const profileMeta = user ? resolveUserMeta(user) : { initials: 'U', profilePhoto: '' };
   const themed = Boolean(user);
   const isCustomer = user?.role === 'customer';
   const shellClass = themed && !isCustomer ? `${theme.bar} border-b border-black/10` : 'border-b border-slate-200 bg-white';
-  const brandClass = themed && !isCustomer ? 'text-white hover:text-white/80' : 'text-slate-900 hover:text-indigo-600';
+  const brandClass = themed && !isCustomer ? 'text-white hover:text-white/80' : 'text-slate-900 hover:text-[#17365d]';
   const navClass = themed && !isCustomer ? 'text-white/80' : 'text-slate-600';
-  const linkClass = themed && !isCustomer ? 'hover:text-white transition' : 'hover:text-indigo-600 transition';
+  const linkClass = themed && !isCustomer ? 'hover:text-white transition' : 'hover:text-[#17365d] transition';
   const canBrowse = !loading && (!user || user.role === 'customer');
 
   // The nav is hidden below lg, so without this the links are unreachable on a phone.
@@ -41,12 +43,6 @@ const Header = () => {
   const accountMenu = useRef(null);
   const closeMenu = () => setMenuOpen(false);
   const closeAccountMenu = () => setAccountMenuOpen(false);
-  const initials = user?.name
-    ?.split(' ')
-    .map((part) => part[0])
-    .join('')
-    .slice(0, 2)
-    .toUpperCase() || 'U';
 
   useEffect(() => {
     if (!accountMenuOpen) return undefined;
@@ -96,7 +92,20 @@ const Header = () => {
       >
         {menuOpen ? '✕' : '☰'}
       </button>
-      <Link to="/" className={`text-xl font-bold tracking-tight transition sm:text-2xl ${brandClass}`}>Zamglam</Link>
+      <Link to="/" aria-label="Zamglam home" className={`inline-flex items-center gap-1 text-xl font-extrabold tracking-tight transition sm:text-2xl ${brandClass}`}>
+        <span className="zamglam-bag inline-flex h-8 w-9 items-center justify-center" aria-hidden="true">
+          <svg viewBox="0 0 36 30" className="h-8 w-9" fill="none" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 10h12l-.7 14H3.7z" fill="#d92d3f" fillOpacity="0.45" stroke="#d92d3f" strokeWidth="1.4" />
+            <path d="M6.5 10V7.8a2.5 2.5 0 0 1 5 0V10" stroke="#d92d3f" strokeWidth="1.4" />
+            <path d="M20 8h13l-.7 16H20.7z" fill="#d92d3f" fillOpacity="0.72" stroke="#d92d3f" strokeWidth="1.5" />
+            <path d="M23.5 8V5.8a3 3 0 0 1 6 0V8" stroke="#d92d3f" strokeWidth="1.5" />
+            <path d="M12 12h14l-.8 16H12.8z" fill="#d92d3f" stroke="#a7192e" strokeWidth="1.5" />
+            <path d="M15.5 12V9.5a3.5 3.5 0 0 1 7 0V12" stroke="#a7192e" strokeWidth="1.5" />
+            <path d="m16 18 5 4m0-4-5 4" stroke="white" strokeWidth="1.5" />
+          </svg>
+        </span>
+        <span>Zamglam</span>
+      </Link>
       {themed && !isCustomer && <span className="hidden rounded-full bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-white sm:inline">{theme.label}</span>}
       <nav className={`${isCustomer ? 'hidden' : 'hidden lg:flex'} shrink-0 gap-6 text-sm font-semibold ${navClass}`}>
         {/* No Home item: the Zamglam wordmark is the way back to the home page. */}
@@ -136,8 +145,8 @@ const Header = () => {
               aria-expanded={accountMenuOpen}
               className={`inline-flex items-center gap-2 rounded-full border px-2 py-1.5 text-left transition ${themed && !isCustomer ? 'border-white/20 bg-white/5 text-white hover:bg-white/10' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'}`}
             >
-              <span className={`inline-flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold ${themed && !isCustomer ? 'bg-white/20 text-white' : 'bg-slate-900 text-white'}`}>
-                {initials}
+              <span className={`inline-flex h-9 w-9 items-center justify-center overflow-hidden rounded-full text-sm font-bold ${themed && !isCustomer ? 'bg-white/20 text-white' : 'bg-slate-900 text-white'}`}>
+                {profileMeta.profilePhoto ? <img src={profileMeta.profilePhoto} alt="" className="h-full w-full object-cover" /> : profileMeta.initials}
               </span>
               <span className={`hidden text-sm font-semibold sm:inline ${isCustomer ? 'text-slate-700' : 'text-white'}`}>{user.name}</span>
               <span aria-hidden="true" className={`hidden text-base sm:inline ${isCustomer ? 'text-slate-400' : 'text-white/70'}`}>▾</span>
@@ -145,8 +154,8 @@ const Header = () => {
             {accountMenuOpen && (
               <div role="menu" aria-label="Account menu" className="absolute right-0 top-14 z-50 w-72 rounded-2xl border border-slate-200 bg-white p-3 text-slate-700 shadow-[0_18px_50px_rgba(15,23,42,0.18)]">
                 <div className="flex items-center gap-3 border-b border-slate-100 px-2 pb-3">
-                  <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 text-base font-bold text-white">
-                    {initials}
+                  <span className="inline-flex h-12 w-12 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 text-base font-bold text-white">
+                    {profileMeta.profilePhoto ? <img src={profileMeta.profilePhoto} alt="" className="h-full w-full object-cover" /> : profileMeta.initials}
                   </span>
                   <div className="min-w-0">
                     <p className="truncate text-base font-bold text-slate-900">{user.name}</p>
@@ -223,7 +232,7 @@ const Header = () => {
                   state={{ from: location }}
                   role="menuitem"
                   onClick={closeAccountMenu}
-                  className="block rounded-lg bg-indigo-600 px-3 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700"
+                  className="block rounded-lg bg-[#17365d] px-3 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0d2340]"
                 >
                   Sign up
                 </Link>
@@ -246,6 +255,12 @@ const Header = () => {
               {link.label}
             </Link>
           ))}
+          {!user && (
+            <div className="mt-3 flex gap-2">
+              <Link to="/login" state={{ from: location }} onClick={closeMenu} className="flex-1 rounded-lg border border-slate-300 bg-white px-4 py-3 text-center font-semibold text-slate-700 shadow-sm">Log In</Link>
+              <Link to="/signup" state={{ from: location }} onClick={closeMenu} className="flex-1 rounded-lg bg-[#17365d] px-4 py-3 text-center font-semibold text-white shadow-sm hover:bg-[#0d2340]">Sign Up</Link>
+            </div>
+          )}
         </nav>
       )}
     </header>

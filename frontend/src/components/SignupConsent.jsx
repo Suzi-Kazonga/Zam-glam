@@ -1,4 +1,5 @@
-// The end of every sign-up form: the password typed again, and agreement to the terms.
+// The end of every sign-up form, agreement to the terms; and the confirm-password field
+// each form places straight after the password.
 //
 // Shared by the shopper, shop and courier forms so all three ask for consent the same way.
 
@@ -11,20 +12,27 @@ export function FieldError({ message }) {
   return <p role="alert" className="mt-1 text-sm text-rose-700">{message}</p>;
 }
 
+// The password typed a second time. Placed straight after the first by each form, so the
+// two are side by side rather than separated by the rest of the details.
+export function ConfirmPasswordField({ form, setForm, errors }) {
+  return (
+    <div>
+      <input
+        className={inputClass}
+        value={form.confirmPassword}
+        onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })}
+        placeholder="Confirm password"
+        type="password"
+        aria-label="Confirm password"
+      />
+      <FieldError message={errors.confirmPassword} />
+    </div>
+  );
+}
+
 export default function SignupConsent({ form, setForm, errors }) {
   return (
     <>
-      <div>
-        <input
-          className={inputClass}
-          value={form.confirmPassword}
-          onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })}
-          placeholder="Confirm password"
-          type="password"
-          aria-label="Confirm password"
-        />
-        <FieldError message={errors.confirmPassword} />
-      </div>
       <div>
         <label className="flex items-start gap-2 text-sm text-slate-700">
           <input

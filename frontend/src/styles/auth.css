@@ -162,20 +162,32 @@
   position: absolute;
   top: 1rem;
   left: 1rem;
-  background: none;
-  border: none;
-  font-size: 1.1rem;
-  color: #667eea;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #475569;
   cursor: pointer;
-  padding: 0.5rem 1rem;
-  border-radius: 6px;
+  padding: 0.55rem 0.85rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 2px rgb(28 25 23 / 8%);
   transition: all 0.3s ease;
   z-index: 10;
 }
 
 .back-button:hover {
-  background: #f0f4ff;
-  color: #764ba2;
+  background: #fafaf9;
+  border-color: #94a3b8;
+  color: #1f2937;
+  transform: translateX(-2px);
+}
+
+.back-button:focus-visible {
+  outline: 2px solid #64748b;
+  outline-offset: 2px;
 }
 
 /* Form Styles */

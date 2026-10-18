@@ -8,6 +8,7 @@ import CourierShiftToggle from '../components/CourierShiftToggle';
 import ReportProblemButton from '../components/ReportProblemButton';
 import CustomerServicePanel from '../components/CustomerServicePanel';
 import useOpenProblems from '../hooks/useOpenProblems';
+import { resolveUserMeta } from '../utils/profileStorage';
 
 const customerPolicies = [
   { label: 'Shipping Info', href: '/policies#shipping' },
@@ -34,12 +35,8 @@ export default function AccountProfile() {
     return <Navigate to="/login" replace />;
   }
 
-  const initials = user.name
-    ?.split(' ')
-    .map((part) => part[0])
-    .join('')
-    .slice(0, 2)
-    .toUpperCase() || 'U';
+  const profileMeta = resolveUserMeta(user);
+  const initials = profileMeta.initials || 'U';
   const location = user.location || user.address || 'Lusaka, Zambia';
 
   return (
@@ -47,8 +44,12 @@ export default function AccountProfile() {
       <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 text-xl font-bold text-white shadow-lg">
-              {initials}
+            <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 text-xl font-bold text-white shadow-lg">
+              {profileMeta.profilePhoto ? (
+                <img src={profileMeta.profilePhoto} alt={user.name || 'Profile'} className="h-full w-full object-cover" />
+              ) : (
+                <span>{initials}</span>
+              )}
             </div>
             <div>
               <p className="text-xs uppercase tracking-[0.2em] text-slate-400">{user.role} account</p>
