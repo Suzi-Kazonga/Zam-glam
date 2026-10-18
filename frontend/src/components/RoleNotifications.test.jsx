@@ -21,6 +21,8 @@ jest.unstable_mockModule(fileURLToPath(new URL('../utils/localSession.js', impor
 const { MemoryRouter } = await import('react-router-dom');
 const { default: SellerOrderIcon } = await import('./SellerOrderIcon.jsx');
 const { default: DeliveryIcon } = await import('./DeliveryIcon.jsx');
+const { default: HelpChatIcon } = await import('./HelpChatIcon.jsx');
+const { AuthContext } = await import('../context/AuthContext');
 
 describe('seller and courier header notifications', () => {
   beforeEach(() => {
@@ -47,20 +49,39 @@ describe('seller and courier header notifications', () => {
     expect(screen.getByRole('link', { name: '2 parcels to pack and release Open the dashboard →' })).toHaveAttribute('href', '/seller/dashboard?section=Orders');
   });
 
-  test('seller sees customer messages and can open the Messages section', async () => {
+  // Unread customer messages are counted beside the shop's chat button — the one place —
+  // so the order bell does not announce the same message a second time.
+  test('seller sees unread customer messages on the chat button, which opens Messages', async () => {
     messageApi.getMessageThreads.mockResolvedValue([{
       store_id: 9,
       customer_id: 12,
       customer_name: 'Ama',
       last_message: 'Do you have this in medium?',
       last_sender_role: 'customer',
+      unread_count: 1,
+    }]);
+
+    render(
+      <MemoryRouter>
+        <AuthContext.Provider value={{ user: { role: 'seller', email: 's@example.com' }, loading: false }}>
+          <HelpChatIcon user={{ role: 'seller' }} />
+        </AuthContext.Provider>
+      </MemoryRouter>,
+    );
+
+    const chat = await screen.findByRole('link', { name: '1 unread message from customers' });
+    expect(chat).toHaveAttribute('href', '/seller/dashboard?section=Messages');
+    expect(screen.getByText('1')).toBeInTheDocument();
+  });
+
+  test('the order bell does not repeat customer messages', async () => {
+    messageApi.getMessageThreads.mockResolvedValue([{
+      store_id: 9, customer_id: 12, customer_name: 'Ama', last_message: 'Medium?', last_sender_role: 'customer', unread_count: 1,
     }]);
 
     render(<MemoryRouter><SellerOrderIcon /></MemoryRouter>);
-    fireEvent.click(await screen.findByRole('button', { name: /1 customer message/ }));
-
-    expect(screen.getByText('New customer message · Ama')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /New customer message · Ama Do you have this in medium\? Reply in Messages/ })).toHaveAttribute('href', '/seller/dashboard?section=Messages');
+    await waitFor(() => expect(api.getMyOrders).toHaveBeenCalled());
+    expect(screen.queryByText(/customer message/i)).not.toBeInTheDocument();
   });
 
   test('courier can request pickup and open delivery details after handover', async () => {

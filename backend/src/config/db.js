@@ -589,6 +589,16 @@ export async function initializeDatabase() {
   // A review table built from database/schema.sql rates products, not shops: it has no
   // order_id or reply columns, and product_id is required. A shop rating is tied to the
   // order it came from and has no product, so without these a customer could not rate.
+  // When the other side of a conversation opened a message. Without it there is no
+  // knowing what is unread, so the chat could not say how many messages are waiting.
+  // Messages already there when the column arrives are counted as read: they were sent
+  // before anybody was keeping track, and announcing the whole history as new would bury
+  // whatever genuinely is.
+  if (!(await columnInfo('store_messages', 'read_at'))) {
+    await pool.query('ALTER TABLE store_messages ADD COLUMN read_at TIMESTAMP NULL DEFAULT NULL');
+    await pool.query('UPDATE store_messages SET read_at = created_at WHERE read_at IS NULL');
+  }
+
   await addColumnIfMissing('reviews', 'order_id', 'INT NULL');
   await addColumnIfMissing('reviews', 'reply', 'TEXT NULL');
   await addColumnIfMissing('reviews', 'replied_at', 'TIMESTAMP NULL DEFAULT NULL');

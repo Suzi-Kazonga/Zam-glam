@@ -4,7 +4,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import useNotificationChime from '../hooks/useNotificationChime';
 import { Link } from 'react-router-dom';
 import { confirmPickup, denyPickup, getMyOrders } from '../api/orderApi';
-import { getMessageThreads } from '../api/messageApi';
 import { getMyRefundRequests } from '../api/refundApi';
 import { isLocalDemoSession } from '../utils/localSession';
 
@@ -16,14 +15,12 @@ const NEEDS_PACKING = ['placed', 'processing'];
 
 export default function SellerOrderIcon({ neutral = false }) {
   const [orders, setOrders] = useState([]);
-  const [customerThreads, setCustomerThreads] = useState([]);
   const [refundCases, setRefundCases] = useState([]);
   const [open, setOpen] = useState(false);
   const [busyId, setBusyId] = useState(null);
   const [message, setMessage] = useState('');
   const announced = useRef(new Set());
   const seenPackingOrders = useRef(null);
-  const seenCustomerThreads = useRef(null);
   const panel = useRef(null);
 
   const load = useCallback(() => {
@@ -33,13 +30,8 @@ export default function SellerOrderIcon({ neutral = false }) {
     getMyRefundRequests()
       .then((rows) => setRefundCases((Array.isArray(rows) ? rows : []).filter((row) => row.status === 'seller_review')))
       .catch(() => {});
-    getMessageThreads().then((threads) => {
-      const waiting = threads.filter((thread) => thread.last_sender_role === 'customer');
-      const ids = new Set(waiting.map((thread) => `${thread.store_id}:${thread.customer_id}`));
-      if (seenCustomerThreads.current && [...ids].some((id) => !seenCustomerThreads.current.has(id))) setOpen(true);
-      seenCustomerThreads.current = ids;
-      setCustomerThreads(waiting);
-    }).catch(() => {});
+    // Customer messages are counted beside the chat button, not here, so the same message
+    // is never announced in two places.
     return getMyOrders()
       .then((rows) => {
         setOrders(rows);
@@ -81,7 +73,7 @@ export default function SellerOrderIcon({ neutral = false }) {
 
   const pickupRequests = orders.filter((order) => order.status === 'pickup_requested');
   const toPack = orders.filter((order) => NEEDS_PACKING.includes(order.status));
-  const count = pickupRequests.length + toPack.length + customerThreads.length + refundCases.length;
+  const count = pickupRequests.length + toPack.length + refundCases.length;
   // A shop packing an order is not watching the screen, so the device sounds as well.
   useNotificationChime(count);
 
@@ -106,7 +98,6 @@ export default function SellerOrderIcon({ neutral = false }) {
 
   const attention = [
     pickupRequests.length && `${pickupRequests.length} courier handover${pickupRequests.length === 1 ? '' : 's'} waiting`,
-    customerThreads.length && `${customerThreads.length} customer message${customerThreads.length === 1 ? '' : 's'} waiting`,
     toPack.length && `${toPack.length} order${toPack.length === 1 ? '' : 's'} to pack or release`,
   ].filter(Boolean);
   const title = attention.length ? attention.join(', ') : 'Nothing waiting on you';
@@ -175,18 +166,6 @@ export default function SellerOrderIcon({ neutral = false }) {
             </Link>
           )}
 
-          {customerThreads.map((thread) => (
-            <Link
-              key={`${thread.store_id}:${thread.customer_id}`}
-              to="/seller/dashboard?section=Messages"
-              onClick={() => setOpen(false)}
-              className="mb-2 block rounded-lg border border-sky-200 bg-sky-50 p-3"
-            >
-              <p className="text-sm font-semibold text-sky-950">New customer message · {thread.customer_name || 'Customer'}</p>
-              <p className="mt-1 truncate text-xs text-sky-800">{thread.last_message}</p>
-              <p className="mt-1 text-xs font-semibold text-sky-900">Reply in Messages</p>
-            </Link>
-          ))}
 
           {refundCases.map((refund) => (
             <Link

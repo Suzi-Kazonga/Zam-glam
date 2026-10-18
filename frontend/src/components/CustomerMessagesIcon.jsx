@@ -1,44 +1,26 @@
-import { useEffect, useState } from 'react';
-import useNotificationChime from '../hooks/useNotificationChime';
+// The shopper's chat button, with the number of unread messages from shops beside it.
+
 import { Link } from 'react-router-dom';
-import { getMessageThreads } from '../api/messageApi';
-import { isLocalDemoSession } from '../utils/localSession';
+import useUnreadMessages from '../hooks/useUnreadMessages';
 
 export default function CustomerMessagesIcon() {
-  const [replies, setReplies] = useState([]);
+  // Counted on the server from what shops have sent and the shopper has not opened; the
+  // hook also chimes when it rises.
+  const unread = useUnreadMessages();
 
-  useEffect(() => {
-    if (isLocalDemoSession()) return undefined;
-    let cancelled = false;
-    const load = () => getMessageThreads()
-      .then((threads) => {
-        if (!cancelled) setReplies(threads.filter((thread) => thread.last_sender_role === 'seller'));
-      })
-      .catch(() => {});
-    load();
-    const timer = window.setInterval(load, 5000);
-    return () => {
-      cancelled = true;
-      window.clearInterval(timer);
-    };
-  }, []);
-
-  // A reply from a shop chimes, so it is not missed while browsing elsewhere.
-  useNotificationChime(replies.length);
-
-  const label = replies.length
-    ? `${replies.length} seller repl${replies.length === 1 ? 'y' : 'ies'} waiting`
-    : 'Customer messages';
+  const label = unread
+    ? `${unread} unread message${unread === 1 ? '' : 's'}`
+    : 'Messages with shops';
 
   return (
     <Link
       to="/customer/dashboard?section=Messages"
       aria-label={label}
-      title={replies.length ? label : 'Open messages with sellers'}
+      title={label}
       className="relative inline-flex h-10 w-10 items-center justify-center rounded-lg text-xl hover:bg-white/10"
     >
       💬
-      {replies.length > 0 && <span className="absolute right-0 top-0 rounded-full bg-sky-700 px-2 py-0.5 text-xs font-bold text-white">{replies.length}</span>}
+      {unread > 0 && <span className="absolute right-0 top-0 rounded-full bg-sky-700 px-2 py-0.5 text-xs font-bold text-white">{unread}</span>}
     </Link>
   );
 }

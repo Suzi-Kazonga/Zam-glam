@@ -53,6 +53,9 @@ export async function getThread(req, res) {
   try {
     const access = await resolveThreadAccess(req);
     if (access.error) return res.status(access.status || 400).json({ error: access.error });
+    // Opening a conversation is reading it: what the other side sent stops counting as
+    // unread. ?peek=1 reads without marking, for anything that only wants to look.
+    if (req.query.peek !== '1') await StoreMessage.markRead(access.storeId, access.customerId, access.senderRole);
     return res.json(await StoreMessage.getThread(access.storeId, access.customerId));
   } catch (error) {
     return res.status(500).json({ error: error.message });

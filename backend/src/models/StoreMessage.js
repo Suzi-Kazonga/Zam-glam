@@ -12,14 +12,17 @@ class StoreMessage {
          ORDER BY message.id DESC LIMIT 1) AS last_sender_role,
         (SELECT message.created_at FROM store_messages message
          WHERE message.store_id = store.id AND message.customer_id = ?
-         ORDER BY message.id DESC LIMIT 1) AS updated_at
+         ORDER BY message.id DESC LIMIT 1) AS updated_at,
+        (SELECT COUNT(*) FROM store_messages message
+         WHERE message.store_id = store.id AND message.customer_id = ?
+           AND message.sender_role = 'seller' AND message.read_at IS NULL) AS unread_count
        FROM stores store
        WHERE EXISTS (
          SELECT 1 FROM store_messages message
          WHERE message.store_id = store.id AND message.customer_id = ?
        )
        ORDER BY updated_at DESC`,
-      [customerId, customerId, customerId, customerId],
+      [customerId, customerId, customerId, customerId, customerId],
     );
     return rows;
   }
@@ -36,7 +39,10 @@ class StoreMessage {
          ORDER BY message.id DESC LIMIT 1) AS last_sender_role,
         (SELECT message.created_at FROM store_messages message
          WHERE message.store_id = store.id AND message.customer_id = customer.id
-         ORDER BY message.id DESC LIMIT 1) AS updated_at
+         ORDER BY message.id DESC LIMIT 1) AS updated_at,
+        (SELECT COUNT(*) FROM store_messages message
+         WHERE message.store_id = store.id AND message.customer_id = customer.id
+           AND message.sender_role = 'customer' AND message.read_at IS NULL) AS unread_count
        FROM store_messages thread
        JOIN stores store ON store.id = thread.store_id
        JOIN customers customer ON customer.id = thread.customer_id
@@ -87,6 +93,16 @@ class StoreMessage {
       [storeId, customerId],
     );
     return rows;
+  }
+
+  // Opening a conversation reads everything the other side has sent in it. Only their
+  // messages: one's own are never "unread", and marking them would change nothing.
+  static async markRead(storeId, customerId, readerRole) {
+    await pool.query(
+      `UPDATE store_messages SET read_at = CURRENT_TIMESTAMP
+       WHERE store_id = ? AND customer_id = ? AND sender_role <> ? AND read_at IS NULL`,
+      [storeId, customerId, readerRole],
+    );
   }
 
   static async create({ storeId, customerId, senderRole, senderId, body }) {
