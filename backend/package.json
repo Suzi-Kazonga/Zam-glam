@@ -17,7 +17,8 @@
     "prepare": "node -e \"try{require('../scripts/enable-git-hooks.cjs')}catch(e){}\"",
     "predev": "node -e \"try{require('../scripts/enable-git-hooks.cjs')}catch(e){}\"",
     "prestart": "node -e \"try{require('../scripts/enable-git-hooks.cjs')}catch(e){}\"",
-    "fix-logins": "node scripts/repair-demo-accounts.js"
+    "fix-logins": "node scripts/repair-demo-accounts.js",
+    "db:import": "node scripts/import-demo-database.js"
   },
   "keywords": [
     "e-commerce",

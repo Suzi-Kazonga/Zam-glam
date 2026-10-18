@@ -185,6 +185,27 @@ Set `DEMO_PASSWORD` to use a different shared password, or `DEMO_ACCOUNTS=off` t
 startup repair. It never runs when `NODE_ENV=production`: these are demonstration
 accounts, and must not exist with a known password anywhere public.
 
+### The team's shared database
+
+To work with the same shops, products, orders, deliveries and chats as the rest of the
+team, rather than a freshly seeded set, load the shared copy (MySQL running):
+
+```bash
+npm run db:import
+```
+
+It copies your current database to `zamglam_db_backup_<date-time>` first, then replaces
+it with [database/snapshot/zamglam_db.sql](database/snapshot/zamglam_db.sql). Restart the
+backend afterwards. It only ever runs when you ask: pulling or starting never touches your
+data.
+
+The copy is cleaned for this public repository. **Every account in it signs in with
+`123456789`**: the accounts above, plus `demoseller@zamglam.local` and the shoppers
+`shopper8@zamglam.local` and `shopper9@zamglam.local`, which stand in for the team's own
+test accounts. Names, phones and delivery addresses are placeholders, and uploaded ID
+documents are left out. `shopper1`–`shopper3` are in the copy as removed accounts; the
+administrator can restore them under Users.
+
 ---
 
 ## Tests
