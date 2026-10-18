@@ -171,9 +171,19 @@ All of them share one password: **`123456789`**.
 Seeded couriers start **unapproved**: sign in as the administrator and approve one before
 it can take parcels.
 
-Seeding again puts these accounts back on that password and leaves accounts people
-registered themselves alone. Set `DEMO_PASSWORD` to seed a different one. These are
-demonstration accounts: change or remove them before deploying anywhere public.
+**If a demo account will not take that password**, restart the backend. Your database
+keeps whatever password it was seeded with, and pulling new code does not change it — so
+on startup the backend puts every demo account back on `123456789`, and creates
+`admin@zamglam.local` if your database has no administrator at all. The console says
+what it did (`🔑 … put back on the shared demo password`). Accounts people registered
+themselves are never touched.
+
+Also check the **account type** chosen above the form: an administrator signs in with
+**Admin** selected, and any other choice is refused with a message saying so.
+
+Set `DEMO_PASSWORD` to use a different shared password, or `DEMO_ACCOUNTS=off` to stop the
+startup repair. It never runs when `NODE_ENV=production`: these are demonstration
+accounts, and must not exist with a known password anywhere public.
 
 ---
 

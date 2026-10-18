@@ -140,7 +140,7 @@ export const login = async (req, res) => {
       return res.status(400).json({ error: 'Choose a valid account type' });
     }
     if (expectedRole && user.role !== expectedRole) {
-      return res.status(403).json({ error: `This account is registered as a ${user.role}. Select that role to sign in.` });
+      return res.status(403).json({ error: `This account is registered as ${user.role === 'admin' ? 'an' : 'a'} ${user.role}. Select that role to sign in.` });
     }
 
     // A removed account cannot sign in, even while it is still restorable.

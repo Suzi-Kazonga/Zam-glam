@@ -13,6 +13,7 @@ import app from './app.js';
 import { initializeDatabase, testConnection } from './config/db.js';
 import Order from './models/Order.js';
 import Admin from './models/Admin.js';
+import { prepareDemoAccounts } from './utils/demoAccounts.js';
 
 dotenv.config();
 
@@ -51,6 +52,13 @@ async function startServer() {
   try {
     await initializeDatabase();
     await testConnection();
+    // Keep the demo accounts on the documented password, and make sure there is an
+    // administrator, so a teammate who has just pulled can sign in without re-seeding.
+    // Never in production, where these accounts must not exist with a known password;
+    // DEMO_ACCOUNTS=off turns it off anywhere.
+    if (process.env.NODE_ENV !== 'production' && process.env.DEMO_ACCOUNTS !== 'off') {
+      await prepareDemoAccounts().catch((error) => console.warn('Could not prepare the demo accounts:', error.message));
+    }
     app.listen(PORT, () => {
       console.log(`Zamglam backend running on http://localhost:${PORT}`);
       startPickupEscalation();

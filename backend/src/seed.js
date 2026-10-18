@@ -6,53 +6,14 @@
 //
 // Run with: npm run seed
 
-import bcrypt from 'bcrypt';
 import { pool, initializeDatabase } from './config/db.js';
 import User from './models/User.js';
 import Store from './models/Store.js';
 import Product from './models/Product.js';
+import { DEMO_PASSWORD, resetDemoPasswords } from './utils/demoAccounts.js';
 
-// Every demonstration account shares one password, so a marker needs to remember only
-// this. These accounts exist to be handed out; real accounts choose their own password at
-// sign-up. Set DEMO_PASSWORD in the environment to use something else.
-const DEMO_PASSWORD = process.env.DEMO_PASSWORD || '123456789';
-
-// Put the demo accounts back on the shared password.
-//
-// Seeding never overwrites an account that already exists, which is what keeps it safe to
-// run again — but it also means a database seeded when each shop had its own password
-// would keep those passwords for good. Only the seeded addresses are touched; an account
-// somebody registered themselves is left alone.
-async function resetDemoPasswords() {
-  const hash = await bcrypt.hash(DEMO_PASSWORD, 10);
-  const emails = [
-    'admin@zamglam.local', 'customer@zamglam.local',
-    'mud@zamglam.local', 'jets@zamglam.local', 'bata@zamglam.local',
-    'pep@zamglam.local', 'mrprice@zamglam.local', 'fashionsgalore@zamglam.local',
-    'mwansa@zamglamcourier.local', 'thandiwe@zamglamcourier.local', 'joseph@zamglamcourier.local',
-  ];
-
-  let changed = 0;
-  for (const email of emails) {
-    const account = await User.findByEmail(email);
-    if (!account) continue;
-    if (await bcrypt.compare(DEMO_PASSWORD, account.password_hash || '')) continue;
-    // Which table the login lives in depends on the account layout, so write it wherever
-    // the email is actually stored.
-    for (const table of ['users', 'customers', 'sellers', 'couriers', 'admins']) {
-      const [columns] = await pool.query(
-        `SELECT COUNT(*) AS count FROM information_schema.columns
-         WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = 'password'`,
-        [table],
-      );
-      if (!Number(columns[0]?.count || 0)) continue;
-      await pool.query(`UPDATE ${table} SET password = ? WHERE LOWER(email) = ?`, [hash, email]);
-    }
-    changed += 1;
-  }
-
-  console.log(changed ? `✅ ${changed} demo account(s) reset to the shared password` : '✅ Demo passwords already current');
-}
+// The demo accounts and their shared password live in utils/demoAccounts.js, which the
+// server also uses on startup to keep them usable on every copy of the project.
 
 async function seedDatabase() {
   try {
@@ -349,7 +310,8 @@ async function seedDatabase() {
     }
 
     // Last, so a database seeded by an earlier version ends up on the shared password too.
-    await resetDemoPasswords();
+    const reset = await resetDemoPasswords();
+    console.log(reset ? `✅ ${reset} demo account(s) reset to the shared password` : '✅ Demo passwords already current');
 
     console.log('\n✨ Database seeding completed successfully!');
     process.exit(0);
