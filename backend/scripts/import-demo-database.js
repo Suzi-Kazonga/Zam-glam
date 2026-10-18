@@ -7,8 +7,10 @@
 // included: admin@zamglam.local.
 //
 // Your current database is copied to zamglam_db_backup_<date-time> first, so nothing is
-// lost; that copy can be dropped in phpMyAdmin once you are happy. It is never run on its
-// own (not on pull, not on start), because it replaces whatever is in your database.
+// lost; that copy can be dropped in phpMyAdmin once you are happy. Your own (non-demo)
+// accounts are carried across exactly as they are, so you can still sign in to them.
+// It is never run on its own (not on pull, not on start), because it replaces the rest
+// of your database.
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -43,6 +45,44 @@ const connection = await mysql
 
 const q = (name) => `\`${name.replace(/`/g, '``')}\``;
 
+// The shared copy holds only demo accounts, on these addresses.
+const isDemoEmail = (email) => /@zamglam(courier)?\.local$/i.test(String(email || ''));
+
+async function columnsOf(database, table) {
+  const [rows] = await connection.query(
+    'SELECT COLUMN_NAME AS name FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ?',
+    [database, table],
+  );
+  return rows.map((row) => row.name);
+}
+
+async function keepPersonalAccounts(backup) {
+  const kept = [];
+  for (const table of ['customers', 'sellers', 'couriers', 'admins']) {
+    const before = await columnsOf(backup, table);
+    const now = new Set(await columnsOf(DATABASE, table));
+    if (!before.includes('email') || !now.has('email')) continue;
+    const shared = before.filter((column) => now.has(column));
+
+    const [rows] = await connection.query(`SELECT * FROM ${q(backup)}.${q(table)}`);
+    for (const row of rows) {
+      if (isDemoEmail(row.email)) continue;
+      const [[taken]] = await connection.query(
+        `SELECT (SELECT COUNT(*) FROM ${q(table)} WHERE email = ?) AS email, (SELECT COUNT(*) FROM ${q(table)} WHERE id = ?) AS id`,
+        [row.email, row.id],
+      );
+      if (taken.email) continue;
+      const columns = shared.filter((column) => column !== 'id' || !taken.id);
+      await connection.query(
+        `INSERT INTO ${q(table)} (${columns.map(q).join(', ')}) VALUES (${columns.map(() => '?').join(', ')})`,
+        columns.map((column) => row[column]),
+      );
+      kept.push(row.email);
+    }
+  }
+  return kept;
+}
+
 try {
   const [tables] = await connection.query(
     "SELECT TABLE_NAME AS name FROM information_schema.TABLES WHERE TABLE_SCHEMA = ? AND TABLE_TYPE = 'BASE TABLE'",
@@ -50,9 +90,10 @@ try {
   );
 
   // 1. Keep a copy of what is there now.
+  let backup = null;
   if (tables.length) {
     const stamp = new Date().toISOString().replace(/[-:]/g, '').replace('T', '_').slice(0, 15);
-    const backup = `${DATABASE}_backup_${stamp}`;
+    backup = `${DATABASE}_backup_${stamp}`;
     await connection.query(`CREATE DATABASE ${q(backup)} CHARACTER SET utf8mb4`);
     await connection.query('SET FOREIGN_KEY_CHECKS = 0');
     for (const { name } of tables) {
@@ -71,6 +112,14 @@ try {
   for (const { name } of tables) await connection.query(`DROP TABLE IF EXISTS ${q(name)}`);
   await connection.query(fs.readFileSync(SNAPSHOT, 'utf8'));
   await connection.query('SET FOREIGN_KEY_CHECKS = 1');
+
+  // 3. Your own accounts come across unchanged: same name, email, password and details,
+  //    and the same id unless the shared copy already uses it. Their orders and listings
+  //    stay in the backup, since they point at rows the shared copy does not have.
+  if (backup) {
+    const kept = await keepPersonalAccounts(backup);
+    if (kept.length) console.log(`Kept your own accounts: ${kept.join(', ')}.`);
+  }
 
   const counts = {};
   for (const table of ['sellers', 'stores', 'products', 'customers', 'couriers', 'orders']) {

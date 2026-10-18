@@ -199,12 +199,11 @@ it with [database/snapshot/zamglam_db.sql](database/snapshot/zamglam_db.sql). Re
 backend afterwards. It only ever runs when you ask: pulling or starting never touches your
 data.
 
-The copy is cleaned for this public repository. **Every account in it signs in with
-`123456789`**: the accounts above, plus `demoseller@zamglam.local` and the shoppers
-`shopper8@zamglam.local` and `shopper9@zamglam.local`, which stand in for the team's own
-test accounts. Names, phones and delivery addresses are placeholders, and uploaded ID
-documents are left out. `shopper1`–`shopper3` are in the copy as removed accounts; the
-administrator can restore them under Users.
+The copy holds **only the demo accounts above, all on `123456789`**. Nobody's personal
+account is in it, since this repository is public. Your own personal accounts are carried
+across the import exactly as they were (same email, password and details), so you can
+still sign in to them afterwards. Their own orders and listings stay in the backup.
+Uploaded ID documents are not included.
 
 ---
 
