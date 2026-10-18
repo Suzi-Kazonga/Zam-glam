@@ -6,6 +6,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import CartIcon from './CartIcon';
 import CustomerMessagesIcon from './CustomerMessagesIcon';
+import CustomerUpdatesIcon from './CustomerUpdatesIcon';
 import HelpChatIcon from './HelpChatIcon';
 import DeliveryIcon from './DeliveryIcon';
 import SellerOrderIcon from './SellerOrderIcon';
@@ -74,7 +75,8 @@ export default function Topbar({ onSearch, navigationItems, activeNavigation, on
       {/* Shoppers and shops message each other about an order. A courier has nobody on the
           platform to message — theirs only pointed at the contact page, which is no use
           mid-delivery — so they get the parcel icon below and nothing else. */}
-      {user?.role === 'customer' && <CustomerMessagesIcon />}
+      {user?.role === 'customer' && <CustomerUpdatesIcon />}
+        {user?.role === 'customer' && <CustomerMessagesIcon />}
       {(user?.role === 'seller' || user?.role === 'admin') && <HelpChatIcon user={user} neutral={lightHeader} />}
       {user?.role === 'courier' && <DeliveryIcon />}
       {user?.role === 'seller' && <SellerOrderIcon neutral={lightHeader} />}

@@ -7,6 +7,7 @@ import { useAuth } from '../context/AuthContext';
 import SearchBar from './SearchBar';
 import CartIcon from './CartIcon';
 import CustomerMessagesIcon from './CustomerMessagesIcon';
+import CustomerUpdatesIcon from './CustomerUpdatesIcon';
 import HelpChatIcon from './HelpChatIcon';
 import DeliveryIcon from './DeliveryIcon';
 import SellerOrderIcon from './SellerOrderIcon';
@@ -107,6 +108,7 @@ const Header = () => {
         </div>
       )}
       <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-2">
+        {user?.role === 'customer' && <CustomerUpdatesIcon />}
         {user?.role === 'customer' && <CustomerMessagesIcon />}
         {/* Shoppers and shops message each other about an order, so the icon takes them
             to those threads. A courier has nobody to message — theirs only pointed at the
