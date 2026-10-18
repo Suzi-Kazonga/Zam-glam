@@ -11,6 +11,7 @@ import CustomerServicePanel from '../components/CustomerServicePanel';
 import UnclaimedParcels from '../components/UnclaimedParcels';
 import ReportsQueue from '../components/ReportsQueue';
 import AdminRefundQueue from '../components/AdminRefundQueue';
+import RefundCasesWaiting from '../components/RefundCasesWaiting';
 import useAdminConsoleController from '../hooks/useAdminConsoleController';
 
 const sections = ['Overview', 'Sellers', 'Customers', 'Couriers', 'Attention', 'Verification', 'Reports', 'Refunds', 'Customer service', 'Deliveries'];
@@ -48,7 +49,7 @@ export default function AdminDashboard() {
           <div>
             <p className="text-sm font-semibold uppercase tracking-widest text-slate-800">Admin console</p>
             <h1 className="mt-2 text-3xl font-bold text-slate-900">{active === 'Overview' ? 'Manage marketplace accounts' : active}</h1>
-            <p className="mt-1 text-slate-500">{active === 'Attention' ? 'Pending approvals and flagged reports that need a decision.' : active === 'Refunds' ? 'Review customer and seller discussions and record the final case decision.' : 'Review, edit, suspend or remove shops, customers and couriers from one place.'}</p>
+            <p className="mt-1 text-slate-500">{active === 'Attention' ? 'Pending approvals, flagged reports, refund cases and reported problems that need a decision.' : active === 'Refunds' ? 'Review customer and seller discussions and record the final case decision.' : 'Review, edit, suspend or remove shops, customers and couriers from one place.'}</p>
           </div>
 
           {error && <p role="alert" className="rounded-md border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">{error}</p>}
@@ -161,6 +162,11 @@ export default function AdminDashboard() {
               <DashboardCard title="Flagged reports">
                 <p className="mt-1 text-sm text-slate-500">Review parties with repeated complaints.</p>
                 <div className="mt-4"><ReportsQueue /></div>
+              </DashboardCard>
+              {/* The bell counts refund cases waiting on the admin, so they show here too. */}
+              <DashboardCard title="Refund cases to decide" className="xl:col-span-2">
+                <p className="mt-1 text-sm text-slate-500">The shop has given its recommendation; the final decision is yours.</p>
+                <div className="mt-4"><RefundCasesWaiting onOpenSection={openSection} /></div>
               </DashboardCard>
               {/* Problems people have reported with Zamglam itself wait here with everything
                   else needing a decision, until they are marked done. */}
