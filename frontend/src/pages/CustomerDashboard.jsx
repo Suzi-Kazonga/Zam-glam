@@ -43,10 +43,13 @@ export default function CustomerDashboard() {
     }
   });
 
+  // Every link here lands on a section: the one it names, or the Customer space overview.
+  // Keyed on the navigation itself, so following a Dashboard link from inside Orders or
+  // Messages comes back to the overview rather than staying where it was.
   useEffect(() => {
     const requested = new URLSearchParams(location.search).get('section');
-    if (sections.includes(requested)) setActive(requested);
-  }, [location.search]);
+    setActive(sections.includes(requested) ? requested : 'Overview');
+  }, [location.key, location.search]);
 
   useEffect(() => {
     apiClient.get('/products').then(({ data }) => setProducts(Array.isArray(data) ? data : [])).catch(() => setProducts([]));
@@ -67,6 +70,12 @@ export default function CustomerDashboard() {
     () => orders.filter((order) => `${order.id} ${orderSummary(order)} ${order.status}`.toLowerCase().includes(query.toLowerCase())),
     [orders, query],
   );
+  // Delivered and cancelled orders are finished; everything else is still under way.
+  const isFinished = (order) => ['delivered', 'cancelled'].includes(order.status);
+  const currentOrders = filteredOrders.filter((order) => !isFinished(order));
+  const previousOrders = filteredOrders.filter(isFinished);
+  const orderDate = (order) => (order.created_at ? new Date(order.created_at).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : '');
+  const statusTone = (status) => (status === 'delivered' ? 'bg-emerald-50 text-emerald-700' : status === 'cancelled' ? 'bg-slate-100 text-slate-600' : 'bg-indigo-50 text-indigo-700');
   const matchingProducts = useMemo(
     () => products.filter((product) => `${product.name} ${product.description || ''}`.toLowerCase().includes(`${query} ${storeSearch}`.toLowerCase())),
     [products, query, storeSearch],
@@ -77,7 +86,7 @@ export default function CustomerDashboard() {
     [stores, query, storeSearch],
   );
 
-  return <div className="flex min-h-screen bg-white"><Sidebar items={sections} active={active} onSelect={setActive} role="customer" /><div className="min-w-0 flex-1"><Topbar onSearch={(value) => { setQuery(value); if (value) setActive('Products'); }} /><SuspendedNotice /><main className="mx-auto max-w-7xl space-y-6 p-4 pb-28 sm:p-6 sm:pb-28 lg:p-8 lg:pb-8">
+  return <div className="flex min-h-screen bg-white"><Sidebar items={sections} active={active} onSelect={setActive} role="customer" /><div className="min-w-0 flex-1"><Topbar onSearch={(value) => { setQuery(value); if (value) setActive('Products'); }} /><SuspendedNotice /><main className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6 lg:p-8">
     <div><p className="text-sm font-semibold uppercase tracking-widest text-indigo-600">Customer space</p><h1 className="mt-2 text-3xl font-bold text-slate-900">Good to see you, {user?.name?.split(' ')[0] || 'there'}</h1><p className="mt-1 text-slate-500">Keep an eye on your orders and your next favorite find.</p></div>
 
     {active === 'Overview' && (
@@ -132,18 +141,31 @@ export default function CustomerDashboard() {
       </div>
     )}
 
-    {active === 'Orders' && <section className="space-y-4"><DashboardCard title="Order history" className="overflow-hidden"><div className="mt-4 overflow-x-auto"><table className="w-full min-w-[620px] text-left text-sm"><thead className="border-b border-slate-100 text-slate-400"><tr><th className="py-3">Order ID</th><th>Items</th><th>Packages</th><th>Status</th><th></th></tr></thead><tbody>
-      {filteredOrders.length ? filteredOrders.map((order) => <tr key={order.id} className="border-b border-slate-50 last:border-0">
-        <td className="py-4 font-semibold">#{order.id}</td>
-        <td className="max-w-xs"><span className="block truncate">{orderSummary(order)}</span></td>
-        <td>
-          <span className="font-semibold text-slate-700">{packageProgress(order)}</span>
-          {order.shipments?.length > 1 && <span className="block text-xs text-slate-400">{order.shipments.map((s, i) => `${i + 1}/${order.shipments.length} ${s.storeName}: ${s.status}`).join(' · ')}</span>}
-        </td>
-        <td><span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold capitalize text-indigo-700">{order.status}</span></td>
-        <td><Link to={`/orders/${order.id}`} className="text-sm font-semibold text-indigo-600 hover:text-indigo-800">Track</Link></td>
-      </tr>) : <tr><td colSpan="5" className="py-6 text-center text-slate-500">No orders found yet.</td></tr>}
-    </tbody></table></div></DashboardCard></section>}
+    {active === 'Orders' && <section className="space-y-6">
+      {/* Orders still on their way first, then everything already delivered or cancelled. */}
+      {[
+        { title: 'Current orders', detail: 'Placed, being prepared or on the way.', list: currentOrders, empty: query ? 'No current orders match your search.' : 'Nothing on its way right now.' },
+        { title: 'Previous orders', detail: 'Delivered or cancelled.', list: previousOrders, empty: query ? 'No previous orders match your search.' : 'Orders appear here once they are delivered.' },
+      ].map((group) => <DashboardCard key={group.title} title={`${group.title} (${group.list.length})`}>
+        <p className="mt-1 text-sm text-slate-500">{group.detail}</p>
+        {group.list.length ? <ul className="mt-4 divide-y divide-slate-100">
+          {group.list.map((order) => <li key={order.id} className="flex flex-col gap-2 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+            <div className="min-w-0">
+              <p className="font-semibold text-slate-800">Order #{order.id}<span className="ml-2 text-xs font-normal text-slate-400">{orderDate(order)}</span></p>
+              <p className="mt-1 break-words text-sm text-slate-600">{orderSummary(order) || 'Order details'}</p>
+              <p className="mt-1 text-xs text-slate-500">
+                {order.total_price != null && `K${Number(order.total_price).toFixed(2)} · `}{packageProgress(order)}
+              </p>
+              {order.shipments?.length > 1 && <p className="mt-1 break-words text-xs text-slate-400">{order.shipments.map((s, i) => `${i + 1}/${order.shipments.length} ${s.storeName}: ${s.status}`).join(' · ')}</p>}
+            </div>
+            <div className="flex shrink-0 items-center gap-3">
+              <span className={`rounded-full px-3 py-1 text-xs font-semibold capitalize ${statusTone(order.status)}`}>{String(order.status).replace(/_/g, ' ')}</span>
+              <Link to={`/orders/${order.id}`} className="text-sm font-semibold text-indigo-600 hover:text-indigo-800">Track</Link>
+            </div>
+          </li>)}
+        </ul> : <p className="mt-4 rounded-lg border border-dashed border-slate-200 p-5 text-center text-sm text-slate-500">{group.empty}</p>}
+      </DashboardCard>)}
+    </section>}
     {active === 'Products' && <section>
       <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
         <div><p className="text-sm font-semibold uppercase tracking-widest text-indigo-600">Marketplace</p><h2 className="mt-1 text-2xl font-bold text-slate-900">{query ? `Results for “${query}”` : 'All products'}</h2></div>

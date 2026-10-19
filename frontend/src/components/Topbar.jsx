@@ -15,6 +15,8 @@ import SearchBar from './SearchBar';
 import ReportProblemButton from './ReportProblemButton';
 import { themeForRole } from '../utils/roleTheme';
 import useOpenProblems from '../hooks/useOpenProblems';
+import { HeaderBackButton } from './BackButton';
+import { OPEN_SIDEBAR_EVENT, SIDEBAR_ATTRIBUTE } from './Sidebar';
 
 const navigationGroups = [
   { title: 'Manage your shop', items: ['Overview', 'Products', 'Orders', 'Messages', 'Refunds'] },
@@ -34,6 +36,9 @@ export default function Topbar({ onSearch, navigationItems, activeNavigation, on
   const hasDashboardMenu = Array.isArray(navigationItems) && typeof onNavigationSelect === 'function';
   const lightHeader = isCustomer || (user?.role === 'seller' && hasDashboardMenu);
   const headerRef = useRef(null);
+  // Whether this page has a section drawer (Sidebar) for the ☰ button to open.
+  const [hasSidebar, setHasSidebar] = useState(false);
+  useEffect(() => { setHasSidebar(Boolean(document.querySelector(`[${SIDEBAR_ATTRIBUTE}]`))); }, []);
   const searchPlaceholder = user?.role === 'admin'
     ? 'Search accounts'
     : user?.role === 'courier'
@@ -65,6 +70,17 @@ export default function Topbar({ onSearch, navigationItems, activeNavigation, on
     >
       <span aria-hidden="true">{navigationOpen ? '×' : '☰'}</span>
     </button>}
+    {/* Phones: the dashboard's section drawer opens from here, in the bar, instead of a
+        floating button that sat on top of the page's own buttons. */}
+    {!hasDashboardMenu && hasSidebar && <button
+      type="button"
+      onClick={() => window.dispatchEvent(new Event(OPEN_SIDEBAR_EVENT))}
+      aria-label="Open the menu"
+      className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-2xl transition lg:hidden ${lightHeader ? 'text-slate-700 hover:bg-slate-100' : 'text-white hover:bg-white/10'}`}
+    >
+      <span aria-hidden="true">☰</span>
+    </button>}
+    <HeaderBackButton light={lightHeader} />
     <Link to="/" className={`shrink-0 text-xl font-bold tracking-tight transition ${lightHeader ? 'text-slate-900 hover:text-indigo-600' : 'text-white hover:text-white/80'}`}>Zamglam</Link>
     {!lightHeader && <span className="hidden rounded-full bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-white sm:inline">{theme.label}</span>}
     <div className="order-3 w-full min-w-0 md:order-none md:mx-auto md:max-w-xl md:flex-1">

@@ -253,7 +253,7 @@ export default function SellerDashboard() {
     <div className="min-w-0 flex-1">
       <Topbar onSearch={setQuery} navigationItems={sections} activeNavigation={active} onNavigationSelect={setActive} />
       <SuspendedNotice />
-      <main className="mx-auto max-w-screen-2xl space-y-6 p-4 pb-28 sm:p-6 sm:pb-28 lg:p-8 lg:pb-8">
+      <main className="mx-auto max-w-screen-2xl space-y-6 p-4 sm:p-6 lg:p-8">
         <header className="flex flex-wrap items-end justify-between gap-4 border-b border-slate-200 pb-5">
           <div>
             <p className="text-xs font-bold uppercase tracking-widest text-emerald-800">Seller workspace / {sellerName}</p>
@@ -266,7 +266,7 @@ export default function SellerDashboard() {
 
         {active === 'Overview' && <section className="space-y-5">
           <StoreDutyCard store={store} saving={savingDuty} onToggle={toggleStoreDuty} onManageHours={() => setActive('Store profile')} />
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <button type="button" onClick={() => setActive('Orders')} className="text-left"><DashboardCard title="Pending orders" value={orders.filter((order) => order.status === 'pending').length} detail="Need your attention" /></button>
             <button type="button" onClick={() => setActive('Orders')} className="text-left"><DashboardCard title="In transit" value={inTransit} detail="On the way to customers" /></button>
             <button type="button" onClick={() => setActive('Products')} className="text-left"><DashboardCard title="Low stock" value={lowStock.length} detail="Fewer than 5 units" /></button>
@@ -285,7 +285,7 @@ export default function SellerDashboard() {
             </div>
             {products.length > 8 && <button type="button" onClick={() => setActive('Products')} className="mt-4 text-sm font-semibold text-emerald-800">View all {products.length} products</button>}
           </DashboardCard>
-          <div className="grid gap-4 xl:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
             <DashboardCard title="Out of stock" detail="Add stock and an expected restock date to let customers know when items return.">
               <div className="mt-3 divide-y divide-slate-100">
                 {outOfStock.map((product) => <div key={product.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
@@ -302,7 +302,7 @@ export default function SellerDashboard() {
               </div>
             </DashboardCard>
           </div>
-          <div className="grid gap-4 xl:grid-cols-[1.25fr_0.75fr]">
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1.25fr_0.75fr]">
             <DashboardCard title="Recent orders" detail="Your shop's latest order activity."><div className="mt-3 divide-y divide-slate-100">{orders.slice(0, 5).map((order) => <div key={order.id} className="flex flex-wrap items-center justify-between gap-3 py-3"><div className="min-w-0"><p className="font-semibold text-slate-900">Order #{order.id}</p><p className="truncate text-sm text-slate-500">{(order.items || []).map((item) => item.name).join(', ')}</p></div><span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${order.status === 'delivered' ? 'bg-emerald-50 text-emerald-800' : order.status === 'in_transit' ? 'bg-sky-50 text-sky-800' : 'bg-amber-50 text-amber-800'}`}>{deliveryLabel(order.status)}</span></div>)}{!orders.length && <p className="py-4 text-sm text-slate-500">New orders will appear here.</p>}</div><button type="button" onClick={() => setActive('Orders')} className="mt-3 border-t border-slate-100 pt-4 text-sm font-semibold text-emerald-800">Open order tracker</button></DashboardCard>
             <div className="space-y-4"><DashboardCard title="Sales snapshot"><div className="mt-4 flex items-end justify-between gap-4"><div><p className="text-sm text-slate-500">Total seller revenue</p><p className="mt-1 text-3xl font-bold text-slate-950">K{revenue.toFixed(2)}</p></div><div className="text-right"><p className="text-sm text-slate-500">Rating</p><p className="mt-1 text-lg font-bold text-slate-900">{score.count ? `${score.average} / 5` : '—'}</p></div></div><button type="button" onClick={() => setActive('Analytics')} className="mt-5 text-sm font-semibold text-emerald-800">View analytics</button></DashboardCard><button type="button" onClick={() => setActive('Notifications')} className="block w-full text-left"><DashboardCard title="Shop alerts" value={notificationCount} detail="Orders, stock, and feedback" /></button></div>
           </div>

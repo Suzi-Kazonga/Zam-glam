@@ -57,7 +57,7 @@ export default function AccountProfile() {
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Link to={dashboardForRole(user.role)} className="rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700">
+            <Link to={user.role === 'customer' ? '/customer/dashboard' : dashboardForRole(user.role)} className="rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700">
               Dashboard
             </Link>
             <button type="button" onClick={() => { logout(); navigate('/'); }} className="rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">

@@ -9,6 +9,10 @@
 
 import { useLocation, useNavigate } from 'react-router-dom';
 
+// On a phone the floating button would sit on the top bar's search box, so the bars carry
+// their own back arrow there (HeaderBackButton) and the floating one steps aside whenever
+// one is on the page (styles/globals.css, [data-header-back]).
+
 // Pages that place their own inline back button.
 const HAS_OWN_BACK = (path) => path === '/login' || path.startsWith('/signup');
 
@@ -40,10 +44,32 @@ export default function BackButton({ to, label, className = '' }) {
   return (
     <button
       type="button"
+      data-floating-back=""
       onClick={() => navigate(window.history.length > 1 ? -1 : '/')}
       className="fixed left-4 top-20 z-50 inline-flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-lg transition hover:-translate-x-0.5 hover:border-indigo-400 hover:text-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2"
       aria-label="Go back"
       title="Go back"
+    >
+      <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
+        <path d="M19 12H5m7 7-7-7 7-7" />
+      </svg>
+    </button>
+  );
+}
+
+// The back arrow inside a top bar, shown on phones only (wider screens have the floating one).
+export function HeaderBackButton({ light = true }) {
+  const navigate = useNavigate();
+  const location = useLocation();
+  if (location.pathname === '/') return null;
+  return (
+    <button
+      type="button"
+      data-header-back=""
+      onClick={() => navigate(window.history.length > 1 ? -1 : '/')}
+      aria-label="Go back"
+      title="Go back"
+      className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg transition lg:hidden ${light ? 'text-slate-700 hover:bg-slate-100' : 'text-white hover:bg-white/10'}`}
     >
       <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
         <path d="M19 12H5m7 7-7-7 7-7" />

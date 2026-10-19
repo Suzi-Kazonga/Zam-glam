@@ -45,7 +45,7 @@ export default function AdminDashboard() {
       <Sidebar items={sections} active={active} onSelect={openSection} role="admin" />
       <div className="min-w-0 flex-1">
         <Topbar onSearch={setQuery} />
-        <main className="mx-auto max-w-7xl space-y-6 p-4 pb-28 sm:p-6 sm:pb-28 lg:p-8 lg:pb-8">
+        <main className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6 lg:p-8">
           <div>
             <p className="text-sm font-semibold uppercase tracking-widest text-slate-800">Admin console</p>
             <h1 className="mt-2 text-3xl font-bold text-slate-900">{active === 'Overview' ? 'Manage marketplace accounts' : active}</h1>

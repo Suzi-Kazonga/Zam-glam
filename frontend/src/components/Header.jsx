@@ -16,6 +16,7 @@ import { getStorefrontPath } from '../utils/storeLogos';
 import { themeForRole } from '../utils/roleTheme';
 import useOpenProblems from '../hooks/useOpenProblems';
 import { resolveUserMeta } from '../utils/profileStorage';
+import { HeaderBackButton } from './BackButton';
 
 const Header = () => {
   const { user, loading, logout } = useAuth();
@@ -92,6 +93,7 @@ const Header = () => {
       >
         {menuOpen ? '✕' : '☰'}
       </button>
+      <HeaderBackButton light={!(themed && !isCustomer)} />
       <Link to="/" aria-label="Zamglam home" className={`inline-flex items-center gap-1 text-xl font-extrabold tracking-tight transition sm:text-2xl ${brandClass}`}>
         <span className="zamglam-bag inline-flex h-8 w-9 items-center justify-center" aria-hidden="true">
           <svg viewBox="0 0 36 30" className="h-8 w-9" fill="none" strokeLinecap="round" strokeLinejoin="round">
@@ -112,7 +114,7 @@ const Header = () => {
         {navLinks.map((link) => <Link key={link.to + link.label} to={link.to} className={linkClass}>{link.label}</Link>)}
       </nav>
       {canBrowse && (
-        <div className="order-3 w-full min-w-0 flex-1 md:order-none md:mx-auto md:max-w-xl">
+        <div className="order-3 w-full min-w-0 basis-full md:order-none md:mx-auto md:max-w-xl md:flex-1 md:basis-0">
           <SearchBar placeholder="Search all styles" onSearch={(value) => { if (value) navigate(`/products?search=${encodeURIComponent(value)}`); }} />
         </div>
       )}
@@ -152,7 +154,7 @@ const Header = () => {
               <span aria-hidden="true" className={`hidden text-base sm:inline ${isCustomer ? 'text-slate-400' : 'text-white/70'}`}>▾</span>
             </button>
             {accountMenuOpen && (
-              <div role="menu" aria-label="Account menu" className="absolute right-0 top-14 z-50 w-72 rounded-2xl border border-slate-200 bg-white p-3 text-slate-700 shadow-[0_18px_50px_rgba(15,23,42,0.18)]">
+              <div role="menu" aria-label="Account menu" className="absolute right-0 top-14 z-50 w-72 max-w-[calc(100vw-2rem)] rounded-2xl border border-slate-200 bg-white p-3 text-slate-700 shadow-[0_18px_50px_rgba(15,23,42,0.18)]">
                 <div className="flex items-center gap-3 border-b border-slate-100 px-2 pb-3">
                   <span className="inline-flex h-12 w-12 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 text-base font-bold text-white">
                     {profileMeta.profilePhoto ? <img src={profileMeta.profilePhoto} alt="" className="h-full w-full object-cover" /> : profileMeta.initials}
@@ -167,7 +169,7 @@ const Header = () => {
                     <span>My Profile</span>
                     <span aria-hidden="true">→</span>
                   </Link>
-                  <Link to="/account#orders" onClick={closeAccountMenu} className="flex items-center justify-between rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">
+                  <Link to={user.role === 'customer' ? '/customer/dashboard?section=Orders' : '/seller/dashboard?section=Orders'} onClick={closeAccountMenu} className="flex items-center justify-between rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">
                     <span>My Orders</span>
                     <span aria-hidden="true">→</span>
                   </Link>

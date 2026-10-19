@@ -31,3 +31,11 @@ input, textarea, select {
   font-family: inherit;
   border: none;
 }
+
+/* Phones: when the top bar has its own back arrow, the floating one would only cover the
+   search box beneath it (BackButton.jsx). */
+@media (max-width: 1023.98px) {
+  body:has([data-header-back]) [data-floating-back] {
+    display: none;
+  }
+}

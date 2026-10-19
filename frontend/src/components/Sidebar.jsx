@@ -1,5 +1,6 @@
-// The section list beside every dashboard. On a phone it becomes a drawer opened by a
-// floating Menu button.
+// The section list beside every dashboard. On a phone it becomes a drawer, opened by the
+// ☰ button in the top bar (Topbar) rather than a floating button that would sit on top of
+// the page's own buttons.
 
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -17,6 +18,11 @@ const customerIconPaths = {
   Profile: 'M20 21a8 8 0 0 0-16 0M12 13a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z',
   Wishlist: 'M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21l7.8-7.5 1.1-1.1a5.5 5.5 0 0 0-.1-7.8Z',
 };
+
+// The top bar asks for the drawer with this event, and looks for this attribute to know
+// the page has one.
+export const OPEN_SIDEBAR_EVENT = 'zamglam:open-sidebar';
+export const SIDEBAR_ATTRIBUTE = 'data-dashboard-sidebar';
 
 export default function Sidebar({ items, active, onSelect, role, shopName, storefrontPath }) {
   const [open, setOpen] = useState(false);
@@ -37,21 +43,16 @@ export default function Sidebar({ items, active, onSelect, role, shopName, store
     };
   }, [open]);
 
+  useEffect(() => {
+    const openDrawer = () => setOpen(true);
+    window.addEventListener(OPEN_SIDEBAR_EVENT, openDrawer);
+    return () => window.removeEventListener(OPEN_SIDEBAR_EVENT, openDrawer);
+  }, []);
+
   const heading = role === 'admin' ? 'Admin console' : role === 'courier' ? 'Courier hub' : 'My Zamglam';
 
   return (
     <>
-      {/* Out of the way of the header and of the page's own content, and big enough to hit. */}
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        aria-expanded={open}
-        aria-label="Open the menu"
-        className={`fixed bottom-5 left-4 z-30 flex items-center gap-2 rounded-full px-5 py-3 text-sm font-semibold text-white shadow-lg lg:hidden ${theme.button}`}
-      >
-        <span aria-hidden="true">☰</span> Menu
-      </button>
-
       {open && (
         <div
           className="fixed inset-0 z-40 bg-slate-900/50 lg:hidden"
@@ -61,6 +62,7 @@ export default function Sidebar({ items, active, onSelect, role, shopName, store
       )}
 
       <aside
+        {...{ [SIDEBAR_ATTRIBUTE]: '' }}
         className={`${open ? 'translate-x-0' : '-translate-x-full'} fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] overflow-y-auto bg-white p-4 shadow-xl transition-transform duration-200
                     lg:static lg:z-0 lg:w-64 lg:max-w-none lg:translate-x-0 lg:shadow-md lg:transition-none`}
       >
